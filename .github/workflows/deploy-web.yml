@@ -3,9 +3,11 @@ name: Deploy web
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'site/**'
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -22,10 +24,32 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-      - run: flutter build web --release --base-href /lang_mm/
+      - run: flutter build web --release --base-href /lang_mm/site/
+      - name: Update published site
+        run: |
+          find build/web -name '*.symbols' -delete
+          rm -rf site
+          mkdir -p site
+          cp -R build/web/. site/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site
+          if git diff --staged --quiet; then
+            echo "Site is unchanged."
+          else
+            git commit -m "Publish the web build."
+            git push origin HEAD:main
+          fi
+      - name: Assemble Pages artifact
+        run: |
+          rm -rf build/pages
+          mkdir -p build/pages
+          cp index.html build/pages/index.html
+          cp .nojekyll build/pages/.nojekyll
+          cp -R site build/pages/site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: build/pages
 
   deploy:
     needs: build
