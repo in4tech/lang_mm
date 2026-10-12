@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lang/localization/app_language.dart';
+import 'package:lang/language/app_language.dart';
 
 void main() {
   test('fromCode maps stored codes and falls back to English', () {

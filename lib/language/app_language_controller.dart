@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:lang/localization/app_language.dart';
-import 'package:lang/localization/app_language_store.dart';
+import 'package:lang/language/app_language.dart';
+import 'package:lang/language/app_language_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLanguageController extends ChangeNotifier {

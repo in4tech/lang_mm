@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:lang/localization/app_language_controller.dart';
+import 'package:lang/language/app_language_controller.dart';
 
 class AppLanguageScope extends InheritedNotifier<AppLanguageController> {
   const AppLanguageScope({

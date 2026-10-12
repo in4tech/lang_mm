@@ -2,11 +2,11 @@
   "@@locale": "en",
   "homeTitle": "Flutter Demo Home Page",
   "@homeTitle": {
-    "description": "Title shown in the home app bar and the app switcher."
+    "description": "Title shown in the counter app bar and the app switcher on non-web platforms."
   },
   "counterMessage": "You have pushed the button this many times:",
   "@counterMessage": {
-    "description": "Message above the counter on the home screen."
+    "description": "Message above the counter on the non-web home screen."
   },
   "incrementAction": "Increment",
   "@incrementAction": {
@@ -15,5 +15,98 @@
   "missingTranslationProbe": "Missing translation probe",
   "@missingTranslationProbe": {
     "description": "English-only string used to verify fallback. Not shown in the home screen."
+  },
+  "statisticsHeading": "Your vocabulary statistics",
+  "@statisticsHeading": {
+    "description": "Title of the vocabulary statistics region and the web app title."
+  },
+  "searchHint": "Find your vocab...",
+  "@searchHint": {
+    "description": "Placeholder in the vocabulary home search field."
+  },
+  "newVocab": "New vocab",
+  "@newVocab": {
+    "description": "Button that starts a new vocabulary entry."
+  },
+  "navHome": "Homepage",
+  "@navHome": {
+    "description": "Sidebar navigation label for the home screen."
+  },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "Sidebar navigation label for the library."
+  },
+  "navNotification": "Notification",
+  "@navNotification": {
+    "description": "Sidebar navigation label for notifications."
+  },
+  "vocabularySet": "Your vocabulary set",
+  "@vocabularySet": {
+    "description": "Sidebar section label above the vocabulary folders."
+  },
+  "setOfWords": "Set of words",
+  "@setOfWords": {
+    "description": "Sidebar action for adding a set of words."
+  },
+  "allLabel": "All",
+  "@allLabel": {
+    "description": "Label for the All switch on the statistics card."
+  },
+  "wordsLearned": "Words learned",
+  "@wordsLearned": {
+    "description": "Caption under the learned side of the statistics chart."
+  },
+  "wordsNotLearned": "Words not yet learned",
+  "@wordsNotLearned": {
+    "description": "Caption under the not-yet-learned side of the statistics chart."
+  },
+  "levelMastered": "Lv.6 - Mastered",
+  "@levelMastered": {
+    "description": "Legend label for level 6."
+  },
+  "levelGood": "Lv.5 - Good",
+  "@levelGood": {
+    "description": "Legend label for level 5."
+  },
+  "levelFamiliar": "Lv.4 - Familiar",
+  "@levelFamiliar": {
+    "description": "Legend label for level 4."
+  },
+  "levelLearning": "Lv.3 - Learning",
+  "@levelLearning": {
+    "description": "Legend label for level 3."
+  },
+  "levelHard": "Lv.2 - Hard",
+  "@levelHard": {
+    "description": "Legend label for level 2."
+  },
+  "levelForgot": "Lv.1 - Forgot",
+  "@levelForgot": {
+    "description": "Legend label for level 1."
+  },
+  "todaysVocabulary": "Today's vocabulary",
+  "@todaysVocabulary": {
+    "description": "Heading of the today's vocabulary panel."
+  },
+  "practice": "Practice",
+  "@practice": {
+    "description": "Action on the today's vocabulary panel."
+  },
+  "recent": "Recent",
+  "@recent": {
+    "description": "Heading above the recent vocabulary sets."
+  },
+  "progressComplete": "The process is {percent}% complete.",
+  "@progressComplete": {
+    "description": "Progress sentence on a recent vocabulary card.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "continueAction": "Continue",
+  "@continueAction": {
+    "description": "Action on a recent vocabulary card."
   }
 }

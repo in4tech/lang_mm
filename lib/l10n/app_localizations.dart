@@ -100,13 +100,13 @@ abstract class AppLocalizations {
     Locale('vi'),
   ];
 
-  /// Title shown in the home app bar and the app switcher.
+  /// Title shown in the counter app bar and the app switcher on non-web platforms.
   ///
   /// In en, this message translates to:
   /// **'Flutter Demo Home Page'**
   String get homeTitle;
 
-  /// Message above the counter on the home screen.
+  /// Message above the counter on the non-web home screen.
   ///
   /// In en, this message translates to:
   /// **'You have pushed the button this many times:'**
@@ -123,6 +123,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Missing translation probe'**
   String get missingTranslationProbe;
+
+  /// Title of the vocabulary statistics region and the web app title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your vocabulary statistics'**
+  String get statisticsHeading;
+
+  /// Placeholder in the vocabulary home search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Find your vocab...'**
+  String get searchHint;
+
+  /// Button that starts a new vocabulary entry.
+  ///
+  /// In en, this message translates to:
+  /// **'New vocab'**
+  String get newVocab;
+
+  /// Sidebar navigation label for the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Homepage'**
+  String get navHome;
+
+  /// Sidebar navigation label for the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get navLibrary;
+
+  /// Sidebar navigation label for notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification'**
+  String get navNotification;
+
+  /// Sidebar section label above the vocabulary folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Your vocabulary set'**
+  String get vocabularySet;
+
+  /// Sidebar action for adding a set of words.
+  ///
+  /// In en, this message translates to:
+  /// **'Set of words'**
+  String get setOfWords;
+
+  /// Label for the All switch on the statistics card.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get allLabel;
+
+  /// Caption under the learned side of the statistics chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Words learned'**
+  String get wordsLearned;
+
+  /// Caption under the not-yet-learned side of the statistics chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Words not yet learned'**
+  String get wordsNotLearned;
+
+  /// Legend label for level 6.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.6 - Mastered'**
+  String get levelMastered;
+
+  /// Legend label for level 5.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.5 - Good'**
+  String get levelGood;
+
+  /// Legend label for level 4.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.4 - Familiar'**
+  String get levelFamiliar;
+
+  /// Legend label for level 3.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.3 - Learning'**
+  String get levelLearning;
+
+  /// Legend label for level 2.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.2 - Hard'**
+  String get levelHard;
+
+  /// Legend label for level 1.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.1 - Forgot'**
+  String get levelForgot;
+
+  /// Heading of the today's vocabulary panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s vocabulary'**
+  String get todaysVocabulary;
+
+  /// Action on the today's vocabulary panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get practice;
+
+  /// Heading above the recent vocabulary sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recent;
+
+  /// Progress sentence on a recent vocabulary card.
+  ///
+  /// In en, this message translates to:
+  /// **'The process is {percent}% complete.'**
+  String progressComplete(int percent);
+
+  /// Action on a recent vocabulary card.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueAction;
 }
 
 class _AppLocalizationsDelegate

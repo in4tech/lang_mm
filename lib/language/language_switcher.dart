@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:lang/localization/app_language.dart';
-import 'package:lang/localization/app_language_scope.dart';
+import 'package:lang/language/app_language.dart';
+import 'package:lang/language/app_language_scope.dart';
 
 class LanguageSwitcher extends StatelessWidget {
-  const LanguageSwitcher({super.key});
+  const LanguageSwitcher({super.key, this.child});
+
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
     final controller = AppLanguageScope.of(context);
     return PopupMenuButton<AppLanguage>(
-      icon: const Icon(Icons.language),
+      icon: child == null ? const Icon(Icons.language) : null,
       onSelected: controller.select,
       itemBuilder: (context) {
         final active = controller.language;
@@ -26,6 +28,7 @@ class LanguageSwitcher extends StatelessWidget {
             ),
         ];
       },
+      child: child,
     );
   }
 }

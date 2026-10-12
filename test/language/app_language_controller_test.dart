@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lang/localization/app_language.dart';
-import 'package:lang/localization/app_language_controller.dart';
-import 'package:lang/localization/app_language_store.dart';
+import 'package:lang/language/app_language.dart';
+import 'package:lang/language/app_language_controller.dart';
+import 'package:lang/language/app_language_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lang/localization/app_language.dart';
-import 'package:lang/localization/app_language_controller.dart';
-import 'package:lang/main.dart';
+import 'package:lang/language/app_language.dart';
+import 'package:lang/language/app_language_controller.dart';
+import 'package:lang/app/lang_app.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -10,36 +10,35 @@ void main() {
     WidgetTester tester,
     Map<String, Object> preferences,
   ) async {
+    tester.view.physicalSize = const Size(1600, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     SharedPreferences.setMockInitialValues(preferences);
     final controller = await loadAppLanguageController();
     await tester.pumpWidget(LangApp(controller: controller));
+    await tester.pumpAndSettle();
   }
 
   testWidgets('saved de opens in German', (tester) async {
     await launch(tester, <String, Object>{AppLanguage.storageKey: 'de'});
 
-    expect(find.text('Flutter-Demo-Startseite'), findsOneWidget);
-    expect(
-      find.text('Sie haben die Schaltfläche so oft gedrückt:'),
-      findsOneWidget,
-    );
+    expect(find.text('Deine Vokabelstatistik'), findsOneWidget);
+    expect(find.text('Üben'), findsOneWidget);
   });
 
   testWidgets('saved vi opens in Vietnamese', (tester) async {
     await launch(tester, <String, Object>{AppLanguage.storageKey: 'vi'});
 
-    expect(find.text('Trang chủ bản demo Flutter'), findsOneWidget);
-    expect(find.text('Bạn đã nhấn nút này bấy nhiêu lần:'), findsOneWidget);
+    expect(find.text('Thống kê từ vựng của bạn'), findsOneWidget);
+    expect(find.text('Luyện tập'), findsOneWidget);
   });
 
   testWidgets('an unsupported saved code opens in English', (tester) async {
     await launch(tester, <String, Object>{AppLanguage.storageKey: 'fr'});
 
-    expect(find.text('Flutter Demo Home Page'), findsOneWidget);
-    expect(
-      find.text('You have pushed the button this many times:'),
-      findsOneWidget,
-    );
+    expect(find.text('Your vocabulary statistics'), findsOneWidget);
+    expect(find.text('Practice'), findsOneWidget);
   });
 
   testWidgets('selecting German is restored on the next start', (tester) async {
@@ -55,11 +54,9 @@ void main() {
 
     final restarted = await loadAppLanguageController();
     await tester.pumpWidget(LangApp(controller: restarted));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Flutter-Demo-Startseite'), findsOneWidget);
-    expect(
-      find.text('Sie haben die Schaltfläche so oft gedrückt:'),
-      findsOneWidget,
-    );
+    expect(find.text('Deine Vokabelstatistik'), findsOneWidget);
+    expect(find.text('Üben'), findsOneWidget);
   });
 }

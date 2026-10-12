@@ -1,4 +1,4 @@
-import 'package:lang/localization/app_language.dart';
+import 'package:lang/language/app_language.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class AppLanguageStore {
