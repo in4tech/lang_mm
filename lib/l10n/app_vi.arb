@@ -1,0 +1,6 @@
+{
+  "@@locale": "vi",
+  "homeTitle": "Trang chủ bản demo Flutter",
+  "counterMessage": "Bạn đã nhấn nút này bấy nhiêu lần:",
+  "incrementAction": "Tăng"
+}

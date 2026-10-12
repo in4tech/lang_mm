@@ -1,0 +1,6 @@
+{
+  "@@locale": "de",
+  "homeTitle": "Flutter-Demo-Startseite",
+  "counterMessage": "Sie haben die Schaltfläche so oft gedrückt:",
+  "incrementAction": "Erhöhen"
+}

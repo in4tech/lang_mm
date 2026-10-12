@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "homeTitle": "Flutter Demo Home Page",
+  "@homeTitle": {
+    "description": "Title shown in the home app bar and the app switcher."
+  },
+  "counterMessage": "You have pushed the button this many times:",
+  "@counterMessage": {
+    "description": "Message above the counter on the home screen."
+  },
+  "incrementAction": "Increment",
+  "@incrementAction": {
+    "description": "Tooltip for the button that increments the counter."
+  },
+  "missingTranslationProbe": "Missing translation probe",
+  "@missingTranslationProbe": {
+    "description": "English-only string used to verify fallback. Not shown in the home screen."
+  }
+}
