@@ -9,9 +9,10 @@ void main() {
     final controller = await loadAppLanguageController();
     await tester.pumpWidget(LangApp(controller: controller));
 
-    expect(find.text('Your vocabulary statistics'), findsOneWidget);
+    expect(find.text('Hot search'), findsOneWidget);
     expect(find.text('Find your vocab...'), findsOneWidget);
-    expect(find.text('5/20'), findsOneWidget);
+    expect(find.text('student'), findsWidgets);
+    expect(find.text('5/20'), findsNothing);
     expect(
       find.text('You have pushed the button this many times:'),
       findsNothing,

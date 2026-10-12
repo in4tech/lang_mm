@@ -88,4 +88,21 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get continueAction => 'Weiter';
+
+  @override
+  String get hotSearch => 'Beliebte Suche';
+
+  @override
+  String get suggestedSets => 'Vorgeschlagene Sets';
+
+  @override
+  String get suggestedPractice => 'Vorgeschlagenes Üben';
+
+  @override
+  String get saveWord => 'Speichern';
+
+  @override
+  String saveCount(int count) {
+    return '$count Mal gespeichert';
+  }
 }

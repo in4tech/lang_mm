@@ -88,4 +88,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get continueAction => 'Tiếp tục';
+
+  @override
+  String get hotSearch => 'Tìm kiếm nổi bật';
+
+  @override
+  String get suggestedSets => 'Bộ từ gợi ý';
+
+  @override
+  String get suggestedPractice => 'Luyện tập gợi ý';
+
+  @override
+  String get saveWord => 'Lưu từ';
+
+  @override
+  String saveCount(int count) {
+    return '$count Lượt lưu';
+  }
 }

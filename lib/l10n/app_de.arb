@@ -24,5 +24,10 @@
   "practice": "Üben",
   "recent": "Zuletzt",
   "progressComplete": "Der Fortschritt ist zu {percent}% abgeschlossen.",
-  "continueAction": "Weiter"
+  "continueAction": "Weiter",
+  "hotSearch": "Beliebte Suche",
+  "suggestedSets": "Vorgeschlagene Sets",
+  "suggestedPractice": "Vorgeschlagenes Üben",
+  "saveWord": "Speichern",
+  "saveCount": "{count} Mal gespeichert"
 }

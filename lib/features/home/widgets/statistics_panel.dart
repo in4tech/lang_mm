@@ -189,6 +189,9 @@ class _BarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (bars.isEmpty) {
+      return const SizedBox(height: 161, width: double.infinity);
+    }
     return SizedBox(
       height: 161,
       width: double.infinity,

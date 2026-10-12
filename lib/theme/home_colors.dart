@@ -17,5 +17,4 @@ abstract final class HomeColors {
   static const scrollTrack = Color(0xFFEAECF0);
   static const scrollThumb = Color(0xFF0033CC);
   static const chevronFill = Color(0xFFEAECF0);
-  static const avatar = Color(0xFF022A8C);
 }

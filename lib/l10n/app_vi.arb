@@ -24,5 +24,10 @@
   "practice": "Luyện tập",
   "recent": "Gần đây",
   "progressComplete": "Tiến trình đã hoàn thành {percent}%.",
-  "continueAction": "Tiếp tục"
+  "continueAction": "Tiếp tục",
+  "hotSearch": "Tìm kiếm nổi bật",
+  "suggestedSets": "Bộ từ gợi ý",
+  "suggestedPractice": "Luyện tập gợi ý",
+  "saveWord": "Lưu từ",
+  "saveCount": "{count} Lượt lưu"
 }

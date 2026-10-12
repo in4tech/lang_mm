@@ -1,0 +1,13 @@
+---
+description: Limit the scope of changes and commit only when asked
+alwaysApply: true
+---
+
+# Scope of work
+
+Read these rules before editing files or running git.
+
+- Do not commit, push, or open a pull request unless the user explicitly asks in the current message.
+- Edit only the files the current task needs. Before changing a file outside that scope, ask and wait for confirmation.
+
+Example: the task is to fix one widget. Do not also edit the workflow, unrelated tests, or commit those changes.

@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:lang/features/home/widgets/home_sidebar.dart';
 import 'package:lang/theme/home_colors.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/language/language_switcher.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+  const HomeHeader({super.key, required this.onMenuPressed});
+
+  final VoidCallback onMenuPressed;
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       height: 80,
       width: 1440,
       child: Row(
         children: [
-          _Brand(),
-          Expanded(child: _SearchAndActions()),
+          _Brand(onMenuPressed: onMenuPressed),
+          const Expanded(child: _SearchAndActions()),
         ],
       ),
     );
@@ -23,22 +26,35 @@ class HomeHeader extends StatelessWidget {
 }
 
 class _Brand extends StatelessWidget {
-  const _Brand();
+  const _Brand({required this.onMenuPressed});
+
+  final VoidCallback onMenuPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 288,
+      width: HomeSidebar.width,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
             IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.menu, color: HomeColors.ink),
+              key: const Key('drawer-menu'),
+              onPressed: onMenuPressed,
               visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+              icon: const Icon(Icons.menu, color: HomeColors.ink),
             ),
-            Image.asset('assets/images/lang_logo.png', width: 139, height: 48),
+            const Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: Image(
+                key: Key('header-logo'),
+                image: AssetImage('assets/images/lang_logo.png'),
+                width: 139,
+                height: 48,
+              ),
+            ),
           ],
         ),
       ),
@@ -130,14 +146,12 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 48,
-      height: 48,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: HomeColors.avatar,
-          shape: BoxShape.circle,
-        ),
+    return ClipOval(
+      child: Image.asset(
+        'assets/images/avatar.jpg',
+        width: 48,
+        height: 48,
+        fit: BoxFit.cover,
       ),
     );
   }

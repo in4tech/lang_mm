@@ -108,5 +108,30 @@
   "continueAction": "Continue",
   "@continueAction": {
     "description": "Action on a recent vocabulary card."
+  },
+  "hotSearch": "Hot search",
+  "@hotSearch": {
+    "description": "Heading above the suggested search chips on an empty home."
+  },
+  "suggestedSets": "Suggested sets",
+  "@suggestedSets": {
+    "description": "Heading above the suggested vocabulary sets on an empty home."
+  },
+  "suggestedPractice": "Suggested practice",
+  "@suggestedPractice": {
+    "description": "Heading above the suggested practice rows on an empty home."
+  },
+  "saveWord": "Save",
+  "@saveWord": {
+    "description": "Action on the suggested word card."
+  },
+  "saveCount": "{count} saves",
+  "@saveCount": {
+    "description": "How many times the suggested word has been saved.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

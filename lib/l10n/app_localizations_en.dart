@@ -88,4 +88,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get continueAction => 'Continue';
+
+  @override
+  String get hotSearch => 'Hot search';
+
+  @override
+  String get suggestedSets => 'Suggested sets';
+
+  @override
+  String get suggestedPractice => 'Suggested practice';
+
+  @override
+  String get saveWord => 'Save';
+
+  @override
+  String saveCount(int count) {
+    return '$count saves';
+  }
 }

@@ -255,6 +255,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get continueAction;
+
+  /// Heading above the suggested search chips on an empty home.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot search'**
+  String get hotSearch;
+
+  /// Heading above the suggested vocabulary sets on an empty home.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested sets'**
+  String get suggestedSets;
+
+  /// Heading above the suggested practice rows on an empty home.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested practice'**
+  String get suggestedPractice;
+
+  /// Action on the suggested word card.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveWord;
+
+  /// How many times the suggested word has been saved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} saves'**
+  String saveCount(int count);
 }
 
 class _AppLocalizationsDelegate

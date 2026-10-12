@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:lang/features/home/vocabulary_home.dart';
+import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/language/app_language_controller.dart';
 import 'package:lang/language/app_language_scope.dart';
 
 class LangApp extends StatefulWidget {
-  const LangApp({super.key, required this.controller});
+  const LangApp({
+    super.key,
+    required this.controller,
+    this.library = VocabularyLibrary.empty,
+  });
 
   final AppLanguageController controller;
+  final VocabularyLibrary library;
 
   @override
   State<LangApp> createState() => _LangAppState();
@@ -60,7 +66,7 @@ class _LangAppState extends State<LangApp> {
           fontFamily: 'Poppins',
           scaffoldBackgroundColor: Colors.white,
         ),
-        home: const VocabularyHome(),
+        home: VocabularyHome(library: widget.library),
       ),
     );
   }
