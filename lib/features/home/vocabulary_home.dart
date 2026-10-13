@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:lang/features/home/home_from_library.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
 import 'package:lang/features/home/widgets/home_header.dart';
+import 'package:lang/features/word_editor/word_editor.dart';
 import 'package:lang/features/home/widgets/suggestion_columns.dart';
 import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/features/home/widgets/home_sidebar.dart';
 import 'package:lang/features/home/widgets/recent_panel.dart';
 import 'package:lang/features/home/widgets/statistics_panel.dart';
 import 'package:lang/features/home/widgets/today_panel.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
@@ -51,6 +52,7 @@ class _DebugHomeSwitchState extends State<_DebugHomeSwitch> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
     return _HomeFrame(
       sample: widget.sample,
       library: widget.library,
@@ -58,8 +60,8 @@ class _DebugHomeSwitchState extends State<_DebugHomeSwitch> {
       debugToggle: FloatingActionButton.extended(
         key: const Key('debug-home-toggle'),
         heroTag: 'debug-home-toggle',
-        backgroundColor: HomeColors.newVocab,
-        foregroundColor: Colors.white,
+        backgroundColor: colors.newVocab,
+        foregroundColor: colors.onAccent,
         onPressed: () {
           setState(() => _forceOriginal = !_showingOriginal);
         },
@@ -90,6 +92,21 @@ class _HomeFrame extends StatefulWidget {
 class _HomeFrameState extends State<_HomeFrame> {
   bool _collapsed = false;
   bool _overlayOpen = false;
+  bool _editing = false;
+
+  void _openEditor() => setState(() => _editing = true);
+
+  void _closeEditor() => setState(() => _editing = false);
+
+  Widget _center({required bool narrow, required HomeSample? dashboard}) {
+    if (_editing) {
+      return WordEditor(onClose: _closeEditor);
+    }
+    if (dashboard == null) {
+      return SuggestionColumns(narrow: narrow);
+    }
+    return _Dashboard(sample: dashboard, narrow: narrow);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,8 +120,9 @@ class _HomeFrameState extends State<_HomeFrame> {
       forceOriginal: forceOriginal,
     );
     final sidebarSample = dashboard ?? homeSampleFromLibrary(library);
+    final colors = HomePalette.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.page,
       floatingActionButton: debugToggle,
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -122,18 +140,12 @@ class _HomeFrameState extends State<_HomeFrame> {
                   onMenuPressed: () {
                     setState(() => _collapsed = !_collapsed);
                   },
+                  onNewVocab: _openEditor,
                 ),
                 Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  child: Stack(
                     children: [
-                      SingleChildScrollView(
-                        child: HomeSidebar(
-                          sample: sidebarSample,
-                          collapsed: _collapsed,
-                        ),
-                      ),
-                      Expanded(
+                      Positioned.fill(
                         child: Scrollbar(
                           child: SingleChildScrollView(
                             child: Align(
@@ -150,11 +162,26 @@ class _HomeFrameState extends State<_HomeFrame> {
                                     46,
                                     48,
                                   ),
-                                  child: dashboard == null
-                                      ? const SuggestionColumns()
-                                      : _Dashboard(sample: dashboard),
+                                  child: _center(
+                                    narrow: false,
+                                    dashboard: dashboard,
+                                  ),
                                 ),
                               ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: ColoredBox(
+                          color: colors.page,
+                          child: SingleChildScrollView(
+                            child: HomeSidebar(
+                              sample: sidebarSample,
+                              collapsed: _collapsed,
                             ),
                           ),
                         ),
@@ -175,6 +202,7 @@ class _HomeFrameState extends State<_HomeFrame> {
                   onMenuPressed: () {
                     setState(() => _overlayOpen = !_overlayOpen);
                   },
+                  onNewVocab: _openEditor,
                 ),
               ),
               Expanded(
@@ -187,9 +215,7 @@ class _HomeFrameState extends State<_HomeFrame> {
                           width: width,
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
-                            child: dashboard == null
-                                ? const SuggestionColumns(narrow: true)
-                                : _Dashboard(sample: dashboard, narrow: true),
+                            child: _center(narrow: true, dashboard: dashboard),
                           ),
                         ),
                       ),
@@ -208,7 +234,7 @@ class _HomeFrameState extends State<_HomeFrame> {
                         top: 0,
                         bottom: 0,
                         child: ColoredBox(
-                          color: Colors.white,
+                          color: colors.page,
                           child: SingleChildScrollView(
                             child: HomeSidebar(
                               sample: sidebarSample,
@@ -253,7 +279,10 @@ class _Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final heading = Text(localizations.statisticsHeading, style: HomeText.title);
+    final heading = Text(
+      localizations.statisticsHeading,
+      style: HomeText.of(context).title,
+    );
     if (narrow) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

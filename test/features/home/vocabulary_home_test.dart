@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/features/home/widgets/home_header.dart';
 import 'package:lang/features/home/widgets/home_sidebar.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
@@ -242,14 +243,50 @@ void main() {
     }
 
     await tester.tap(find.text('New vocab'));
-    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add new word'), findsOneWidget);
+    expect(find.text('Enter term'), findsOneWidget);
+    expect(find.text('Find your vocab...'), findsOneWidget);
+    expect(find.text('New vocab'), findsOneWidget);
+    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.byType(HomeHeader), findsOneWidget);
+    expect(find.byType(HomeSidebar), findsOneWidget);
+    expect(find.text('Hot search'), findsNothing);
+    expect(find.text('student'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('word-editor-title')),
+      'German A1',
+    );
+    await tester.enterText(find.byKey(const Key('word-term')), 'Kind');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Hot search'), findsOneWidget);
+    expect(find.text('student'), findsNWidgets(2));
+    expect(find.text('German A1 vocabulary'), findsNothing);
+    expect(find.text('German A1'), findsNothing);
+    expect(find.text('Kind'), findsNothing);
+    var preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString(VocabularyLibraryStore.storageKey), isNull);
+
     await tester.tap(find.byKey(const Key('suggestion-save')));
     await tester.pump();
 
     expect(find.text('student'), findsNWidgets(2));
     expect(find.text('German A1 vocabulary'), findsNothing);
-    final preferences = await SharedPreferences.getInstance();
+    preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(VocabularyLibraryStore.storageKey), isNull);
+
+    await tester.tap(find.text('New vocab'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('word-editor-back')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('student'), findsNWidgets(2));
+    expect(find.text('Hot search'), findsOneWidget);
   });
 
   testWidgets('a stored library shows names and empty progress', (
@@ -284,6 +321,27 @@ void main() {
     expect(find.text('5/20'), findsNothing);
     expect(find.text('3'), findsNothing);
     expect(find.text('2'), findsNothing);
+
+    await tester.tap(find.text('New vocab'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add new word'), findsOneWidget);
+    expect(find.text('Find your vocab...'), findsOneWidget);
+    expect(find.text('My vocab'), findsOneWidget);
+    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.byType(HomeHeader), findsOneWidget);
+    expect(find.byType(HomeSidebar), findsOneWidget);
+    expect(find.text('0/0'), findsNothing);
+    expect(find.text('Practice'), findsNothing);
+
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('My vocab'), findsOneWidget);
+    expect(find.text('0/0'), findsOneWidget);
+    expect(find.text('German A1 vocabulary'), findsOneWidget);
+    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Add new word'), findsNothing);
   });
 
   testWidgets('the debug button switches the sample and the empty home', (
@@ -340,25 +398,24 @@ void main() {
     final contentWidth = tester
         .getSize(find.byKey(const Key('home-canvas')))
         .width;
+    final contentLeft = tester.getTopLeft(find.byKey(const Key('home-canvas'))).dx;
 
     await tester.tap(find.byKey(const Key('drawer-menu')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 140));
 
-    expect(
-      tester.getSize(find.byType(HomeSidebar)).width,
-      HomeSidebar.width,
-    );
+    expect(tester.getSize(find.byType(HomeSidebar)).width, HomeSidebar.width);
 
     await tester.pumpAndSettle();
 
-    expect(
-      tester.getSize(find.byType(HomeSidebar)).width,
-      HomeSidebar.width,
-    );
+    expect(tester.getSize(find.byType(HomeSidebar)).width, HomeSidebar.width);
     expect(
       tester.getSize(find.byKey(const Key('home-canvas'))).width,
       contentWidth,
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const Key('home-canvas'))).dx,
+      contentLeft,
     );
     expect(tester.getSize(find.byKey(const Key('nav-home-label'))).width, 0);
     expect(tester.getSize(find.byKey(const Key('sidebar-extra'))).height, 0);
@@ -373,16 +430,13 @@ void main() {
     );
     expect(
       tester.widget<Material>(selectedFill).color,
-      HomeColors.selectedFill,
+      HomePalette.dark.selectedFill,
     );
     expect(
       tester.getSize(selectedFill),
       const Size(HomeSidebar.collapsedSlot, HomeSidebar.collapsedSlot),
     );
-    expect(
-      tester.getCenter(selectedFill).dx,
-      lessThan(sidebar.center.dx),
-    );
+    expect(tester.getCenter(selectedFill).dx, lessThan(sidebar.center.dx));
     final chip = tester.getSize(find.byKey(const Key('folder-My vocab')));
     expect(chip.width, HomeSidebar.collapsedSlot);
     expect(chip.height, HomeSidebar.collapsedSlot);
@@ -401,10 +455,7 @@ void main() {
       tester.getCenter(find.byIcon(Icons.home_outlined)).dx,
     );
     expect(folderDivider, findsOneWidget);
-    expect(
-      tester.getSize(folderDivider).width,
-      HomeSidebar.collapsedSlot,
-    );
+    expect(tester.getSize(folderDivider).width, HomeSidebar.collapsedSlot);
     expect(
       tester.getCenter(search).dy,
       lessThan(tester.getCenter(folderDivider).dy),
@@ -450,24 +501,21 @@ void main() {
     expect(header.left, 0);
     expect(header.width, viewport);
     expect(sidebar.left, 0);
-    expect(
-      canvas.width,
-      VocabularyHome.designWidth - HomeSidebar.width,
-    );
-    expect(
-      canvas.left - sidebar.right,
-      moreOrLessEquals(viewport - canvas.right),
-    );
+    expect(canvas.width, VocabularyHome.designWidth - HomeSidebar.width);
+    expect(canvas.center.dx, moreOrLessEquals(viewport / 2));
     expect(find.byKey(const Key('home-advertisement')), findsNothing);
 
     final logo = tester.getRect(find.byKey(const Key('header-logo')));
     final search = tester.getRect(find.text('Find your vocab...'));
+    final searchField = tester.getRect(find.byType(TextField));
     final newVocab = tester.getRect(find.text('New vocab'));
     final avatar = tester.getRect(
       find.image(const AssetImage('assets/images/avatar.jpg')),
     );
     expect(search.top, lessThan(logo.bottom));
     expect(logo.top, lessThan(search.bottom));
+    expect(searchField.width, HomeHeader.searchWidth);
+    expect(searchField.center.dx, moreOrLessEquals(header.center.dx));
     expect(newVocab.top, lessThan(logo.bottom));
     expect(logo.top, lessThan(newVocab.bottom));
     expect(avatar.top, lessThan(logo.bottom));
@@ -515,12 +563,16 @@ void main() {
       find.image(const AssetImage('assets/images/avatar.jpg')),
     );
     final search = tester.getRect(find.text('Find your vocab...'));
+    final searchField = tester.getRect(find.byType(TextField));
     final newVocab = tester.getRect(find.text('New vocab'));
+    final header = tester.getRect(find.byType(HomeHeader));
     expect(menu.top, lessThan(logo.bottom));
     expect(logo.top, lessThan(menu.bottom));
     expect(avatar.top, lessThan(logo.bottom));
     expect(logo.top, lessThan(avatar.bottom));
     expect(search.top, greaterThan(logo.bottom));
+    expect(searchField.width, HomeHeader.searchWidth);
+    expect(searchField.center.dx, moreOrLessEquals(header.center.dx));
     expect(newVocab.top, greaterThan(search.bottom));
     expect(
       tester.getSize(find.widgetWithText(FilledButton, 'New vocab')).width,
@@ -578,12 +630,13 @@ void main() {
     expect(find.text('Notification'), findsOneWidget);
     expect(find.text('Your vocabulary set'), findsOneWidget);
     expect(find.text('Set of words'), findsOneWidget);
+    expect(tester.widget<Icon>(find.byIcon(Icons.add_outlined)).size, 20);
     expect(find.text('My vocab'), findsNothing);
     final selected = find.descendant(
       of: find.byKey(const Key('nav-home')),
       matching: find.byType(Material),
     );
-    expect(tester.widget<Material>(selected).color, HomeColors.selectedFill);
+    expect(tester.widget<Material>(selected).color, HomePalette.dark.selectedFill);
 
     await tester.tap(find.byKey(const Key('sidebar-barrier')));
     await tester.pumpAndSettle();

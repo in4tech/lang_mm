@@ -46,7 +46,6 @@ jobs:
           mkdir -p build/pages
           cp index.html build/pages/index.html
           cp .nojekyll build/pages/.nojekyll
-          cp CNAME build/pages/CNAME
           cp -R site build/pages/site
       - uses: actions/upload-pages-artifact@v3
         with:

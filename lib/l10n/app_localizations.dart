@@ -285,6 +285,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} saves'**
   String saveCount(int count);
+
+  /// Button that leaves the word editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get editorDone;
+
+  /// Back control on the word editor.
+  ///
+  /// In en, this message translates to:
+  /// **'All posts'**
+  String get editorBack;
+
+  /// Label for the word editor title field.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get editorTitle;
+
+  /// Placeholder for the word editor title field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a title...'**
+  String get editorTitleHint;
+
+  /// Placeholder for the word editor description field.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a description...'**
+  String get editorDescriptionHint;
+
+  /// Import control on the word editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get editorImport;
+
+  /// Label for the term field.
+  ///
+  /// In en, this message translates to:
+  /// **'Term'**
+  String get editorTerm;
+
+  /// Placeholder for the term field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter term'**
+  String get editorTermHint;
+
+  /// Label for the definition field.
+  ///
+  /// In en, this message translates to:
+  /// **'Definition'**
+  String get editorDefinition;
+
+  /// Placeholder for the definition field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter definition'**
+  String get editorDefinitionHint;
+
+  /// Label for the sentence field.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence'**
+  String get editorSentence;
+
+  /// Placeholder for the sentence field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter sentence'**
+  String get editorSentenceHint;
+
+  /// Heading above the detail fields on a word card.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get editorDetails;
+
+  /// Label for the IPA field.
+  ///
+  /// In en, this message translates to:
+  /// **'IPA'**
+  String get editorIpa;
+
+  /// Placeholder for the IPA field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter IPA'**
+  String get editorIpaHint;
+
+  /// Label for the singular and plural field.
+  ///
+  /// In en, this message translates to:
+  /// **'Singular - Plural'**
+  String get editorSingularPlural;
+
+  /// Placeholder for the singular and plural field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter singular and plural'**
+  String get editorSingularPluralHint;
+
+  /// Label for the note field.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get editorNote;
+
+  /// Placeholder for the note field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a note'**
+  String get editorNoteHint;
+
+  /// Label above the word type choices.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get editorType;
+
+  /// Word type choice for a chunk.
+  ///
+  /// In en, this message translates to:
+  /// **'Chunking'**
+  String get editorChunking;
+
+  /// Word type choice for a noun.
+  ///
+  /// In en, this message translates to:
+  /// **'Noun'**
+  String get editorNoun;
+
+  /// Word type choice for a verb.
+  ///
+  /// In en, this message translates to:
+  /// **'Verb'**
+  String get editorVerb;
+
+  /// Word type choice for an adjective.
+  ///
+  /// In en, this message translates to:
+  /// **'Adj'**
+  String get editorAdj;
+
+  /// Button that collapses the current word and opens a new empty card.
+  ///
+  /// In en, this message translates to:
+  /// **'Add new word'**
+  String get editorAddWord;
+
+  /// Switches the app to light mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// Switches the app to dark mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// Avatar menu item for achievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get menuAchievements;
+
+  /// Avatar menu item for settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get menuSettings;
+
+  /// Avatar menu item that switches to light mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Light mode'**
+  String get menuLightMode;
+
+  /// Avatar menu item that switches to dark mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark mode'**
+  String get menuDarkMode;
+
+  /// Avatar menu item for logging out.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get menuLogOut;
+
+  /// Avatar menu item for the privacy policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get menuPrivacy;
+
+  /// Avatar menu item for help and feedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Help and feedback'**
+  String get menuHelp;
+
+  /// Avatar menu item for upgrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get menuUpgrade;
 }
 
 class _AppLocalizationsDelegate

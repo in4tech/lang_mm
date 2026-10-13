@@ -105,4 +105,109 @@ class AppLocalizationsDe extends AppLocalizations {
   String saveCount(int count) {
     return '$count Mal gespeichert';
   }
+
+  @override
+  String get editorDone => 'Fertig';
+
+  @override
+  String get editorBack => 'Alle Beiträge';
+
+  @override
+  String get editorTitle => 'Titel';
+
+  @override
+  String get editorTitleHint => 'Titel eingeben...';
+
+  @override
+  String get editorDescriptionHint => 'Beschreibung hinzufügen...';
+
+  @override
+  String get editorImport => 'Importieren';
+
+  @override
+  String get editorTerm => 'Begriff';
+
+  @override
+  String get editorTermHint => 'Begriff eingeben';
+
+  @override
+  String get editorDefinition => 'Definition';
+
+  @override
+  String get editorDefinitionHint => 'Definition eingeben';
+
+  @override
+  String get editorSentence => 'Satz';
+
+  @override
+  String get editorSentenceHint => 'Satz eingeben';
+
+  @override
+  String get editorDetails => 'Details';
+
+  @override
+  String get editorIpa => 'IPA';
+
+  @override
+  String get editorIpaHint => 'IPA eingeben';
+
+  @override
+  String get editorSingularPlural => 'Singular - Plural';
+
+  @override
+  String get editorSingularPluralHint => 'Singular und Plural eingeben';
+
+  @override
+  String get editorNote => 'Notiz';
+
+  @override
+  String get editorNoteHint => 'Notiz eingeben';
+
+  @override
+  String get editorType => 'Typ';
+
+  @override
+  String get editorChunking => 'Chunking';
+
+  @override
+  String get editorNoun => 'Nomen';
+
+  @override
+  String get editorVerb => 'Verb';
+
+  @override
+  String get editorAdj => 'Adjektiv';
+
+  @override
+  String get editorAddWord => 'Neues Wort hinzufügen';
+
+  @override
+  String get themeLight => 'Hell';
+
+  @override
+  String get themeDark => 'Dunkel';
+
+  @override
+  String get menuAchievements => 'Erfolge';
+
+  @override
+  String get menuSettings => 'Einstellungen';
+
+  @override
+  String get menuLightMode => 'Heller Modus';
+
+  @override
+  String get menuDarkMode => 'Dunkler Modus';
+
+  @override
+  String get menuLogOut => 'Abmelden';
+
+  @override
+  String get menuPrivacy => 'Datenschutz';
+
+  @override
+  String get menuHelp => 'Hilfe und Feedback';
+
+  @override
+  String get menuUpgrade => 'Upgrade';
 }

@@ -105,4 +105,109 @@ class AppLocalizationsVi extends AppLocalizations {
   String saveCount(int count) {
     return '$count Lượt lưu';
   }
+
+  @override
+  String get editorDone => 'Xong';
+
+  @override
+  String get editorBack => 'Tất cả bài viết';
+
+  @override
+  String get editorTitle => 'Tiêu đề';
+
+  @override
+  String get editorTitleHint => 'Nhập tiêu đề...';
+
+  @override
+  String get editorDescriptionHint => 'Thêm mô tả...';
+
+  @override
+  String get editorImport => 'Nhập';
+
+  @override
+  String get editorTerm => 'Từ';
+
+  @override
+  String get editorTermHint => 'Nhập từ';
+
+  @override
+  String get editorDefinition => 'Định nghĩa';
+
+  @override
+  String get editorDefinitionHint => 'Nhập định nghĩa';
+
+  @override
+  String get editorSentence => 'Câu';
+
+  @override
+  String get editorSentenceHint => 'Nhập câu';
+
+  @override
+  String get editorDetails => 'Chi tiết';
+
+  @override
+  String get editorIpa => 'IPA';
+
+  @override
+  String get editorIpaHint => 'Nhập IPA';
+
+  @override
+  String get editorSingularPlural => 'Số ít - Số nhiều';
+
+  @override
+  String get editorSingularPluralHint => 'Nhập số ít và số nhiều';
+
+  @override
+  String get editorNote => 'Ghi chú';
+
+  @override
+  String get editorNoteHint => 'Nhập ghi chú';
+
+  @override
+  String get editorType => 'Loại';
+
+  @override
+  String get editorChunking => 'Chunking';
+
+  @override
+  String get editorNoun => 'Danh từ';
+
+  @override
+  String get editorVerb => 'Động từ';
+
+  @override
+  String get editorAdj => 'Tính từ';
+
+  @override
+  String get editorAddWord => 'Thêm từ mới';
+
+  @override
+  String get themeLight => 'Sáng';
+
+  @override
+  String get themeDark => 'Tối';
+
+  @override
+  String get menuAchievements => 'Thành tích';
+
+  @override
+  String get menuSettings => 'Cài đặt';
+
+  @override
+  String get menuLightMode => 'Chế độ sáng';
+
+  @override
+  String get menuDarkMode => 'Chế độ tối';
+
+  @override
+  String get menuLogOut => 'Đăng xuất';
+
+  @override
+  String get menuPrivacy => 'Chính sách quyền riêng tư';
+
+  @override
+  String get menuHelp => 'Trợ giúp và phản hồi';
+
+  @override
+  String get menuUpgrade => 'Nâng cấp';
 }

@@ -71,7 +71,7 @@ When the loaded library has folders, Recent SHALL show its title and no set card
 - **AND** Recent does not show "The process is 25% complete.", "The process is 50% complete.", or "The process is 93% complete."
 
 ### Requirement: Home actions stay on the home screen
-Activating search, New vocab, Practice, Library, Notification, All, a hot-search chip, Save, or a suggestion row SHALL leave the user on the vocabulary home, SHALL keep Homepage selected, and SHALL NOT add or remove folders, sets, or words.
+Activating search, Practice, Library, Notification, All, a hot-search chip, Save, or a suggestion row SHALL leave the user on the vocabulary home, SHALL keep Homepage selected, and SHALL NOT add or remove folders, sets, or words. Activating New vocab SHALL open the word editor.
 
 #### Scenario: Practice does not leave home
 - **WHEN** the user activates Practice on the vocabulary home and the loaded library has a folder
@@ -80,11 +80,21 @@ Activating search, New vocab, Practice, Library, Notification, All, a hot-search
 - **AND** the statistics still show 0/0 and 0%
 - **AND** the sidebar still shows that folder
 
-#### Scenario: New vocab does not create a set
+#### Scenario: New vocab opens the word editor
 - **WHEN** the user activates New vocab on the vocabulary home and the loaded library has no folders
-- **THEN** the vocabulary home remains
+- **THEN** the word editor is shown in the center
+- **AND** the header and the sidebar remain
+- **AND** "Add new word" and "Enter term" are shown
+- **AND** "Find your vocab..." and "Homepage" are shown
+- **AND** "Hot search" and "student" are not shown
+
+#### Scenario: New vocab does not create a set
+- **WHEN** the user activates New vocab on the vocabulary home, the loaded library has no folders, and the user activates Done
+- **THEN** the vocabulary home is shown
+- **AND** Homepage stays selected
 - **AND** the sidebar still shows no folder name and no set name
 - **AND** "Hot search" and "student" are still shown
+- **AND** the library still has no folders
 
 #### Scenario: Save does not store the suggested word
 - **WHEN** the user activates Save on the empty vocabulary home
@@ -170,26 +180,25 @@ Under "Suggested practice", the empty home SHALL show these rows in order: Pract
 - **THEN** those five rows are shown in that order
 
 ### Requirement: Wide home stays at the design width
-When the vocabulary home viewport is at least 1440 wide, the header SHALL fill that width and the sidebar SHALL sit on the left. The main content SHALL keep the width it has in the 1440 design, centered in the space beside the sidebar. Collapsing the sidebar SHALL NOT change that width, and the sidebar SHALL keep its open width. That content SHALL NOT scale to the viewport. Width beyond the content SHALL be empty on its left and right, with no advertisement.
+When the vocabulary home viewport is at least 1440 wide, the header SHALL fill that width and the sidebar SHALL sit on the left. The main content SHALL keep the width it has in the 1440 design, centered on the viewport. Collapsing or opening the sidebar SHALL NOT change that width or that position, and the sidebar SHALL keep its open width. That content SHALL NOT scale to the viewport. Width beyond the content SHALL be empty on its left and right, with no advertisement.
 
 #### Scenario: Window wider than the design
 - **WHEN** the vocabulary home is shown in a viewport wider than 1440
 - **THEN** the header fills the viewport width
 - **AND** the sidebar's left edge is the viewport's left edge
-- **AND** the main content is centered in the space to the right of the sidebar
-- **AND** the empty space left of that content equals the empty space right of it
-- **AND** neither space shows an advertisement
+- **AND** the main content is centered on the viewport
+- **AND** neither side of that content shows an advertisement
 
 #### Scenario: Window exactly the design width
 - **WHEN** the vocabulary home is shown in a viewport 1440 wide
 - **THEN** the header fills the viewport width
 - **AND** the sidebar sits on the left
-- **AND** the main content fills the space beside the sidebar
-- **AND** there is no empty side region beside the content
+- **AND** the main content is centered on the viewport
 
 #### Scenario: Closing the sidebar keeps the content width
 - **WHEN** the vocabulary home is shown at a viewport at least 1440 wide and the user collapses the sidebar
 - **THEN** the main content width is unchanged
+- **AND** the main content stays in the same horizontal position
 
 ### Requirement: Wide header keeps one row
 When the vocabulary home viewport is at least 1440 wide, the menu, the lang mark, the search field, New vocab, and the avatar SHALL sit on one header row.

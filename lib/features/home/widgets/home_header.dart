@@ -1,28 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:lang/features/home/widgets/home_sidebar.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/language/language_switcher.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key, required this.onMenuPressed, this.narrow = false});
+  const HomeHeader({
+    super.key,
+    required this.onMenuPressed,
+    required this.onNewVocab,
+    this.narrow = false,
+  });
 
   final VoidCallback onMenuPressed;
+  final VoidCallback onNewVocab;
   final bool narrow;
+
+  static const searchWidth = 750.0;
 
   @override
   Widget build(BuildContext context) {
     if (narrow) {
-      return _NarrowHeader(onMenuPressed: onMenuPressed);
+      return _NarrowHeader(
+        onMenuPressed: onMenuPressed,
+        onNewVocab: onNewVocab,
+      );
     }
+    final localizations = AppLocalizations.of(context);
     return SizedBox(
       height: 80,
       width: double.infinity,
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          _Brand(onMenuPressed: onMenuPressed),
-          const Expanded(child: _SearchAndActions()),
+          Row(
+            children: [
+              _Brand(onMenuPressed: onMenuPressed),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: _HeaderActions(onNewVocab: onNewVocab),
+              ),
+            ],
+          ),
+          SizedBox(
+            width: searchWidth,
+            child: _SearchField(hint: localizations.searchHint),
+          ),
         ],
       ),
     );
@@ -30,9 +55,10 @@ class HomeHeader extends StatelessWidget {
 }
 
 class _NarrowHeader extends StatelessWidget {
-  const _NarrowHeader({required this.onMenuPressed});
+  const _NarrowHeader({required this.onMenuPressed, required this.onNewVocab});
 
   final VoidCallback onMenuPressed;
+  final VoidCallback onNewVocab;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +74,7 @@ class _NarrowHeader extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-              icon: const Icon(Icons.menu, color: HomeColors.ink),
+              icon: Icon(Icons.menu, color: HomePalette.of(context).ink),
             ),
             const SizedBox(width: 8),
             const Image(
@@ -62,9 +88,21 @@ class _NarrowHeader extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        _SearchField(hint: localizations.searchHint),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: HomeHeader.searchWidth),
+            child: SizedBox(
+              width: double.infinity,
+              child: _SearchField(hint: localizations.searchHint),
+            ),
+          ),
+        ),
         const SizedBox(height: 12),
-        _NewVocabButton(label: localizations.newVocab, expand: true),
+        _NewVocabButton(
+          label: localizations.newVocab,
+          onPressed: onNewVocab,
+          expand: true,
+        ),
       ],
     );
   }
@@ -89,7 +127,7 @@ class _Brand extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-              icon: const Icon(Icons.menu, color: HomeColors.ink),
+              icon: Icon(Icons.menu, color: HomePalette.of(context).ink),
             ),
             const Padding(
               padding: EdgeInsets.only(left: 8),
@@ -107,23 +145,21 @@ class _Brand extends StatelessWidget {
   }
 }
 
-class _SearchAndActions extends StatelessWidget {
-  const _SearchAndActions();
+class _HeaderActions extends StatelessWidget {
+  const _HeaderActions({required this.onNewVocab});
+
+  final VoidCallback onNewVocab;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 16, 20, 16),
-      child: Row(
-        children: [
-          Expanded(child: _SearchField(hint: localizations.searchHint)),
-          const SizedBox(width: 24),
-          _NewVocabButton(label: localizations.newVocab),
-          const SizedBox(width: 24),
-          const LanguageSwitcher(child: _Avatar()),
-        ],
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _NewVocabButton(label: localizations.newVocab, onPressed: onNewVocab),
+        const SizedBox(width: 24),
+        const LanguageSwitcher(child: _Avatar()),
+      ],
     );
   }
 }
@@ -135,24 +171,26 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final text = HomeText.of(context);
     return TextField(
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: HomeText.subtitle.copyWith(color: HomeColors.placeholder),
-        prefixIcon: const Padding(
-          padding: EdgeInsets.only(left: 14),
-          child: Icon(Icons.search, size: 28, color: HomeColors.text),
+        hintStyle: text.subtitle.copyWith(color: colors.placeholder),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 14),
+          child: Icon(Icons.search, size: 28, color: colors.text),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: HomeColors.border, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colors.border, width: 2),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: HomeColors.border, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colors.border, width: 2),
         ),
       ),
     );
@@ -160,18 +198,24 @@ class _SearchField extends StatelessWidget {
 }
 
 class _NewVocabButton extends StatelessWidget {
-  const _NewVocabButton({required this.label, this.expand = false});
+  const _NewVocabButton({
+    required this.label,
+    required this.onPressed,
+    this.expand = false,
+  });
 
   final String label;
+  final VoidCallback onPressed;
   final bool expand;
 
   @override
   Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
     return FilledButton(
-      onPressed: () {},
+      onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: HomeColors.newVocab,
-        foregroundColor: Colors.white,
+        backgroundColor: colors.newVocab,
+        foregroundColor: colors.onAccent,
         minimumSize: Size(expand ? double.infinity : 131, 48),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

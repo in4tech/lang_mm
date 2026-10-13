@@ -44,7 +44,7 @@ void main() {
   testWidgets('selecting German is restored on the next start', (tester) async {
     await launch(tester, <String, Object>{});
 
-    await tester.tap(find.byType(PopupMenuButton<AppLanguage>));
+    await tester.tap(find.byKey(const Key('avatar-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Deutsch'));
     await tester.pumpAndSettle();

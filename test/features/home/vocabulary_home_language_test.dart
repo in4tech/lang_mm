@@ -29,7 +29,7 @@ void main() {
   Finder menuItem(String label) {
     return find.ancestor(
       of: find.text(label),
-      matching: find.byType(PopupMenuItem<AppLanguage>),
+      matching: find.byType(PopupMenuItem<Object>),
     );
   }
 
@@ -44,7 +44,7 @@ void main() {
   }
 
   Future<void> openMenu(WidgetTester tester) async {
-    await tester.tap(find.byType(PopupMenuButton<AppLanguage>));
+    await tester.tap(find.byKey(const Key('avatar-menu')));
     await tester.pumpAndSettle();
   }
 
@@ -78,7 +78,7 @@ void main() {
     expectSuggestions(heading: 'Hot search');
 
     await openMenu(tester);
-    expect(find.byType(PopupMenuItem<AppLanguage>), findsNWidgets(3));
+    expect(find.byType(PopupMenuItem<Object>), findsNWidgets(11));
     expect(find.text('Tiếng Việt'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
     expect(find.text('Deutsch'), findsOneWidget);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
@@ -18,7 +18,7 @@ class TodayPanel extends StatelessWidget {
       height: 372,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: HomeColors.border),
+          border: Border.all(color: HomePalette.of(context).border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(
@@ -26,14 +26,14 @@ class TodayPanel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(localizations.todaysVocabulary, style: HomeText.heading),
+              Text(localizations.todaysVocabulary, style: HomeText.of(context).heading),
               const SizedBox(height: 16),
               Expanded(child: _TodayList(rows: sample.today)),
               FilledButton(
                 onPressed: () {},
                 style: FilledButton.styleFrom(
-                  backgroundColor: HomeColors.practice,
-                  foregroundColor: Colors.white,
+                  backgroundColor: HomePalette.of(context).practice,
+                  foregroundColor: HomePalette.of(context).onAccent,
                   minimumSize: const Size.fromHeight(48),
                   shape: const StadiumBorder(),
                   textStyle: const TextStyle(
@@ -88,7 +88,7 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: HomeColors.chip,
+        color: HomePalette.of(context).chip,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Padding(
@@ -100,13 +100,13 @@ class _Chip extends StatelessWidget {
               pair.word,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: HomeText.caption,
+              style: HomeText.of(context).caption,
             ),
             Text(
               pair.form,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: HomeText.fine,
+              style: HomeText.of(context).fine,
             ),
           ],
         ),
@@ -210,11 +210,11 @@ class _ScrollIndicator extends StatelessWidget {
           height: trackHeight,
           child: Stack(
             children: [
-              const Positioned.fill(
+              Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: HomeColors.scrollTrack,
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    color: HomePalette.of(context).scrollTrack,
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
                 ),
               ),
@@ -223,10 +223,10 @@ class _ScrollIndicator extends StatelessWidget {
                 left: 0,
                 right: 0,
                 height: thumbHeight,
-                child: const DecoratedBox(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: HomeColors.scrollThumb,
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    color: HomePalette.of(context).scrollThumb,
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
                 ),
               ),

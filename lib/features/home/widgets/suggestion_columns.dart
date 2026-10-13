@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lang/features/home/suggestions/suggestion_templates.dart';
 import 'package:lang/l10n/app_localizations.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 
 class SuggestionColumns extends StatelessWidget {
@@ -39,7 +39,7 @@ class _SuggestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border.all(color: HomeColors.border),
+        border: Border.all(color: HomePalette.of(context).border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -59,7 +59,7 @@ class _SearchColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(localizations.hotSearch, style: HomeText.heading),
+        Text(localizations.hotSearch, style: HomeText.of(context).heading),
         const SizedBox(height: 16),
         Wrap(
           spacing: 8,
@@ -69,7 +69,7 @@ class _SearchColumn extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        Text(localizations.suggestedSets, style: HomeText.heading),
+        Text(localizations.suggestedSets, style: HomeText.of(context).heading),
         const SizedBox(height: 8),
         for (var index = 0; index < SuggestionTemplates.sets.length; index++)
           _SuggestionRow(
@@ -91,27 +91,27 @@ class _WordColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(SuggestionTemplates.word, style: HomeText.title),
+        Text(SuggestionTemplates.word, style: HomeText.of(context).title),
         const SizedBox(height: 12),
-        const Text(SuggestionTemplates.uk, style: HomeText.body),
+        Text(SuggestionTemplates.uk, style: HomeText.of(context).body),
         const SizedBox(height: 4),
-        const Text(SuggestionTemplates.us, style: HomeText.body),
+        Text(SuggestionTemplates.us, style: HomeText.of(context).body),
         const SizedBox(height: 12),
-        const Text(SuggestionTemplates.gloss, style: HomeText.body),
+        Text(SuggestionTemplates.gloss, style: HomeText.of(context).body),
         const SizedBox(height: 16),
         Row(
           children: [
             Text(
               localizations.saveCount(SuggestionTemplates.saveCount),
-              style: HomeText.body,
+              style: HomeText.of(context).body,
             ),
             const Spacer(),
             FilledButton(
               key: const Key('suggestion-save'),
               onPressed: () {},
               style: FilledButton.styleFrom(
-                backgroundColor: HomeColors.practice,
-                foregroundColor: Colors.white,
+                backgroundColor: HomePalette.of(context).practice,
+                foregroundColor: HomePalette.of(context).onAccent,
                 shape: const StadiumBorder(),
               ),
               child: Text(localizations.saveWord),
@@ -119,7 +119,7 @@ class _WordColumn extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        Text(localizations.suggestedPractice, style: HomeText.heading),
+        Text(localizations.suggestedPractice, style: HomeText.of(context).heading),
         const SizedBox(height: 8),
         for (
           var index = 0;
@@ -147,13 +147,13 @@ class _SearchChip extends StatelessWidget {
       key: Key('hot-chip-$label'),
       onPressed: () {},
       style: TextButton.styleFrom(
-        foregroundColor: HomeColors.text,
-        side: const BorderSide(color: HomeColors.border),
+        foregroundColor: HomePalette.of(context).text,
+        side: BorderSide(color: HomePalette.of(context).border),
         shape: const StadiumBorder(),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        textStyle: HomeText.body,
+        textStyle: HomeText.of(context).body,
       ),
       child: Text(label),
     );
@@ -174,12 +174,12 @@ class _SuggestionRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: HomeColors.ink),
+            Icon(icon, size: 18, color: HomePalette.of(context).ink),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 label,
-                style: HomeText.body.copyWith(color: HomeColors.ink),
+                style: HomeText.of(context).body.copyWith(color: HomePalette.of(context).ink),
               ),
             ),
           ],

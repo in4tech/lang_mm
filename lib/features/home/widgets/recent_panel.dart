@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
@@ -16,7 +16,7 @@ class RecentPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(localizations.recent, style: HomeText.title),
+        Text(localizations.recent, style: HomeText.of(context).title),
         const SizedBox(height: 16),
         _RecentStrip(sets: sample.recent, width: width),
       ],
@@ -142,7 +142,7 @@ class _RecentCard extends StatelessWidget {
       height: 188,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: HomeColors.border),
+          border: Border.all(color: HomePalette.of(context).border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(
@@ -152,14 +152,14 @@ class _RecentCard extends StatelessWidget {
             children: [
               Text(
                 set.name,
-                style: HomeText.subtitle.copyWith(color: HomeColors.ink),
+                style: HomeText.of(context).subtitle.copyWith(color: HomePalette.of(context).ink),
               ),
               const SizedBox(height: 16),
               _ThinBar(percent: set.percent, color: set.color),
               const SizedBox(height: 8),
               Text(
                 localizations.progressComplete(set.percent),
-                style: HomeText.caption,
+                style: HomeText.of(context).caption,
               ),
               const Spacer(),
               _ContinueButton(label: localizations.continueAction),
@@ -183,7 +183,7 @@ class _ThinBar extends StatelessWidget {
       height: 5,
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
-        color: HomeColors.border,
+        color: HomePalette.of(context).border,
         borderRadius: BorderRadius.circular(100),
       ),
       child: FractionallySizedBox(
@@ -208,20 +208,25 @@ class _ContinueButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Radius.circular(30)),
         gradient: LinearGradient(
-          colors: [HomeColors.continueStart, HomeColors.continueEnd],
+          colors: [
+            HomePalette.of(context).continueStart,
+            HomePalette.of(context).continueEnd,
+          ],
         ),
       ),
       child: TextButton(
         onPressed: () {},
         style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
+          foregroundColor: HomePalette.of(context).onAccent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           minimumSize: const Size(0, 40),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          textStyle: HomeText.caption.copyWith(color: Colors.white),
+          textStyle: HomeText.of(context).caption.copyWith(
+            color: HomePalette.of(context).onAccent,
+          ),
         ),
         child: Text(label),
       ),
@@ -238,7 +243,7 @@ class _StepButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: HomeColors.chevronFill,
+      color: HomePalette.of(context).chevronFill,
       shape: const CircleBorder(),
       child: IconButton(
         onPressed: onPressed,

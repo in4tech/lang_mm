@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
@@ -71,7 +71,7 @@ class HomeSidebar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 8),
-                    const Divider(height: 1, color: HomeColors.border),
+                    Divider(height: 1, color: HomePalette.of(context).border),
                     const SizedBox(height: 8),
                     _SectionAction(label: localizations.setOfWords),
                   ],
@@ -110,7 +110,7 @@ class _SidebarDivider extends StatelessWidget {
     final line = Divider(
       key: dividerKey,
       height: 1,
-      color: HomeColors.border,
+      color: HomePalette.of(context).border,
     );
     if (!collapsed) {
       return line;
@@ -142,9 +142,9 @@ class _NavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? HomeColors.selected : HomeColors.text;
+    final color = selected ? HomePalette.of(context).selected : HomePalette.of(context).text;
     final icon = Icon(this.icon, size: 18, color: color);
-    final background = selected ? HomeColors.selectedFill : Colors.transparent;
+    final background = selected ? HomePalette.of(context).selectedFill : Colors.transparent;
     return Semantics(
       selected: selected,
       button: onTap != null,
@@ -189,7 +189,7 @@ class _NavRow extends StatelessWidget {
                           key: labelKey,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: HomeText.subtitle.copyWith(color: color),
+                          style: HomeText.of(context).subtitle.copyWith(color: color),
                         ),
                       ),
                     ],
@@ -209,9 +209,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const icon = Icon(Icons.search, size: 18, color: HomeColors.text);
+    final icon = Icon(
+      Icons.search,
+      size: 18,
+      color: HomePalette.of(context).text,
+    );
     if (collapsed) {
-      return const Align(
+      return Align(
         alignment: Alignment.centerLeft,
         child: SizedBox(
           width: HomeSidebar.collapsedSlot,
@@ -224,7 +228,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: HomeText.subtitle)),
+          Expanded(child: Text(label, style: HomeText.of(context).subtitle)),
           icon,
         ],
       ),
@@ -246,13 +250,13 @@ class _SectionAction extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: HomeText.body.copyWith(color: HomeColors.text),
+              style: HomeText.of(context).body.copyWith(color: HomePalette.of(context).text),
             ),
           ),
-          const Icon(
+          Icon(
             Icons.add_outlined,
-            size: 14,
-            color: HomeColors.placeholder,
+            size: 20,
+            color: HomePalette.of(context).placeholder,
           ),
         ],
       ),
@@ -268,7 +272,11 @@ class _FolderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const icon = Icon(Icons.folder_outlined, size: 18, color: HomeColors.ink);
+    final icon = Icon(
+      Icons.folder_outlined,
+      size: 18,
+      color: HomePalette.of(context).ink,
+    );
     if (collapsed) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -278,7 +286,7 @@ class _FolderRow extends StatelessWidget {
           height: HomeSidebar.collapsedSlot,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: HomeColors.folderFill,
+            color: HomePalette.of(context).folderFill,
             borderRadius: BorderRadius.circular(8),
           ),
           child: icon,
@@ -291,18 +299,18 @@ class _FolderRow extends StatelessWidget {
         key: Key('folder-${folder.name}'),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: HomeColors.folderFill,
+          color: HomePalette.of(context).folderFill,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
             icon,
             const SizedBox(width: 8),
-            Expanded(child: Text(folder.name, style: HomeText.subtitle)),
+            Expanded(child: Text(folder.name, style: HomeText.of(context).subtitle)),
             Icon(
               folder.expanded ? Icons.expand_less : Icons.expand_more,
               size: 18,
-              color: const Color(0xFF98A2B3),
+              color: HomePalette.of(context).muted,
             ),
           ],
         ),
@@ -322,9 +330,13 @@ class _SetRow extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Row(
         children: [
-          const Icon(Icons.menu_book_outlined, size: 18, color: HomeColors.ink),
+          Icon(
+            Icons.menu_book_outlined,
+            size: 18,
+            color: HomePalette.of(context).ink,
+          ),
           const SizedBox(width: 8),
-          Expanded(child: Text(name, style: HomeText.subtitle)),
+          Expanded(child: Text(name, style: HomeText.of(context).subtitle)),
         ],
       ),
     );
