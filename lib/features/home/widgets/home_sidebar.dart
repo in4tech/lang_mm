@@ -23,9 +23,9 @@ class HomeSidebar extends StatelessWidget {
       child: AnimatedContainer(
         duration: animationDuration,
         curve: animationCurve,
-        width: collapsed ? collapsedWidth : width,
+        width: width,
         padding: EdgeInsets.symmetric(
-          horizontal: collapsed ? 0 : 20,
+          horizontal: 20,
           vertical: collapsed ? 12 : 20,
         ),
         child: Column(
@@ -54,10 +54,7 @@ class HomeSidebar extends StatelessWidget {
               onTap: () {},
             ),
             const SizedBox(height: 8),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: collapsed ? 20 : 0),
-              child: const Divider(height: 1, color: HomeColors.border),
-            ),
+            _SidebarDivider(collapsed: collapsed),
             const SizedBox(height: 8),
             _SectionLabel(
               label: localizations.vocabularySet,
@@ -83,13 +80,9 @@ class HomeSidebar extends StatelessWidget {
             ),
             if (collapsed) ...[
               const SizedBox(height: 8),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Divider(
-                  key: Key('collapsed-folder-divider'),
-                  height: 1,
-                  color: HomeColors.border,
-                ),
+              const _SidebarDivider(
+                collapsed: true,
+                dividerKey: Key('collapsed-folder-divider'),
               ),
               const SizedBox(height: 8),
             ],
@@ -102,6 +95,29 @@ class HomeSidebar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SidebarDivider extends StatelessWidget {
+  const _SidebarDivider({required this.collapsed, this.dividerKey});
+
+  final bool collapsed;
+  final Key? dividerKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final line = Divider(
+      key: dividerKey,
+      height: 1,
+      color: HomeColors.border,
+    );
+    if (!collapsed) {
+      return line;
+    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(width: HomeSidebar.collapsedSlot, child: line),
     );
   }
 }
@@ -133,25 +149,23 @@ class _NavRow extends StatelessWidget {
       selected: selected,
       button: onTap != null,
       child: collapsed
-          ? SizedBox(
-              height: HomeSidebar.collapsedSlot,
-              child: Center(
-                child: Material(
-                  color: background,
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: Material(
+                color: background,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: onTap,
                   borderRadius: BorderRadius.circular(8),
-                  child: InkWell(
-                    onTap: onTap,
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: HomeSidebar.collapsedSlot,
-                      height: HomeSidebar.collapsedSlot,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          icon,
-                          SizedBox(key: labelKey, width: 0, height: 0),
-                        ],
-                      ),
+                  child: SizedBox(
+                    width: HomeSidebar.collapsedSlot,
+                    height: HomeSidebar.collapsedSlot,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        icon,
+                        SizedBox(key: labelKey, width: 0, height: 0),
+                      ],
                     ),
                   ),
                 ),
@@ -197,9 +211,13 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     const icon = Icon(Icons.search, size: 18, color: HomeColors.text);
     if (collapsed) {
-      return const SizedBox(
-        height: HomeSidebar.collapsedSlot,
-        child: Center(child: icon),
+      return const Align(
+        alignment: Alignment.centerLeft,
+        child: SizedBox(
+          width: HomeSidebar.collapsedSlot,
+          height: HomeSidebar.collapsedSlot,
+          child: icon,
+        ),
       );
     }
     return Padding(
@@ -252,7 +270,8 @@ class _FolderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     const icon = Icon(Icons.folder_outlined, size: 18, color: HomeColors.ink);
     if (collapsed) {
-      return Center(
+      return Align(
+        alignment: Alignment.centerLeft,
         child: Container(
           key: Key('folder-${folder.name}'),
           width: HomeSidebar.collapsedSlot,

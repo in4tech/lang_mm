@@ -89,6 +89,7 @@ class _HomeFrame extends StatefulWidget {
 
 class _HomeFrameState extends State<_HomeFrame> {
   bool _collapsed = false;
+  bool _overlayOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -110,58 +111,117 @@ class _HomeFrameState extends State<_HomeFrame> {
           final width = constraints.maxWidth.isFinite
               ? constraints.maxWidth
               : VocabularyHome.designWidth;
-          return Scrollbar(
-            child: SingleChildScrollView(
-              child: SizedBox(
-                width: width,
-                child: FittedBox(
-                  fit: BoxFit.fitWidth,
-                  alignment: Alignment.topCenter,
-                  child: SizedBox(
-                    width: VocabularyHome.designWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HomeHeader(
-                          onMenuPressed: () {
-                            setState(() => _collapsed = !_collapsed);
-                          },
+          final wide =
+              !constraints.maxWidth.isFinite ||
+              width >= VocabularyHome.designWidth;
+          if (wide) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                HomeHeader(
+                  onMenuPressed: () {
+                    setState(() => _collapsed = !_collapsed);
+                  },
+                ),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SingleChildScrollView(
+                        child: HomeSidebar(
+                          sample: sidebarSample,
+                          collapsed: _collapsed,
                         ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            HomeSidebar(
-                              sample: sidebarSample,
-                              collapsed: _collapsed,
-                            ),
-                            AnimatedContainer(
-                              duration: HomeSidebar.animationDuration,
-                              curve: HomeSidebar.animationCurve,
-                              width:
-                                  VocabularyHome.designWidth -
-                                  (_collapsed
-                                      ? HomeSidebar.collapsedWidth
-                                      : HomeSidebar.width),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  32,
-                                  20,
-                                  46,
-                                  48,
+                      ),
+                      Expanded(
+                        child: Scrollbar(
+                          child: SingleChildScrollView(
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: SizedBox(
+                                key: const Key('home-canvas'),
+                                width:
+                                    VocabularyHome.designWidth -
+                                    HomeSidebar.width,
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    32,
+                                    20,
+                                    46,
+                                    48,
+                                  ),
+                                  child: dashboard == null
+                                      ? const SuggestionColumns()
+                                      : _Dashboard(sample: dashboard),
                                 ),
-                                child: dashboard == null
-                                    ? const SuggestionColumns()
-                                    : _Dashboard(sample: dashboard),
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: HomeHeader(
+                  narrow: true,
+                  onMenuPressed: () {
+                    setState(() => _overlayOpen = !_overlayOpen);
+                  },
+                ),
               ),
-            ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Scrollbar(
+                      child: SingleChildScrollView(
+                        child: SizedBox(
+                          key: const Key('home-canvas'),
+                          width: width,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
+                            child: dashboard == null
+                                ? const SuggestionColumns(narrow: true)
+                                : _Dashboard(sample: dashboard, narrow: true),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_overlayOpen) ...[
+                      Positioned.fill(
+                        child: GestureDetector(
+                          key: const Key('sidebar-barrier'),
+                          onTap: () => setState(() => _overlayOpen = false),
+                          behavior: HitTestBehavior.opaque,
+                          child: const ColoredBox(color: Color(0x66000000)),
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: ColoredBox(
+                          color: Colors.white,
+                          child: SingleChildScrollView(
+                            child: HomeSidebar(
+                              sample: sidebarSample,
+                              collapsed: false,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -185,17 +245,33 @@ HomeSample? _resolveHomeDashboard({
 }
 
 class _Dashboard extends StatelessWidget {
-  const _Dashboard({required this.sample});
+  const _Dashboard({required this.sample, this.narrow = false});
 
   final HomeSample sample;
+  final bool narrow;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final heading = Text(localizations.statisticsHeading, style: HomeText.title);
+    if (narrow) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          heading,
+          const SizedBox(height: 16),
+          StatisticsPanel(sample: sample),
+          const SizedBox(height: 16),
+          TodayPanel(sample: sample, width: double.infinity),
+          const SizedBox(height: 28),
+          RecentPanel(sample: sample, width: double.infinity),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(localizations.statisticsHeading, style: HomeText.title),
+        heading,
         const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,

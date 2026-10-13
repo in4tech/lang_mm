@@ -5,9 +5,10 @@ import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
 class RecentPanel extends StatelessWidget {
-  const RecentPanel({super.key, required this.sample});
+  const RecentPanel({super.key, required this.sample, this.width = 1074});
 
   final HomeSample sample;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -17,16 +18,17 @@ class RecentPanel extends StatelessWidget {
       children: [
         Text(localizations.recent, style: HomeText.title),
         const SizedBox(height: 16),
-        _RecentStrip(sets: sample.recent),
+        _RecentStrip(sets: sample.recent, width: width),
       ],
     );
   }
 }
 
 class _RecentStrip extends StatefulWidget {
-  const _RecentStrip({required this.sets});
+  const _RecentStrip({required this.sets, required this.width});
 
   final List<RecentSet> sets;
+  final double width;
 
   @override
   State<_RecentStrip> createState() => _RecentStripState();
@@ -82,7 +84,7 @@ class _RecentStripState extends State<_RecentStrip> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 1074,
+      width: widget.width,
       height: 206,
       child: Stack(
         children: [

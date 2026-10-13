@@ -5,15 +5,16 @@ import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
 class TodayPanel extends StatelessWidget {
-  const TodayPanel({super.key, required this.sample});
+  const TodayPanel({super.key, required this.sample, this.width = 302});
 
   final HomeSample sample;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     return SizedBox(
-      width: 302,
+      width: width,
       height: 372,
       child: DecoratedBox(
         decoration: BoxDecoration(

@@ -5,16 +5,26 @@ import 'package:lang/theme/home_colors.dart';
 import 'package:lang/theme/home_text.dart';
 
 class SuggestionColumns extends StatelessWidget {
-  const SuggestionColumns({super.key});
+  const SuggestionColumns({super.key, this.narrow = false});
+
+  final bool narrow;
 
   @override
   Widget build(BuildContext context) {
+    const left = _SuggestionCard(child: _SearchColumn());
+    const right = _SuggestionCard(child: _WordColumn());
+    if (narrow) {
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [left, SizedBox(height: 16), right],
+      );
+    }
     return const Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: _SuggestionCard(child: _SearchColumn())),
+        Expanded(child: left),
         SizedBox(width: 16),
-        Expanded(child: _SuggestionCard(child: _WordColumn())),
+        Expanded(child: right),
       ],
     );
   }
