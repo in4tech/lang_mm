@@ -29,7 +29,7 @@ void main() {
   Finder menuItem(String label) {
     return find.ancestor(
       of: find.text(label),
-      matching: find.byType(PopupMenuItem<AppLanguage>),
+      matching: find.byType(PopupMenuItem<Object>),
     );
   }
 
@@ -44,7 +44,7 @@ void main() {
   }
 
   Future<void> openMenu(WidgetTester tester) async {
-    await tester.tap(find.byType(PopupMenuButton<AppLanguage>));
+    await tester.tap(find.byKey(const Key('avatar-menu')));
     await tester.pumpAndSettle();
   }
 
@@ -86,7 +86,18 @@ void main() {
     expectHomeCopy(heading: 'Hot search', save: 'Save');
 
     await openMenu(tester);
-    expect(find.byType(PopupMenuItem<AppLanguage>), findsNWidgets(3));
+    expect(find.byType(PopupMenuItem<Object>), findsNWidgets(11));
+    expect(find.text('in4techit'), findsOneWidget);
+    expect(find.text('in4tech.it@gmail.com'), findsOneWidget);
+    expect(find.text('Achievements'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Light mode'), findsOneWidget);
+    expect(find.text('Log out'), findsOneWidget);
+    expect(find.text('Privacy policy'), findsOneWidget);
+    expect(find.text('Help and feedback'), findsOneWidget);
+    expect(find.text('Upgrade'), findsOneWidget);
+    final avatar = tester.getRect(find.byKey(const Key('avatar-menu')));
+    expect(tester.getRect(find.text('English')).top, greaterThan(avatar.bottom));
     expect(find.text('Tiếng Việt'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
     expect(find.text('Deutsch'), findsOneWidget);
@@ -120,5 +131,8 @@ void main() {
     expectHomeCopy(heading: 'Hot search', save: 'Save');
     await openMenu(tester);
     expectOnlyChecked('English');
+    await tester.tap(find.text('Upgrade'));
+    await tester.pumpAndSettle();
+    expectHomeCopy(heading: 'Hot search', save: 'Save');
   });
 }

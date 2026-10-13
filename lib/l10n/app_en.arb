@@ -133,5 +133,145 @@
         "type": "int"
       }
     }
+  },
+  "editorDone": "Done",
+  "@editorDone": {
+    "description": "Button that leaves the word editor."
+  },
+  "editorBack": "All posts",
+  "@editorBack": {
+    "description": "Back control on the word editor."
+  },
+  "editorTitle": "Title",
+  "@editorTitle": {
+    "description": "Label for the word editor title field."
+  },
+  "editorTitleHint": "Enter a title...",
+  "@editorTitleHint": {
+    "description": "Placeholder for the word editor title field."
+  },
+  "editorDescriptionHint": "Add a description...",
+  "@editorDescriptionHint": {
+    "description": "Placeholder for the word editor description field."
+  },
+  "editorImport": "Import",
+  "@editorImport": {
+    "description": "Import control on the word editor."
+  },
+  "editorTerm": "Term",
+  "@editorTerm": {
+    "description": "Label for the term field."
+  },
+  "editorTermHint": "Enter term",
+  "@editorTermHint": {
+    "description": "Placeholder for the term field."
+  },
+  "editorDefinition": "Definition",
+  "@editorDefinition": {
+    "description": "Label for the definition field."
+  },
+  "editorDefinitionHint": "Enter definition",
+  "@editorDefinitionHint": {
+    "description": "Placeholder for the definition field."
+  },
+  "editorSentence": "Sentence",
+  "@editorSentence": {
+    "description": "Label for the sentence field."
+  },
+  "editorSentenceHint": "Enter sentence",
+  "@editorSentenceHint": {
+    "description": "Placeholder for the sentence field."
+  },
+  "editorDetails": "Details",
+  "@editorDetails": {
+    "description": "Heading above the detail fields on a word card."
+  },
+  "editorIpa": "IPA",
+  "@editorIpa": {
+    "description": "Label for the IPA field."
+  },
+  "editorIpaHint": "Enter IPA",
+  "@editorIpaHint": {
+    "description": "Placeholder for the IPA field."
+  },
+  "editorSingularPlural": "Singular - Plural",
+  "@editorSingularPlural": {
+    "description": "Label for the singular and plural field."
+  },
+  "editorSingularPluralHint": "Enter singular and plural",
+  "@editorSingularPluralHint": {
+    "description": "Placeholder for the singular and plural field."
+  },
+  "editorNote": "Note",
+  "@editorNote": {
+    "description": "Label for the note field."
+  },
+  "editorNoteHint": "Enter a note",
+  "@editorNoteHint": {
+    "description": "Placeholder for the note field."
+  },
+  "editorType": "Type",
+  "@editorType": {
+    "description": "Label above the word type choices."
+  },
+  "editorChunking": "Chunking",
+  "@editorChunking": {
+    "description": "Word type choice for a chunk."
+  },
+  "editorNoun": "Noun",
+  "@editorNoun": {
+    "description": "Word type choice for a noun."
+  },
+  "editorVerb": "Verb",
+  "@editorVerb": {
+    "description": "Word type choice for a verb."
+  },
+  "editorAdj": "Adj",
+  "@editorAdj": {
+    "description": "Word type choice for an adjective."
+  },
+  "editorAddWord": "Add new word",
+  "@editorAddWord": {
+    "description": "Button that collapses the current word and opens a new empty card."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Switches the app to light mode."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Switches the app to dark mode."
+  },
+  "menuAchievements": "Achievements",
+  "@menuAchievements": {
+    "description": "Avatar menu item for achievements."
+  },
+  "menuSettings": "Settings",
+  "@menuSettings": {
+    "description": "Avatar menu item for settings."
+  },
+  "menuLightMode": "Light mode",
+  "@menuLightMode": {
+    "description": "Avatar menu item that switches to light mode."
+  },
+  "menuDarkMode": "Dark mode",
+  "@menuDarkMode": {
+    "description": "Avatar menu item that switches to dark mode."
+  },
+  "menuLogOut": "Log out",
+  "@menuLogOut": {
+    "description": "Avatar menu item for logging out."
+  },
+  "menuPrivacy": "Privacy policy",
+  "@menuPrivacy": {
+    "description": "Avatar menu item for the privacy policy."
+  },
+  "menuHelp": "Help and feedback",
+  "@menuHelp": {
+    "description": "Avatar menu item for help and feedback."
+  },
+  "menuUpgrade": "Upgrade",
+  "@menuUpgrade": {
+    "description": "Avatar menu item for upgrading."
   }
 }

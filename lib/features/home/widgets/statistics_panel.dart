@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
@@ -65,7 +65,7 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border.all(color: HomeColors.border),
+        border: Border.all(color: HomePalette.of(context).border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -85,9 +85,13 @@ class _SetHeading extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.menu_book_outlined, size: 18, color: HomeColors.ink),
+        Icon(
+          Icons.menu_book_outlined,
+          size: 18,
+          color: HomePalette.of(context).ink,
+        ),
         const SizedBox(width: 8),
-        Text(sample.statisticsSetName, style: HomeText.heading),
+        Text(sample.statisticsSetName, style: HomeText.of(context).heading),
         const SizedBox(width: 8),
         _ProgressBar(
           width: 224,
@@ -111,12 +115,12 @@ class _ScoreRow extends StatelessWidget {
       children: [
         Text.rich(
           TextSpan(
-            style: HomeText.title,
+            style: HomeText.of(context).title,
             children: [
               TextSpan(text: '${sample.learnedCount}'),
               TextSpan(
                 text: '/${sample.totalCount}',
-                style: HomeText.subtitle.copyWith(color: HomeColors.ink),
+                style: HomeText.of(context).subtitle.copyWith(color: HomePalette.of(context).ink),
               ),
             ],
           ),
@@ -138,7 +142,7 @@ class _ScoreRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           '${sample.percent}%',
-          style: HomeText.subtitle.copyWith(color: HomeColors.ink),
+          style: HomeText.of(context).subtitle.copyWith(color: HomePalette.of(context).ink),
         ),
       ],
     );
@@ -165,7 +169,7 @@ class _ProgressBar extends StatelessWidget {
       height: height,
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
-        color: HomeColors.border,
+        color: HomePalette.of(context).border,
         borderRadius: BorderRadius.circular(100),
       ),
       child: FractionallySizedBox(
@@ -208,7 +212,7 @@ class _BarChart extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     if (bar.label != null)
-                      Text(bar.label!, style: HomeText.caption),
+                      Text(bar.label!, style: HomeText.of(context).caption),
                     const SizedBox(height: 3),
                     Container(
                       width: 62,
@@ -253,9 +257,9 @@ class _Legend extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(labels[index], style: HomeText.body),
+                Text(labels[index], style: HomeText.of(context).body),
                 const SizedBox(width: 12),
-                Text('${levels[index].percent}%', style: HomeText.body),
+                Text('${levels[index].percent}%', style: HomeText.of(context).body),
               ],
             ),
           ),
@@ -272,16 +276,20 @@ class _ChartFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = HomeText.body.copyWith(
+    final style = HomeText.of(context).body.copyWith(
       fontWeight: FontWeight.w500,
-      color: HomeColors.ink,
+      color: HomePalette.of(context).ink,
     );
     return Row(
       children: [
         Expanded(
           child: Text(learned, textAlign: TextAlign.center, style: style),
         ),
-        Container(width: 1, height: 20, color: const Color(0xFFEAECF0)),
+        Container(
+          width: 1,
+          height: 20,
+          color: HomePalette.of(context).scrollTrack,
+        ),
         Expanded(
           child: Text(notLearned, textAlign: TextAlign.center, style: style),
         ),
@@ -309,7 +317,7 @@ class _AllSwitchState extends State<_AllSwitch> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(widget.label, style: HomeText.caption),
+          Text(widget.label, style: HomeText.of(context).caption),
           const SizedBox(width: 8),
           Container(
             key: const Key('all-switch'),
@@ -317,17 +325,17 @@ class _AllSwitchState extends State<_AllSwitch> {
             height: 14,
             alignment: _on ? Alignment.centerRight : Alignment.centerLeft,
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: HomeColors.border),
+              color: HomePalette.of(context).surface,
+              border: Border.all(color: HomePalette.of(context).border),
               borderRadius: BorderRadius.circular(100),
             ),
-            child: const SizedBox(
-              key: Key('all-switch-knob'),
+            child: SizedBox(
+              key: const Key('all-switch-knob'),
               width: 14,
               height: 14,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: HomeColors.toggleKnob,
+                  color: HomePalette.of(context).toggleKnob,
                   shape: BoxShape.circle,
                 ),
               ),

@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:lang/features/home/home_from_library.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
 import 'package:lang/features/home/widgets/home_header.dart';
+import 'package:lang/features/word_editor/word_editor.dart';
 import 'package:lang/features/home/widgets/suggestion_columns.dart';
 import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/features/home/widgets/home_sidebar.dart';
 import 'package:lang/features/home/widgets/recent_panel.dart';
 import 'package:lang/features/home/widgets/statistics_panel.dart';
 import 'package:lang/features/home/widgets/today_panel.dart';
-import 'package:lang/theme/home_colors.dart';
+import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
@@ -51,6 +52,7 @@ class _DebugHomeSwitchState extends State<_DebugHomeSwitch> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
     return _HomeFrame(
       sample: widget.sample,
       library: widget.library,
@@ -58,8 +60,8 @@ class _DebugHomeSwitchState extends State<_DebugHomeSwitch> {
       debugToggle: FloatingActionButton.extended(
         key: const Key('debug-home-toggle'),
         heroTag: 'debug-home-toggle',
-        backgroundColor: HomeColors.newVocab,
-        foregroundColor: Colors.white,
+        backgroundColor: colors.newVocab,
+        foregroundColor: colors.onAccent,
         onPressed: () {
           setState(() => _forceOriginal = !_showingOriginal);
         },
@@ -89,6 +91,22 @@ class _HomeFrame extends StatefulWidget {
 
 class _HomeFrameState extends State<_HomeFrame> {
   bool _collapsed = false;
+  bool _overlayOpen = false;
+  bool _editing = false;
+
+  void _openEditor() => setState(() => _editing = true);
+
+  void _closeEditor() => setState(() => _editing = false);
+
+  Widget _center({required bool narrow, required HomeSample? dashboard}) {
+    if (_editing) {
+      return WordEditor(onClose: _closeEditor);
+    }
+    if (dashboard == null) {
+      return SuggestionColumns(narrow: narrow);
+    }
+    return _Dashboard(sample: dashboard, narrow: narrow);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,66 +120,134 @@ class _HomeFrameState extends State<_HomeFrame> {
       forceOriginal: forceOriginal,
     );
     final sidebarSample = dashboard ?? homeSampleFromLibrary(library);
+    final colors = HomePalette.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.page,
       floatingActionButton: debugToggle,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth.isFinite
               ? constraints.maxWidth
               : VocabularyHome.designWidth;
-          return Scrollbar(
-            child: SingleChildScrollView(
-              child: SizedBox(
-                width: width,
-                child: FittedBox(
-                  fit: BoxFit.fitWidth,
-                  alignment: Alignment.topCenter,
-                  child: SizedBox(
-                    width: VocabularyHome.designWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HomeHeader(
-                          onMenuPressed: () {
-                            setState(() => _collapsed = !_collapsed);
-                          },
+          final wide =
+              !constraints.maxWidth.isFinite ||
+              width >= VocabularyHome.designWidth;
+          if (wide) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                HomeHeader(
+                  onMenuPressed: () {
+                    setState(() => _collapsed = !_collapsed);
+                  },
+                  onNewVocab: _openEditor,
+                ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Scrollbar(
+                          child: SingleChildScrollView(
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: SizedBox(
+                                key: const Key('home-canvas'),
+                                width:
+                                    VocabularyHome.designWidth -
+                                    HomeSidebar.width,
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    32,
+                                    20,
+                                    46,
+                                    48,
+                                  ),
+                                  child: _center(
+                                    narrow: false,
+                                    dashboard: dashboard,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            HomeSidebar(
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: ColoredBox(
+                          color: colors.page,
+                          child: SingleChildScrollView(
+                            child: HomeSidebar(
                               sample: sidebarSample,
                               collapsed: _collapsed,
                             ),
-                            AnimatedContainer(
-                              duration: HomeSidebar.animationDuration,
-                              curve: HomeSidebar.animationCurve,
-                              width:
-                                  VocabularyHome.designWidth -
-                                  (_collapsed
-                                      ? HomeSidebar.collapsedWidth
-                                      : HomeSidebar.width),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  32,
-                                  20,
-                                  46,
-                                  48,
-                                ),
-                                child: dashboard == null
-                                    ? const SuggestionColumns()
-                                    : _Dashboard(sample: dashboard),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: HomeHeader(
+                  narrow: true,
+                  onMenuPressed: () {
+                    setState(() => _overlayOpen = !_overlayOpen);
+                  },
+                  onNewVocab: _openEditor,
+                ),
               ),
-            ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Scrollbar(
+                      child: SingleChildScrollView(
+                        child: SizedBox(
+                          key: const Key('home-canvas'),
+                          width: width,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
+                            child: _center(narrow: true, dashboard: dashboard),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_overlayOpen) ...[
+                      Positioned.fill(
+                        child: GestureDetector(
+                          key: const Key('sidebar-barrier'),
+                          onTap: () => setState(() => _overlayOpen = false),
+                          behavior: HitTestBehavior.opaque,
+                          child: const ColoredBox(color: Color(0x66000000)),
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: ColoredBox(
+                          color: colors.page,
+                          child: SingleChildScrollView(
+                            child: HomeSidebar(
+                              sample: sidebarSample,
+                              collapsed: false,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -185,17 +271,36 @@ HomeSample? _resolveHomeDashboard({
 }
 
 class _Dashboard extends StatelessWidget {
-  const _Dashboard({required this.sample});
+  const _Dashboard({required this.sample, this.narrow = false});
 
   final HomeSample sample;
+  final bool narrow;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final heading = Text(
+      localizations.statisticsHeading,
+      style: HomeText.of(context).title,
+    );
+    if (narrow) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          heading,
+          const SizedBox(height: 16),
+          StatisticsPanel(sample: sample),
+          const SizedBox(height: 16),
+          TodayPanel(sample: sample, width: double.infinity),
+          const SizedBox(height: 28),
+          RecentPanel(sample: sample, width: double.infinity),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(localizations.statisticsHeading, style: HomeText.title),
+        heading,
         const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
