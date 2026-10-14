@@ -1,13 +1,14 @@
 ---
-description: Limit the scope of changes and commit only when asked
+description: Limit the scope of changes, commit only when asked, and ask before running the terminal
 alwaysApply: true
 ---
 
 # Scope of work
 
-Read these rules before editing files or running git.
+Read these rules before editing files, running git, or running the terminal.
 
 - Do not commit, push, or open a pull request unless the user explicitly asks in the current message.
 - Edit only the files the current task needs. Before changing a file outside that scope, ask and wait for confirmation.
+- Do not run terminal commands on your own. Ask which command to run and wait for an explicit yes in the current message before running it.
 
-Example: the task is to fix one widget. Do not also edit the workflow, unrelated tests, or commit those changes.
+Example: the task is to fix one widget. Do not also edit the workflow, unrelated tests, or commit those changes. If a test or `flutter` command would help, propose the exact command and wait. Run it only after the user says yes.

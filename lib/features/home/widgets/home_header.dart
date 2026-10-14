@@ -10,11 +10,13 @@ class HomeHeader extends StatelessWidget {
     super.key,
     required this.onMenuPressed,
     required this.onNewVocab,
+    required this.onNewFolder,
     this.narrow = false,
   });
 
   final VoidCallback onMenuPressed;
   final VoidCallback onNewVocab;
+  final VoidCallback onNewFolder;
   final bool narrow;
 
   static const searchWidth = 750.0;
@@ -25,6 +27,7 @@ class HomeHeader extends StatelessWidget {
       return _NarrowHeader(
         onMenuPressed: onMenuPressed,
         onNewVocab: onNewVocab,
+        onNewFolder: onNewFolder,
       );
     }
     final localizations = AppLocalizations.of(context);
@@ -40,7 +43,10 @@ class HomeHeader extends StatelessWidget {
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(right: 20),
-                child: _HeaderActions(onNewVocab: onNewVocab),
+                child: _HeaderActions(
+                  onNewVocab: onNewVocab,
+                  onNewFolder: onNewFolder,
+                ),
               ),
             ],
           ),
@@ -55,10 +61,15 @@ class HomeHeader extends StatelessWidget {
 }
 
 class _NarrowHeader extends StatelessWidget {
-  const _NarrowHeader({required this.onMenuPressed, required this.onNewVocab});
+  const _NarrowHeader({
+    required this.onMenuPressed,
+    required this.onNewVocab,
+    required this.onNewFolder,
+  });
 
   final VoidCallback onMenuPressed;
   final VoidCallback onNewVocab;
+  final VoidCallback onNewFolder;
 
   @override
   Widget build(BuildContext context) {
@@ -98,9 +109,9 @@ class _NarrowHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _NewVocabButton(
-          label: localizations.newVocab,
-          onPressed: onNewVocab,
+        _NewVocabMenu(
+          onNewTerm: onNewVocab,
+          onNewFolder: onNewFolder,
           expand: true,
         ),
       ],
@@ -146,17 +157,17 @@ class _Brand extends StatelessWidget {
 }
 
 class _HeaderActions extends StatelessWidget {
-  const _HeaderActions({required this.onNewVocab});
+  const _HeaderActions({required this.onNewVocab, required this.onNewFolder});
 
   final VoidCallback onNewVocab;
+  final VoidCallback onNewFolder;
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _NewVocabButton(label: localizations.newVocab, onPressed: onNewVocab),
+        _NewVocabMenu(onNewTerm: onNewVocab, onNewFolder: onNewFolder),
         const SizedBox(width: 24),
         const LanguageSwitcher(child: _Avatar()),
       ],
@@ -197,6 +208,77 @@ class _SearchField extends StatelessWidget {
   }
 }
 
+class _NewVocabMenu extends StatelessWidget {
+  const _NewVocabMenu({
+    required this.onNewTerm,
+    required this.onNewFolder,
+    this.expand = false,
+  });
+
+  final VoidCallback onNewTerm;
+  final VoidCallback onNewFolder;
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final localizations = AppLocalizations.of(context);
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(colors.surface),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(8),
+        shadowColor: const WidgetStatePropertyAll(Color(0x33101828)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 8),
+        ),
+      ),
+      menuChildren: [
+        MenuItemButton(
+          key: const Key('new-vocab-term'),
+          onPressed: onNewTerm,
+          leadingIcon: Icon(
+            Icons.menu_book_outlined,
+            size: 22,
+            color: colors.ink,
+          ),
+          child: Text(
+            localizations.newTerm,
+            style: HomeText.of(context).subtitle,
+          ),
+        ),
+        Divider(height: 1, thickness: 1, color: colors.border),
+        MenuItemButton(
+          key: const Key('new-vocab-folder'),
+          onPressed: onNewFolder,
+          leadingIcon: Icon(Icons.folder_outlined, size: 22, color: colors.ink),
+          child: Text(
+            localizations.newFolder,
+            style: HomeText.of(context).subtitle,
+          ),
+        ),
+      ],
+      builder: (context, controller, child) {
+        return _NewVocabButton(
+          label: localizations.newVocab,
+          expand: expand,
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
 class _NewVocabButton extends StatelessWidget {
   const _NewVocabButton({
     required this.label,
@@ -227,6 +309,110 @@ class _NewVocabButton extends StatelessWidget {
         ),
       ),
       child: Text(label),
+    );
+  }
+}
+
+Future<String?> showNewFolderDialog(BuildContext context) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => const _NewFolderDialog(),
+  );
+}
+
+class _NewFolderDialog extends StatefulWidget {
+  const _NewFolderDialog();
+
+  @override
+  State<_NewFolderDialog> createState() => _NewFolderDialogState();
+}
+
+class _NewFolderDialogState extends State<_NewFolderDialog> {
+  final _name = TextEditingController();
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _create() {
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      return;
+    }
+    Navigator.of(context).pop(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final text = HomeText.of(context);
+    final localizations = AppLocalizations.of(context);
+    return Dialog(
+      alignment: Alignment.center,
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 400),
+      backgroundColor: colors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(localizations.newFolder, style: text.heading),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('new-folder-name'),
+              controller: _name,
+              autofocus: true,
+              style: text.subtitle,
+              onSubmitted: (_) => _create(),
+              decoration: InputDecoration(
+                hintText: localizations.newFolderHint,
+                hintStyle: text.subtitle.copyWith(color: colors.placeholder),
+                filled: true,
+                fillColor: colors.folderFill,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  key: const Key('new-folder-cancel'),
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(foregroundColor: colors.text),
+                  child: Text(localizations.cancelAction, style: text.subtitle),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  key: const Key('new-folder-create'),
+                  onPressed: _create,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.newVocab,
+                    foregroundColor: colors.onAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: text.subtitle.copyWith(color: colors.onAccent),
+                  ),
+                  child: Text(localizations.createFolder),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

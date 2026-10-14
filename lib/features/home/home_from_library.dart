@@ -21,7 +21,7 @@ HomeSample homeSampleFromLibrary(VocabularyLibrary library) {
     homepageSelected: true,
     folders: <VocabFolder>[
       for (final folder in library.folders)
-        VocabFolder(name: folder.name, expanded: true, sets: folder.sets),
+        VocabFolder(name: folder.name, expanded: false, sets: folder.sets),
     ],
   );
 }

@@ -31,10 +31,50 @@ class AppLocalizationsDe extends AppLocalizations {
   String get newVocab => 'Neue Vokabel';
 
   @override
+  String get newTerm => 'Neuer Begriff';
+
+  @override
+  String get newFolder => 'Neuer Ordner';
+
+  @override
+  String get newFolderHint => 'Ordnernamen eingeben';
+
+  @override
+  String get createFolder => 'Erstellen';
+
+  @override
+  String get cancelAction => 'Abbrechen';
+
+  @override
   String get navHome => 'Startseite';
 
   @override
   String get navLibrary => 'Bibliothek';
+
+  @override
+  String get libraryTitle => 'Deine Bibliothek';
+
+  @override
+  String get librarySets => 'Sets';
+
+  @override
+  String get libraryFolders => 'Ordner';
+
+  @override
+  String get librarySearchHint => 'Suchen';
+
+  @override
+  String libraryTermCount(int count) {
+    return '$count Begriffe';
+  }
+
+  @override
+  String librarySetCount(int count) {
+    return '$count Sets';
+  }
+
+  @override
+  String get libraryEmpty => 'Noch nichts hier';
 
   @override
   String get navNotification => 'Benachrichtigung';
@@ -80,6 +120,57 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get recent => 'Zuletzt';
+
+  @override
+  String get librarySortCreated => 'Erstellt';
+
+  @override
+  String get librarySortStudied => 'Gelernt';
+
+  @override
+  String get librarySearchFolder => 'Diesen Ordner durchsuchen';
+
+  @override
+  String get libraryStudy => 'Lernen';
+
+  @override
+  String get libraryAddSets => 'Sets hinzufügen';
+
+  @override
+  String get studyTodayPractice => 'Heute üben';
+
+  @override
+  String get studyLearnNew => 'Neue Vokabeln lernen';
+
+  @override
+  String get studyRandom => 'Zufällig';
+
+  @override
+  String get studyFlashcard => 'Karteikarte';
+
+  @override
+  String get studyQuiz => 'Quiz';
+
+  @override
+  String get studyTyping => 'Tippen';
+
+  @override
+  String get studyHard => 'Schwer';
+
+  @override
+  String get studyFamiliar => 'Vertraut';
+
+  @override
+  String get studyEasy => 'Leicht';
+
+  @override
+  String get studyList => 'Vokabelliste';
+
+  @override
+  String get studyStillLearning => 'Noch am Lernen';
+
+  @override
+  String get studyMastered => 'Gemeistert';
 
   @override
   String progressComplete(int percent) {
@@ -179,7 +270,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editorAdj => 'Adjektiv';
 
   @override
+  String get editorImageLinkHint => 'Bildlink eingeben';
+
+  @override
   String get editorAddWord => 'Neues Wort hinzufügen';
+
+  @override
+  String get requiredField => 'Pflichtfeld';
 
   @override
   String get themeLight => 'Hell';

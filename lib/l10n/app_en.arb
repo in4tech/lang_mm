@@ -28,6 +28,26 @@
   "@newVocab": {
     "description": "Button that starts a new vocabulary entry."
   },
+  "newTerm": "New term",
+  "@newTerm": {
+    "description": "Menu item that opens the word editor."
+  },
+  "newFolder": "New folder",
+  "@newFolder": {
+    "description": "Menu item that opens the new-folder dialog."
+  },
+  "newFolderHint": "Enter folder name",
+  "@newFolderHint": {
+    "description": "Placeholder in the new-folder dialog."
+  },
+  "createFolder": "Create",
+  "@createFolder": {
+    "description": "Button that creates a folder from the dialog."
+  },
+  "cancelAction": "Cancel",
+  "@cancelAction": {
+    "description": "Button that closes a dialog without saving."
+  },
   "navHome": "Homepage",
   "@navHome": {
     "description": "Sidebar navigation label for the home screen."
@@ -35,6 +55,44 @@
   "navLibrary": "Library",
   "@navLibrary": {
     "description": "Sidebar navigation label for the library."
+  },
+  "libraryTitle": "Your library",
+  "@libraryTitle": {
+    "description": "Heading of the library page."
+  },
+  "librarySets": "Flashcard sets",
+  "@librarySets": {
+    "description": "Library filter for vocabulary sets."
+  },
+  "libraryFolders": "Folders",
+  "@libraryFolders": {
+    "description": "Library filter for folders."
+  },
+  "librarySearchHint": "Search",
+  "@librarySearchHint": {
+    "description": "Placeholder in the library search field."
+  },
+  "libraryTermCount": "{count} terms",
+  "@libraryTermCount": {
+    "description": "How many terms a library set contains.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "librarySetCount": "{count} sets",
+  "@librarySetCount": {
+    "description": "How many sets a library folder contains.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryEmpty": "Nothing here yet",
+  "@libraryEmpty": {
+    "description": "Shown when the selected library filter has no rows."
   },
   "navNotification": "Notification",
   "@navNotification": {
@@ -95,6 +153,74 @@
   "recent": "Recent",
   "@recent": {
     "description": "Heading above the recent vocabulary sets."
+  },
+  "librarySortCreated": "Created",
+  "@librarySortCreated": {
+    "description": "Library sort that orders items by when they were created."
+  },
+  "librarySortStudied": "Studied",
+  "@librarySortStudied": {
+    "description": "Library sort that orders items by when they were studied."
+  },
+  "librarySearchFolder": "Search this folder",
+  "@librarySearchFolder": {
+    "description": "Placeholder for the search field inside a folder."
+  },
+  "libraryStudy": "Study",
+  "@libraryStudy": {
+    "description": "Button on a folder page that starts study."
+  },
+  "libraryAddSets": "Add sets",
+  "@libraryAddSets": {
+    "description": "Button on a folder page that adds flashcard sets."
+  },
+  "studyTodayPractice": "Today practice",
+  "@studyTodayPractice": {
+    "description": "Selected practice action on a flashcard set."
+  },
+  "studyLearnNew": "Learn new vocab",
+  "@studyLearnNew": {
+    "description": "Action that opens the editor for a flashcard set."
+  },
+  "studyRandom": "Random",
+  "@studyRandom": {
+    "description": "Practice mode that shuffles the set."
+  },
+  "studyFlashcard": "Flashcard",
+  "@studyFlashcard": {
+    "description": "Practice mode that shows one card at a time."
+  },
+  "studyQuiz": "Quiz",
+  "@studyQuiz": {
+    "description": "Practice mode that shows the definition first."
+  },
+  "studyTyping": "Typing",
+  "@studyTyping": {
+    "description": "Practice mode that asks the learner to type the definition."
+  },
+  "studyHard": "Hard",
+  "@studyHard": {
+    "description": "Rating that marks a word as hard."
+  },
+  "studyFamiliar": "Familiar",
+  "@studyFamiliar": {
+    "description": "Rating that marks a word as familiar."
+  },
+  "studyEasy": "Easy",
+  "@studyEasy": {
+    "description": "Rating that marks a word as easy."
+  },
+  "studyList": "Vocabulary list",
+  "@studyList": {
+    "description": "Heading above the words in a flashcard set."
+  },
+  "studyStillLearning": "Still learning",
+  "@studyStillLearning": {
+    "description": "Filter for words that are not mastered."
+  },
+  "studyMastered": "Mastered",
+  "@studyMastered": {
+    "description": "Filter for words marked easy."
   },
   "progressComplete": "The process is {percent}% complete.",
   "@progressComplete": {
@@ -230,9 +356,17 @@
   "@editorAdj": {
     "description": "Word type choice for an adjective."
   },
+  "editorImageLinkHint": "Enter image link",
+  "@editorImageLinkHint": {
+    "description": "Placeholder for the image link field on a word card."
+  },
   "editorAddWord": "Add new word",
   "@editorAddWord": {
     "description": "Button that collapses the current word and opens a new empty card."
+  },
+  "requiredField": "Required",
+  "@requiredField": {
+    "description": "Shown when a required editor field is empty."
   },
   "themeLight": "Light",
   "@themeLight": {

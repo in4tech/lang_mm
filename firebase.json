@@ -1,0 +1,22 @@
+{
+  "auth": {
+    "providers": {
+      "anonymous": true
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "langmm-ca0d0",
+          "configurations": {
+            "web": "1:784692205969:web:e29e3281927aa06dc7e230"
+          }
+        }
+      }
+    }
+  }
+}

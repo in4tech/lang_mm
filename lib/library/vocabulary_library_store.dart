@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:lang/library/vocabulary_library.dart';
+import 'package:lang/library/vocabulary_set.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class VocabularyLibraryStore {
@@ -28,14 +29,28 @@ class SharedPreferencesVocabularyLibraryStore
 
   @override
   Future<void> write(VocabularyLibrary library) {
+    final payload = <String, Object>{
+      'folders': <Object>[
+        for (final folder in library.folders)
+          <String, Object>{
+            'name': folder.name,
+            if (folder.id != null) 'id': folder.id!,
+            'sets': <Object>[
+              for (var index = 0; index < folder.sets.length; index++)
+                folder.contentAt(index) == null
+                    ? folder.sets[index]
+                    : vocabularySetDocument(folder.contentAt(index)!),
+            ],
+          },
+      ],
+    };
+    final editorFolder = library.editorFolder;
+    if (editorFolder != null) {
+      payload['editorFolder'] = editorFolder;
+    }
     return _preferences.setString(
       VocabularyLibraryStore.storageKey,
-      jsonEncode(<String, Object>{
-        'folders': <Object>[
-          for (final folder in library.folders)
-            <String, Object>{'name': folder.name, 'sets': folder.sets},
-        ],
-      }),
+      jsonEncode(payload),
     );
   }
 }
@@ -54,6 +69,10 @@ VocabularyLibrary? _decode(String raw) {
   if (foldersValue is! List) {
     return null;
   }
+  final editorFolderValue = decoded['editorFolder'];
+  if (editorFolderValue != null && editorFolderValue is! String) {
+    return null;
+  }
   final folders = <VocabularyFolder>[];
   for (final item in foldersValue) {
     if (item is! Map) {
@@ -61,22 +80,39 @@ VocabularyLibrary? _decode(String raw) {
     }
     final name = item['name'];
     final setsValue = item['sets'];
-    if (name is! String || setsValue is! List) {
+    final id = item['id'];
+    if (name is! String ||
+        setsValue is! List ||
+        (id != null && id is! String)) {
       return null;
     }
     final sets = <String>[];
+    final contents = <VocabularySet?>[];
     for (final setName in setsValue) {
-      if (setName is! String) {
+      if (setName is String) {
+        sets.add(setName);
+        contents.add(null);
+        continue;
+      }
+      final stored = vocabularySetFromDocument(setName);
+      if (stored == null) {
         return null;
       }
-      sets.add(setName);
+      sets.add(stored.title);
+      contents.add(stored);
     }
     folders.add(
-      VocabularyFolder(name: name, sets: List<String>.unmodifiable(sets)),
+      VocabularyFolder(
+        name: name,
+        id: id is String ? id : null,
+        sets: List<String>.unmodifiable(sets),
+        contents: List<VocabularySet?>.unmodifiable(contents),
+      ),
     );
   }
   return VocabularyLibrary(
     folders: List<VocabularyFolder>.unmodifiable(folders),
+    editorFolder: editorFolderValue is String ? editorFolderValue : null,
   );
 }
 

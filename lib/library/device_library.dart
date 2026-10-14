@@ -1,0 +1,80 @@
+import 'package:lang/library/vocabulary_library.dart';
+import 'package:lang/library/vocabulary_set.dart';
+
+const debugLibraryOwnerId = 'OTNroxcSOzPelmdSb8qgISjcjf72';
+
+String ownerIdForLibraryRead({
+  required bool debugMode,
+  required String signedInOwnerId,
+}) {
+  if (debugMode) {
+    return debugLibraryOwnerId;
+  }
+  return signedInOwnerId;
+}
+
+Future<VocabularyLibrary> libraryForDevice({
+  required VocabularyLibrary local,
+  required Future<VocabularyLibrary> Function() readCloud,
+  required VocabularySetStore store,
+}) async {
+  final VocabularyLibrary cloud;
+  try {
+    cloud = await readCloud();
+  } catch (_) {
+    return local;
+  }
+  if (cloud.folders.isNotEmpty) {
+    return cloud;
+  }
+  if (local.folders.isEmpty) {
+    return local;
+  }
+  try {
+    return await _upload(store, local);
+  } catch (_) {
+    return local;
+  }
+}
+
+Future<VocabularyLibrary> _upload(
+  VocabularySetStore store,
+  VocabularyLibrary local,
+) async {
+  final folders = <VocabularyFolder>[];
+  for (final folder in local.folders) {
+    final editor = folder.name == local.editorFolder;
+    final id = await store.createFolder(folder.name, editor: editor);
+    final names = <String>[];
+    final contents = <VocabularySet?>[];
+    for (var index = 0; index < folder.sets.length; index++) {
+      final content = folder.contentAt(index);
+      if (content == null) {
+        names.add(folder.sets[index]);
+        contents.add(null);
+        continue;
+      }
+      final stored = VocabularySet(
+        title: content.title,
+        description: content.description,
+        words: content.words,
+        folderId: id,
+      );
+      await store.save(stored);
+      names.add(stored.title);
+      contents.add(stored);
+    }
+    folders.add(
+      VocabularyFolder(
+        name: folder.name,
+        id: id,
+        sets: List<String>.unmodifiable(names),
+        contents: List<VocabularySet?>.unmodifiable(contents),
+      ),
+    );
+  }
+  return VocabularyLibrary(
+    folders: List<VocabularyFolder>.unmodifiable(folders),
+    editorFolder: local.editorFolder,
+  );
+}

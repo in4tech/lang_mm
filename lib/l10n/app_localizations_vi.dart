@@ -31,10 +31,50 @@ class AppLocalizationsVi extends AppLocalizations {
   String get newVocab => 'Từ mới';
 
   @override
+  String get newTerm => 'Từ mới';
+
+  @override
+  String get newFolder => 'Thư mục mới';
+
+  @override
+  String get newFolderHint => 'Nhập tên thư mục';
+
+  @override
+  String get createFolder => 'Tạo';
+
+  @override
+  String get cancelAction => 'Hủy';
+
+  @override
   String get navHome => 'Trang chủ';
 
   @override
   String get navLibrary => 'Thư viện';
+
+  @override
+  String get libraryTitle => 'Thư viện của bạn';
+
+  @override
+  String get librarySets => 'Bộ từ';
+
+  @override
+  String get libraryFolders => 'Thư mục';
+
+  @override
+  String get librarySearchHint => 'Tìm kiếm';
+
+  @override
+  String libraryTermCount(int count) {
+    return '$count từ';
+  }
+
+  @override
+  String librarySetCount(int count) {
+    return '$count bộ từ';
+  }
+
+  @override
+  String get libraryEmpty => 'Chưa có gì ở đây';
 
   @override
   String get navNotification => 'Thông báo';
@@ -80,6 +120,57 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get recent => 'Gần đây';
+
+  @override
+  String get librarySortCreated => 'Đã tạo';
+
+  @override
+  String get librarySortStudied => 'Đã học';
+
+  @override
+  String get librarySearchFolder => 'Tìm trong thư mục này';
+
+  @override
+  String get libraryStudy => 'Học';
+
+  @override
+  String get libraryAddSets => 'Thêm bộ từ';
+
+  @override
+  String get studyTodayPractice => 'Luyện hôm nay';
+
+  @override
+  String get studyLearnNew => 'Học từ mới';
+
+  @override
+  String get studyRandom => 'Ngẫu nhiên';
+
+  @override
+  String get studyFlashcard => 'Thẻ học';
+
+  @override
+  String get studyQuiz => 'Quiz';
+
+  @override
+  String get studyTyping => 'Gõ từ';
+
+  @override
+  String get studyHard => 'Khó';
+
+  @override
+  String get studyFamiliar => 'Quen';
+
+  @override
+  String get studyEasy => 'Dễ';
+
+  @override
+  String get studyList => 'Danh sách từ';
+
+  @override
+  String get studyStillLearning => 'Đang học';
+
+  @override
+  String get studyMastered => 'Đã thuộc';
 
   @override
   String progressComplete(int percent) {
@@ -179,7 +270,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get editorAdj => 'Tính từ';
 
   @override
+  String get editorImageLinkHint => 'Nhập link ảnh';
+
+  @override
   String get editorAddWord => 'Thêm từ mới';
+
+  @override
+  String get requiredField => 'Bắt buộc';
 
   @override
   String get themeLight => 'Sáng';

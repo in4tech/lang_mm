@@ -142,6 +142,36 @@ abstract class AppLocalizations {
   /// **'New vocab'**
   String get newVocab;
 
+  /// Menu item that opens the word editor.
+  ///
+  /// In en, this message translates to:
+  /// **'New term'**
+  String get newTerm;
+
+  /// Menu item that opens the new-folder dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get newFolder;
+
+  /// Placeholder in the new-folder dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter folder name'**
+  String get newFolderHint;
+
+  /// Button that creates a folder from the dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get createFolder;
+
+  /// Button that closes a dialog without saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelAction;
+
   /// Sidebar navigation label for the home screen.
   ///
   /// In en, this message translates to:
@@ -153,6 +183,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Library'**
   String get navLibrary;
+
+  /// Heading of the library page.
+  ///
+  /// In en, this message translates to:
+  /// **'Your library'**
+  String get libraryTitle;
+
+  /// Library filter for vocabulary sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcard sets'**
+  String get librarySets;
+
+  /// Library filter for folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get libraryFolders;
+
+  /// Placeholder in the library search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get librarySearchHint;
+
+  /// How many terms a library set contains.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} terms'**
+  String libraryTermCount(int count);
+
+  /// How many sets a library folder contains.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sets'**
+  String librarySetCount(int count);
+
+  /// Shown when the selected library filter has no rows.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet'**
+  String get libraryEmpty;
 
   /// Sidebar navigation label for notifications.
   ///
@@ -243,6 +315,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recent'**
   String get recent;
+
+  /// Library sort that orders items by when they were created.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get librarySortCreated;
+
+  /// Library sort that orders items by when they were studied.
+  ///
+  /// In en, this message translates to:
+  /// **'Studied'**
+  String get librarySortStudied;
+
+  /// Placeholder for the search field inside a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search this folder'**
+  String get librarySearchFolder;
+
+  /// Button on a folder page that starts study.
+  ///
+  /// In en, this message translates to:
+  /// **'Study'**
+  String get libraryStudy;
+
+  /// Button on a folder page that adds flashcard sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sets'**
+  String get libraryAddSets;
+
+  /// Selected practice action on a flashcard set.
+  ///
+  /// In en, this message translates to:
+  /// **'Today practice'**
+  String get studyTodayPractice;
+
+  /// Action that opens the editor for a flashcard set.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn new vocab'**
+  String get studyLearnNew;
+
+  /// Practice mode that shuffles the set.
+  ///
+  /// In en, this message translates to:
+  /// **'Random'**
+  String get studyRandom;
+
+  /// Practice mode that shows one card at a time.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcard'**
+  String get studyFlashcard;
+
+  /// Practice mode that shows the definition first.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get studyQuiz;
+
+  /// Practice mode that asks the learner to type the definition.
+  ///
+  /// In en, this message translates to:
+  /// **'Typing'**
+  String get studyTyping;
+
+  /// Rating that marks a word as hard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get studyHard;
+
+  /// Rating that marks a word as familiar.
+  ///
+  /// In en, this message translates to:
+  /// **'Familiar'**
+  String get studyFamiliar;
+
+  /// Rating that marks a word as easy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get studyEasy;
+
+  /// Heading above the words in a flashcard set.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary list'**
+  String get studyList;
+
+  /// Filter for words that are not mastered.
+  ///
+  /// In en, this message translates to:
+  /// **'Still learning'**
+  String get studyStillLearning;
+
+  /// Filter for words marked easy.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastered'**
+  String get studyMastered;
 
   /// Progress sentence on a recent vocabulary card.
   ///
@@ -430,11 +604,23 @@ abstract class AppLocalizations {
   /// **'Adj'**
   String get editorAdj;
 
+  /// Placeholder for the image link field on a word card.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter image link'**
+  String get editorImageLinkHint;
+
   /// Button that collapses the current word and opens a new empty card.
   ///
   /// In en, this message translates to:
   /// **'Add new word'**
   String get editorAddWord;
+
+  /// Shown when a required editor field is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get requiredField;
 
   /// Switches the app to light mode.
   ///

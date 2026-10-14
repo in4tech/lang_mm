@@ -3,10 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:lang/features/home/home_from_library.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
 import 'package:lang/features/home/widgets/home_header.dart';
+import 'package:lang/features/home/widgets/library_page.dart';
 import 'package:lang/features/word_editor/word_editor.dart';
 import 'package:lang/features/home/widgets/suggestion_columns.dart';
 import 'package:lang/library/vocabulary_library.dart';
+import 'package:lang/library/vocabulary_library_store.dart';
+import 'package:lang/library/vocabulary_set.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lang/features/home/widgets/home_sidebar.dart';
+import 'package:lang/features/home/widgets/set_study_page.dart';
 import 'package:lang/features/home/widgets/recent_panel.dart';
 import 'package:lang/features/home/widgets/statistics_panel.dart';
 import 'package:lang/features/home/widgets/today_panel.dart';
@@ -19,27 +24,38 @@ class VocabularyHome extends StatelessWidget {
     super.key,
     this.sample,
     this.library = VocabularyLibrary.empty,
+    this.setStore,
   });
 
   final HomeSample? sample;
   final VocabularyLibrary library;
+  final VocabularySetStore? setStore;
 
   static const designWidth = 1440.0;
 
   @override
   Widget build(BuildContext context) {
     if (!kDebugMode) {
-      return _HomeFrame(sample: sample, library: library);
+      return _HomeFrame(sample: sample, library: library, setStore: setStore);
     }
-    return _DebugHomeSwitch(sample: sample, library: library);
+    return _DebugHomeSwitch(
+      sample: sample,
+      library: library,
+      setStore: setStore,
+    );
   }
 }
 
 class _DebugHomeSwitch extends StatefulWidget {
-  const _DebugHomeSwitch({required this.sample, required this.library});
+  const _DebugHomeSwitch({
+    required this.sample,
+    required this.library,
+    required this.setStore,
+  });
 
   final HomeSample? sample;
   final VocabularyLibrary library;
+  final VocabularySetStore? setStore;
 
   @override
   State<_DebugHomeSwitch> createState() => _DebugHomeSwitchState();
@@ -56,6 +72,7 @@ class _DebugHomeSwitchState extends State<_DebugHomeSwitch> {
     return _HomeFrame(
       sample: widget.sample,
       library: widget.library,
+      setStore: widget.setStore,
       forceOriginal: _forceOriginal,
       debugToggle: FloatingActionButton.extended(
         key: const Key('debug-home-toggle'),
@@ -76,12 +93,14 @@ class _HomeFrame extends StatefulWidget {
   const _HomeFrame({
     required this.sample,
     required this.library,
+    required this.setStore,
     this.forceOriginal,
     this.debugToggle,
   });
 
   final HomeSample? sample;
   final VocabularyLibrary library;
+  final VocabularySetStore? setStore;
   final bool? forceOriginal;
   final Widget? debugToggle;
 
@@ -93,14 +112,220 @@ class _HomeFrameState extends State<_HomeFrame> {
   bool _collapsed = false;
   bool _overlayOpen = false;
   bool _editing = false;
+  bool _studying = false;
+  bool _studyReturn = false;
+  bool _libraryOpen = false;
+  String? _libraryFolder;
+  int _editorSession = 0;
+  VocabularySet? _openSet;
+  late VocabularyLibrary _library;
+  String? _createdEditorFolderId;
 
-  void _openEditor() => setState(() => _editing = true);
+  @override
+  void initState() {
+    super.initState();
+    _library = widget.library;
+  }
 
-  void _closeEditor() => setState(() => _editing = false);
+  void _openEditor() {
+    setState(() {
+      _editing = true;
+      _studying = false;
+      _studyReturn = false;
+      _openSet = null;
+      _editorSession += 1;
+    });
+  }
+
+  void _editOpenSet() {
+    setState(() {
+      _editing = true;
+      _studying = false;
+      _studyReturn = true;
+      _editorSession += 1;
+    });
+  }
+
+  Future<void> _promptNewFolder() async {
+    final name = await showNewFolderDialog(context);
+    final trimmed = name?.trim() ?? '';
+    if (trimmed.isEmpty || !mounted) {
+      return;
+    }
+    if (_library.folders.any((folder) => folder.name == trimmed)) {
+      return;
+    }
+    final store = widget.setStore;
+    String? id;
+    if (store != null) {
+      try {
+        id = await store.createFolder(trimmed);
+      } catch (_) {
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
+    }
+    final next = _library.addFolder(trimmed, id: id);
+    final preferences = await SharedPreferences.getInstance();
+    await SharedPreferencesVocabularyLibraryStore(preferences).write(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _library = next);
+  }
+
+  void _openSavedSet(String folderName, int setIndex) {
+    VocabularySet? stored;
+    for (final folder in _library.folders) {
+      if (folder.name == folderName) {
+        stored = folder.contentAt(setIndex);
+        break;
+      }
+    }
+    final visible = _sidebarFolders().where(
+      (folder) => folder.name == folderName,
+    );
+    final name = visible.isEmpty || setIndex >= visible.first.sets.length
+        ? stored?.title ?? ''
+        : visible.first.sets[setIndex];
+    setState(() {
+      _studying = true;
+      _editing = false;
+      _studyReturn = false;
+      _openSet =
+          stored ??
+          VocabularySet(
+            title: name,
+            description: '',
+            words: const <VocabularyWord>[],
+          );
+    });
+  }
+
+  List<VocabFolder> _sidebarFolders() {
+    final dashboard = _resolveHomeDashboard(
+      sample: widget.sample,
+      library: _library,
+      forceOriginal: widget.forceOriginal,
+    );
+    return (dashboard ?? homeSampleFromLibrary(_library)).folders;
+  }
+
+  void _closeEditor() {
+    setState(() {
+      _editing = false;
+      if (_studyReturn) {
+        _studying = true;
+      }
+    });
+  }
+
+  void _showHome() {
+    setState(() {
+      _libraryOpen = false;
+      _editing = false;
+      _studying = false;
+      _studyReturn = false;
+      _libraryFolder = null;
+    });
+  }
+
+  void _showLibrary() {
+    setState(() {
+      _libraryOpen = true;
+      _editing = false;
+      _studying = false;
+      _studyReturn = false;
+    });
+  }
+
+  List<VocabularyFolder> _libraryFolders(HomeSample? dashboard) {
+    if (widget.forceOriginal == true) {
+      return <VocabularyFolder>[
+        for (final folder in HomeSample.current.folders)
+          VocabularyFolder(name: folder.name, sets: folder.sets),
+      ];
+    }
+    if (_library.folders.isNotEmpty) {
+      return _library.folders;
+    }
+    if (dashboard == null) {
+      return const <VocabularyFolder>[];
+    }
+    return <VocabularyFolder>[
+      for (final folder in dashboard.folders)
+        VocabularyFolder(name: folder.name, sets: folder.sets),
+    ];
+  }
+
+  Future<String> _editorFolderId(VocabularySetStore store) async {
+    final label = AppLocalizations.of(context).vocabularySet;
+    final target = _library.editorFolder ?? label;
+    for (final folder in _library.folders) {
+      final id = folder.id;
+      if (folder.name == target && id != null && id.isNotEmpty) {
+        return id;
+      }
+    }
+    final pending = _createdEditorFolderId;
+    if (pending != null) {
+      return pending;
+    }
+    final created = await store.createFolder(target, editor: true);
+    _createdEditorFolderId = created;
+    return created;
+  }
+
+  Future<void> _persistSavedSet(VocabularySet set) async {
+    final next = _library.addSavedSet(
+      name: set.title,
+      folderLabel: AppLocalizations.of(context).vocabularySet,
+      content: set,
+      folderId: set.folderId,
+    );
+    final preferences = await SharedPreferences.getInstance();
+    await SharedPreferencesVocabularyLibraryStore(preferences).write(next);
+    _createdEditorFolderId = null;
+    if (!mounted) {
+      return;
+    }
+    setState(() => _library = next);
+  }
 
   Widget _center({required bool narrow, required HomeSample? dashboard}) {
+    final openSet = _openSet;
+    if (_studying && openSet != null) {
+      return SetStudyPage(
+        set: openSet,
+        narrow: narrow,
+        onEdit: _editOpenSet,
+      );
+    }
     if (_editing) {
-      return WordEditor(onClose: _closeEditor);
+      final setStore = widget.setStore;
+      return WordEditor(
+        key: ValueKey(_editorSession),
+        onClose: _closeEditor,
+        initialSet: _openSet,
+        setStore: setStore == null
+            ? null
+            : _LibrarySavingSetStore(
+                inner: setStore,
+                onSaved: _persistSavedSet,
+                folderId: () => _editorFolderId(setStore),
+              ),
+      );
+    }
+    if (_libraryOpen) {
+      return LibraryPage(
+        folders: _libraryFolders(dashboard),
+        narrow: narrow,
+        openFolder: _libraryFolder,
+        onOpenFolder: (name) => setState(() => _libraryFolder = name),
+        onOpenSet: _openSavedSet,
+      );
     }
     if (dashboard == null) {
       return SuggestionColumns(narrow: narrow);
@@ -111,7 +336,7 @@ class _HomeFrameState extends State<_HomeFrame> {
   @override
   Widget build(BuildContext context) {
     final sample = widget.sample;
-    final library = widget.library;
+    final library = _library;
     final forceOriginal = widget.forceOriginal;
     final debugToggle = widget.debugToggle;
     final dashboard = _resolveHomeDashboard(
@@ -141,11 +366,16 @@ class _HomeFrameState extends State<_HomeFrame> {
                     setState(() => _collapsed = !_collapsed);
                   },
                   onNewVocab: _openEditor,
+                  onNewFolder: _promptNewFolder,
                 ),
                 Expanded(
                   child: Stack(
                     children: [
-                      Positioned.fill(
+                      Positioned(
+                        left: HomeSidebar.width,
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
                         child: Scrollbar(
                           child: SingleChildScrollView(
                             child: Align(
@@ -182,6 +412,11 @@ class _HomeFrameState extends State<_HomeFrame> {
                             child: HomeSidebar(
                               sample: sidebarSample,
                               collapsed: _collapsed,
+                              librarySelected: _libraryOpen,
+                              onHome: _showHome,
+                              onLibrary: _showLibrary,
+                              onOpenSet: _openSavedSet,
+                              onAddFolder: _promptNewFolder,
                             ),
                           ),
                         ),
@@ -203,6 +438,7 @@ class _HomeFrameState extends State<_HomeFrame> {
                     setState(() => _overlayOpen = !_overlayOpen);
                   },
                   onNewVocab: _openEditor,
+                  onNewFolder: _promptNewFolder,
                 ),
               ),
               Expanded(
@@ -239,6 +475,11 @@ class _HomeFrameState extends State<_HomeFrame> {
                             child: HomeSidebar(
                               sample: sidebarSample,
                               collapsed: false,
+                              librarySelected: _libraryOpen,
+                              onHome: _showHome,
+                              onLibrary: _showLibrary,
+                              onOpenSet: _openSavedSet,
+                              onAddFolder: _promptNewFolder,
                             ),
                           ),
                         ),
@@ -314,5 +555,35 @@ class _Dashboard extends StatelessWidget {
         RecentPanel(sample: sample),
       ],
     );
+  }
+}
+
+class _LibrarySavingSetStore implements VocabularySetStore {
+  _LibrarySavingSetStore({
+    required this.inner,
+    required this.onSaved,
+    required this.folderId,
+  });
+
+  final VocabularySetStore inner;
+  final Future<void> Function(VocabularySet set) onSaved;
+  final Future<String> Function() folderId;
+
+  @override
+  Future<String> createFolder(String name, {bool editor = false}) {
+    return inner.createFolder(name, editor: editor);
+  }
+
+  @override
+  Future<void> save(VocabularySet set) async {
+    final id = await folderId();
+    final stored = VocabularySet(
+      title: set.title,
+      description: set.description,
+      words: set.words,
+      folderId: id,
+    );
+    await inner.save(stored);
+    await onSaved(stored);
   }
 }

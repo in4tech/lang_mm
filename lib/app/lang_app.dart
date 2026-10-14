@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:lang/features/home/vocabulary_home.dart';
 import 'package:lang/library/vocabulary_library.dart';
+import 'package:lang/library/vocabulary_set.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/language/app_language_controller.dart';
 import 'package:lang/language/app_language_scope.dart';
@@ -17,11 +18,13 @@ class LangApp extends StatefulWidget {
     required this.controller,
     this.themeController,
     this.library = VocabularyLibrary.empty,
+    this.setStore,
   });
 
   final AppLanguageController controller;
   final AppThemeController? themeController;
   final VocabularyLibrary library;
+  final VocabularySetStore? setStore;
 
   @override
   State<LangApp> createState() => _LangAppState();
@@ -97,7 +100,10 @@ class _LangAppState extends State<LangApp> {
           theme: _themeData(HomePalette.light),
           darkTheme: _themeData(HomePalette.dark),
           themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-          home: VocabularyHome(library: widget.library),
+          home: VocabularyHome(
+            library: widget.library,
+            setStore: widget.setStore,
+          ),
         ),
       ),
     );
