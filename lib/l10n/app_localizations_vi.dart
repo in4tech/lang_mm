@@ -164,6 +164,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studyEasy => 'Dễ';
 
   @override
+  String get studyShortcut => 'Mẹo';
+
+  @override
+  String get studyTapForMeaning => 'Chạm vào thẻ để xem nghĩa';
+
+  @override
+  String get studyKnow => 'Biết';
+
+  @override
   String get studyList => 'Danh sách từ';
 
   @override

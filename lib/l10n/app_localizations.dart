@@ -400,6 +400,24 @@ abstract class AppLocalizations {
   /// **'Easy'**
   String get studyEasy;
 
+  /// Label on the flashcard hint that explains how to reveal the meaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortcut'**
+  String get studyShortcut;
+
+  /// Flashcard hint shown until the learner taps the card.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the card to see the meaning'**
+  String get studyTapForMeaning;
+
+  /// Count of words marked easy on the study page.
+  ///
+  /// In en, this message translates to:
+  /// **'Know'**
+  String get studyKnow;
+
   /// Heading above the words in a flashcard set.
   ///
   /// In en, this message translates to:

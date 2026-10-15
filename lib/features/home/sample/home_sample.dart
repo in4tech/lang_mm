@@ -39,11 +39,13 @@ class RecentSet {
     required this.name,
     required this.percent,
     required this.color,
+    this.id,
   });
 
   final String name;
   final int percent;
   final Color color;
+  final String? id;
 }
 
 @immutable

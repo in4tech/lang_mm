@@ -6,6 +6,7 @@ import 'package:lang/features/home/widgets/home_header.dart';
 import 'package:lang/features/home/widgets/library_page.dart';
 import 'package:lang/features/word_editor/word_editor.dart';
 import 'package:lang/features/home/widgets/suggestion_columns.dart';
+import 'package:lang/library/study_progress.dart';
 import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/library/vocabulary_library_store.dart';
 import 'package:lang/library/vocabulary_set.dart';
@@ -25,23 +26,31 @@ class VocabularyHome extends StatelessWidget {
     this.sample,
     this.library = VocabularyLibrary.empty,
     this.setStore,
+    this.studyProgress,
   });
 
   final HomeSample? sample;
   final VocabularyLibrary library;
   final VocabularySetStore? setStore;
+  final StudyProgressStore? studyProgress;
 
   static const designWidth = 1440.0;
 
   @override
   Widget build(BuildContext context) {
     if (!kDebugMode) {
-      return _HomeFrame(sample: sample, library: library, setStore: setStore);
+      return _HomeFrame(
+        sample: sample,
+        library: library,
+        setStore: setStore,
+        studyProgress: studyProgress,
+      );
     }
     return _DebugHomeSwitch(
       sample: sample,
       library: library,
       setStore: setStore,
+      studyProgress: studyProgress,
     );
   }
 }
@@ -51,11 +60,13 @@ class _DebugHomeSwitch extends StatefulWidget {
     required this.sample,
     required this.library,
     required this.setStore,
+    required this.studyProgress,
   });
 
   final HomeSample? sample;
   final VocabularyLibrary library;
   final VocabularySetStore? setStore;
+  final StudyProgressStore? studyProgress;
 
   @override
   State<_DebugHomeSwitch> createState() => _DebugHomeSwitchState();
@@ -73,6 +84,7 @@ class _DebugHomeSwitchState extends State<_DebugHomeSwitch> {
       sample: widget.sample,
       library: widget.library,
       setStore: widget.setStore,
+      studyProgress: widget.studyProgress,
       forceOriginal: _forceOriginal,
       debugToggle: FloatingActionButton.extended(
         key: const Key('debug-home-toggle'),
@@ -94,6 +106,7 @@ class _HomeFrame extends StatefulWidget {
     required this.sample,
     required this.library,
     required this.setStore,
+    this.studyProgress,
     this.forceOriginal,
     this.debugToggle,
   });
@@ -101,6 +114,7 @@ class _HomeFrame extends StatefulWidget {
   final HomeSample? sample;
   final VocabularyLibrary library;
   final VocabularySetStore? setStore;
+  final StudyProgressStore? studyProgress;
   final bool? forceOriginal;
   final Widget? debugToggle;
 
@@ -118,13 +132,17 @@ class _HomeFrameState extends State<_HomeFrame> {
   String? _libraryFolder;
   int _editorSession = 0;
   VocabularySet? _openSet;
+  List<StudyCue>? _cues;
   late VocabularyLibrary _library;
   String? _createdEditorFolderId;
+  StudyHomeData _study = StudyHomeData.empty;
+  var _allSets = true;
 
   @override
   void initState() {
     super.initState();
     _library = widget.library;
+    _loadStudy();
   }
 
   void _openEditor() {
@@ -194,6 +212,7 @@ class _HomeFrameState extends State<_HomeFrame> {
       _studying = true;
       _editing = false;
       _studyReturn = false;
+      _cues = null;
       _openSet =
           stored ??
           VocabularySet(
@@ -209,6 +228,9 @@ class _HomeFrameState extends State<_HomeFrame> {
       sample: widget.sample,
       library: _library,
       forceOriginal: widget.forceOriginal,
+      progress: _study.progress,
+      agenda: _study.agenda,
+      allSets: _allSets,
     );
     return (dashboard ?? homeSampleFromLibrary(_library)).folders;
   }
@@ -222,6 +244,20 @@ class _HomeFrameState extends State<_HomeFrame> {
     });
   }
 
+  Future<void> _loadStudy() async {
+    final store = widget.studyProgress;
+    if (store == null) {
+      return;
+    }
+    try {
+      final data = await store.loadHome(studySetsIn(_library));
+      if (!mounted) {
+        return;
+      }
+      setState(() => _study = data);
+    } catch (_) {}
+  }
+
   void _showHome() {
     setState(() {
       _libraryOpen = false;
@@ -229,6 +265,44 @@ class _HomeFrameState extends State<_HomeFrame> {
       _studying = false;
       _studyReturn = false;
       _libraryFolder = null;
+      _cues = null;
+    });
+    _loadStudy();
+  }
+
+  void _openPractice() {
+    final cues = cuesForAgenda(_library, _study.agenda);
+    if (cues.isEmpty) {
+      return;
+    }
+    final set = setWithId(_library, cues.first.setId ?? '');
+    if (set == null) {
+      return;
+    }
+    setState(() {
+      _studying = true;
+      _editing = false;
+      _studyReturn = false;
+      _openSet = set;
+      _cues = cues;
+    });
+  }
+
+  void _continueRecent(RecentSet recent) {
+    final id = recent.id;
+    if (id == null) {
+      return;
+    }
+    final set = setWithId(_library, id);
+    if (set == null) {
+      return;
+    }
+    setState(() {
+      _studying = true;
+      _editing = false;
+      _studyReturn = false;
+      _openSet = set;
+      _cues = null;
     });
   }
 
@@ -301,6 +375,9 @@ class _HomeFrameState extends State<_HomeFrame> {
         set: openSet,
         narrow: narrow,
         onEdit: _editOpenSet,
+        progress: widget.studyProgress,
+        initialMarks: _study.progress[openSet.id]?.marks ?? const <int, StudyMark>{},
+        cues: _cues,
       );
     }
     if (_editing) {
@@ -330,7 +407,13 @@ class _HomeFrameState extends State<_HomeFrame> {
     if (dashboard == null) {
       return SuggestionColumns(narrow: narrow);
     }
-    return _Dashboard(sample: dashboard, narrow: narrow);
+    return _Dashboard(
+      sample: dashboard,
+      narrow: narrow,
+      onAllChanged: (allSets) => setState(() => _allSets = allSets),
+      onPractice: _openPractice,
+      onContinue: _continueRecent,
+    );
   }
 
   @override
@@ -343,6 +426,9 @@ class _HomeFrameState extends State<_HomeFrame> {
       sample: sample,
       library: library,
       forceOriginal: forceOriginal,
+      progress: _study.progress,
+      agenda: _study.agenda,
+      allSets: _allSets,
     );
     final sidebarSample = dashboard ?? homeSampleFromLibrary(library);
     final colors = HomePalette.of(context);
@@ -500,6 +586,9 @@ HomeSample? _resolveHomeDashboard({
   required HomeSample? sample,
   required VocabularyLibrary library,
   bool? forceOriginal,
+  Map<String, StudySetProgress> progress = const <String, StudySetProgress>{},
+  List<StudyWordRef> agenda = const <StudyWordRef>[],
+  bool allSets = true,
 }) {
   if (forceOriginal == true) {
     return HomeSample.current;
@@ -508,14 +597,30 @@ HomeSample? _resolveHomeDashboard({
     return null;
   }
   return sample ??
-      (library.folders.isEmpty ? null : homeSampleFromLibrary(library));
+      (library.folders.isEmpty
+          ? null
+          : homeSampleFromLibrary(
+              library,
+              progress: progress,
+              agenda: agenda,
+              allSets: allSets,
+            ));
 }
 
 class _Dashboard extends StatelessWidget {
-  const _Dashboard({required this.sample, this.narrow = false});
+  const _Dashboard({
+    required this.sample,
+    this.narrow = false,
+    this.onAllChanged,
+    this.onPractice,
+    this.onContinue,
+  });
 
   final HomeSample sample;
   final bool narrow;
+  final ValueChanged<bool>? onAllChanged;
+  final VoidCallback? onPractice;
+  final ValueChanged<RecentSet>? onContinue;
 
   @override
   Widget build(BuildContext context) {
@@ -530,11 +635,19 @@ class _Dashboard extends StatelessWidget {
         children: [
           heading,
           const SizedBox(height: 16),
-          StatisticsPanel(sample: sample),
+          StatisticsPanel(sample: sample, onAllChanged: onAllChanged),
           const SizedBox(height: 16),
-          TodayPanel(sample: sample, width: double.infinity),
+          TodayPanel(
+            sample: sample,
+            width: double.infinity,
+            onPractice: onPractice,
+          ),
           const SizedBox(height: 28),
-          RecentPanel(sample: sample, width: double.infinity),
+          RecentPanel(
+            sample: sample,
+            width: double.infinity,
+            onContinue: onContinue,
+          ),
         ],
       );
     }
@@ -546,13 +659,15 @@ class _Dashboard extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: StatisticsPanel(sample: sample)),
+            Expanded(
+              child: StatisticsPanel(sample: sample, onAllChanged: onAllChanged),
+            ),
             const SizedBox(width: 16),
-            TodayPanel(sample: sample),
+            TodayPanel(sample: sample, onPractice: onPractice),
           ],
         ),
         const SizedBox(height: 28),
-        RecentPanel(sample: sample),
+        RecentPanel(sample: sample, onContinue: onContinue),
       ],
     );
   }

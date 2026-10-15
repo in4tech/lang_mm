@@ -29,5 +29,43 @@ service cloud.firestore {
         && request.resource.data.folderId.size() > 0;
       allow update, delete: if false;
     }
+
+    match /progress/{progressId} {
+      allow read: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && progressId == request.auth.uid + '_' + request.resource.data.setId
+        && request.resource.data.marks is map
+        && request.resource.data.marks.values().hasOnly(['hard', 'familiar', 'easy']);
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.setId == resource.data.setId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['marks', 'updatedAt'])
+        && request.resource.data.marks is map
+        && request.resource.data.marks.values().hasOnly(['hard', 'familiar', 'easy']);
+      allow delete: if false;
+    }
+
+    match /agenda/{agendaId} {
+      allow read: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && agendaId == request.auth.uid + '_' + request.resource.data.date
+        && request.resource.data.words is list
+        && request.resource.data.words.size() <= 8;
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && agendaId == request.auth.uid + '_' + request.resource.data.date
+        && resource.data.words.size() == 0
+        && request.resource.data.words is list
+        && request.resource.data.words.size() > 0
+        && request.resource.data.words.size() <= 8
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['words']);
+      allow delete: if false;
+    }
   }
 }

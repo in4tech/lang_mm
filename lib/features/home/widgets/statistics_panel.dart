@@ -5,9 +5,10 @@ import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
 class StatisticsPanel extends StatelessWidget {
-  const StatisticsPanel({super.key, required this.sample});
+  const StatisticsPanel({super.key, required this.sample, this.onAllChanged});
 
   final HomeSample sample;
+  final ValueChanged<bool>? onAllChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +49,10 @@ class StatisticsPanel extends StatelessWidget {
           Positioned(
             top: 0,
             right: 0,
-            child: _AllSwitch(label: localizations.allLabel),
+            child: _AllSwitch(
+              label: localizations.allLabel,
+              onChanged: onAllChanged,
+            ),
           ),
         ],
       ),
@@ -299,9 +303,10 @@ class _ChartFooter extends StatelessWidget {
 }
 
 class _AllSwitch extends StatefulWidget {
-  const _AllSwitch({required this.label});
+  const _AllSwitch({required this.label, this.onChanged});
 
   final String label;
+  final ValueChanged<bool>? onChanged;
 
   @override
   State<_AllSwitch> createState() => _AllSwitchState();
@@ -313,7 +318,10 @@ class _AllSwitchState extends State<_AllSwitch> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => setState(() => _on = !_on),
+      onTap: () {
+        setState(() => _on = !_on);
+        widget.onChanged?.call(_on);
+      },
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

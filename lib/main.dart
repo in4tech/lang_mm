@@ -7,6 +7,7 @@ import 'package:lang/firebase_options.dart';
 import 'package:lang/language/app_language_controller.dart';
 import 'package:lang/library/device_library.dart';
 import 'package:lang/library/firestore_vocabulary_set_store.dart';
+import 'package:lang/library/study_progress.dart';
 import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/library/vocabulary_library_store.dart';
 import 'package:lang/library/vocabulary_set.dart';
@@ -26,15 +27,21 @@ Future<void> main() async {
       themeController: themeController,
       library: opened.library,
       setStore: opened.store,
+      studyProgress: opened.studyProgress,
     ),
   );
 }
 
 class _OpenedLibrary {
-  const _OpenedLibrary({required this.library, required this.store});
+  const _OpenedLibrary({
+    required this.library,
+    required this.store,
+    this.studyProgress,
+  });
 
   final VocabularyLibrary library;
   final VocabularySetStore? store;
+  final StudyProgressStore? studyProgress;
 }
 
 Future<_OpenedLibrary> _openDeviceLibrary(VocabularyLibrary local) async {
@@ -64,7 +71,11 @@ Future<_OpenedLibrary> _openDeviceLibrary(VocabularyLibrary local) async {
       final preferences = await SharedPreferences.getInstance();
       await SharedPreferencesVocabularyLibraryStore(preferences).write(library);
     }
-    return _OpenedLibrary(library: library, store: cloudStore);
+    return _OpenedLibrary(
+      library: library,
+      store: cloudStore,
+      studyProgress: FirestoreStudyProgressStore(ownerId: ownerId),
+    );
   } catch (_) {
     return _OpenedLibrary(library: local, store: null);
   }

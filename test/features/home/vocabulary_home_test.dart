@@ -9,6 +9,7 @@ import 'package:lang/features/home/widgets/statistics_panel.dart';
 import 'package:lang/features/home/widgets/today_panel.dart';
 import 'package:lang/features/home/suggestions/suggestion_templates.dart';
 import 'package:lang/features/home/vocabulary_home.dart';
+import 'package:lang/library/study_progress.dart';
 import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/library/vocabulary_library_store.dart';
 import 'package:lang/library/vocabulary_set.dart';
@@ -60,13 +61,20 @@ void main() {
     WidgetTester tester, {
     VocabularyLibrary library = VocabularyLibrary.empty,
     VocabularySetStore? setStore,
+    StudyProgressStore? studyProgress,
     Size size = const Size(1600, 1200),
   }) async {
     await prepareView(tester, size: size);
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final controller = await loadAppLanguageController();
     await tester.pumpWidget(
-      LangApp(controller: controller, library: library, setStore: setStore),
+      LangApp(
+        key: UniqueKey(),
+        controller: controller,
+        library: library,
+        setStore: setStore,
+        studyProgress: studyProgress,
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -528,7 +536,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('set-study-page')), findsOneWidget);
     expect(find.text('Kind'), findsNWidgets(3));
-    expect(find.text('child'), findsNWidgets(2));
+    expect(find.text('child'), findsNWidgets(3));
     expect(find.byKey(const Key('word-term')), findsNothing);
     expect(find.text('Add new word'), findsNothing);
 
@@ -745,13 +753,43 @@ void main() {
     expect(find.text('Your vocabulary statistics'), findsOneWidget);
     expect(find.text('0/1'), findsOneWidget);
     expect(find.text('Kind'), findsNWidgets(2));
-    expect(find.text('child'), findsOneWidget);
-    expect(find.text('Das Kind'), findsOneWidget);
+    expect(_cardText('child'), findsOneWidget);
+    expect(_cardText('Das Kind'), findsOneWidget);
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(find.byKey(const Key('set-study-speak')), findsOneWidget);
+    expect(find.byKey(const Key('set-study-prev')), findsOneWidget);
+    expect(find.byKey(const Key('set-study-peek')), findsNothing);
+    expect(find.text('Tap the card to see the meaning'), findsNothing);
     expect(find.byKey(const Key('word-term')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('set-study-today-practice')));
+    await tester.pumpAndSettle();
+    expect(_cardText('child'), findsNothing);
+    expect(_cardText('Das Kind'), findsNothing);
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(tester.widget<Text>(_cardText('Kind')).textAlign, TextAlign.center);
+    expect(find.text('Tap the card to see the meaning'), findsOneWidget);
+    expect(find.byKey(const Key('set-study-prev')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('set-study-card-tap')));
+    await tester.pumpAndSettle();
+    expect(_cardText('child'), findsOneWidget);
+    expect(tester.widget<Text>(_cardText('child')).textAlign, TextAlign.center);
+    expect(_cardText('Das Kind'), findsOneWidget);
+    expect(_cardText('Kind'), findsNothing);
+    expect(find.text('Tap the card to see the meaning'), findsNothing);
+    expect(find.byKey(const Key('set-study-speak')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('set-study-card-tap')));
+    await tester.pumpAndSettle();
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(_cardText('child'), findsNothing);
 
     await tester.tap(find.byKey(const Key('set-study-easy')));
     await tester.pump();
     expect(find.text('1/1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('set-study-practice-back')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('set-study-filter-mastered')));
     await tester.pump();
     expect(find.byKey(const Key('set-study-word-0')), findsOneWidget);
@@ -1163,6 +1201,437 @@ void main() {
     expect(find.byKey(const Key('today-scrollbar')), findsOneWidget);
     expect(find.text('das Auto fahren'), findsWidgets);
   });
+
+  testWidgets('random slides between words and one word stays', (tester) async {
+    await pumpApp(
+      tester,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus]),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+
+    await tester.tap(find.byKey(const Key('set-study-mode-random')));
+    await tester.pumpAndSettle();
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(_cardText('child'), findsOneWidget);
+    expect(find.byKey(const Key('set-study-peek')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('set-study-card-tap')));
+    await tester.pumpAndSettle();
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(_cardText('child'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('set-study-next')));
+    await tester.pumpAndSettle();
+    expect(_cardText('Haus'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('set-study-prev')));
+    await tester.pumpAndSettle();
+    expect(_cardText('Kind'), findsOneWidget);
+
+    await pumpApp(tester, library: _libraryOf(<_NamedSet>[
+      _NamedSet('German A1', <VocabularyWord>[_kind]),
+    ]));
+    await _openSet(tester);
+    await _startPractice(tester);
+    await tester.tap(find.byKey(const Key('set-study-mode-random')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('set-study-next')));
+    await tester.pumpAndSettle();
+    expect(_cardText('Kind'), findsOneWidget);
+  });
+
+  testWidgets('ratings are stored and flashcard advances', (tester) async {
+    final progress = _MemoryProgress();
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await tester.tap(find.byKey(const Key('set-study-easy')));
+    await tester.pumpAndSettle();
+
+    expect(progress.rates, <(String, int, StudyMark)>[
+      ('setA', 0, StudyMark.easy),
+    ]);
+    expect(find.text('1/1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('set-study-practice-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('set-study-filter-mastered')));
+    await tester.pump();
+    expect(find.byKey(const Key('set-study-word-0')), findsOneWidget);
+    final preferences = await SharedPreferences.getInstance();
+    expect(
+      preferences.getString(VocabularyLibraryStore.storageKey),
+      isNot(contains('learnedCount')),
+    );
+
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await tester.tap(find.byKey(const Key('set-study-easy')));
+    await tester.pumpAndSettle();
+    expect(_cardText('Haus'), findsOneWidget);
+    expect(_cardText('house'), findsNothing);
+
+    final untouched = _MemoryProgress();
+    await pumpApp(
+      tester,
+      studyProgress: untouched,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind]),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await tester.tap(find.byKey(const Key('set-study-easy')));
+    await tester.pump();
+    expect(untouched.rates, isEmpty);
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('set-study-easy')))
+          .style
+          ?.side
+          ?.resolve(<WidgetState>{}),
+      isNotNull,
+    );
+  });
+
+  testWidgets('opening a set selects the stored easy mark', (tester) async {
+    final progress = _MemoryProgress(
+      marks: <String, Map<int, StudyMark>>{
+        'setA': <int, StudyMark>{0: StudyMark.easy},
+      },
+    );
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+
+    expect(find.text('1/1'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('set-study-easy')))
+          .style
+          ?.side
+          ?.resolve(<WidgetState>{}),
+      isNotNull,
+    );
+  });
+
+  testWidgets('statistics follow stored marks and All', (tester) async {
+    final progress = _MemoryProgress(
+      home: StudyHomeData(
+        progress: <String, StudySetProgress>{
+          'setA': StudySetProgress(
+            marks: const <int, StudyMark>{
+              0: StudyMark.easy,
+              1: StudyMark.familiar,
+              2: StudyMark.hard,
+            },
+            updatedAt: DateTime(2026, 1, 1),
+          ),
+        },
+      ),
+    );
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[
+          _kind,
+          _haus,
+          _plain('Auto'),
+          _plain('Baum'),
+        ], id: 'setA'),
+      ]),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('1/4'), findsOneWidget);
+    expect(find.text('25%'), findsNWidgets(5));
+    expect(find.text('0%'), findsNWidgets(2));
+    expect(find.text('1'), findsNWidgets(4));
+
+    final later = _MemoryProgress(
+      home: StudyHomeData(
+        progress: <String, StudySetProgress>{
+          'setA': StudySetProgress(
+            marks: const <int, StudyMark>{0: StudyMark.hard},
+            updatedAt: DateTime(2026, 1, 1),
+          ),
+          'setB': StudySetProgress(
+            marks: const <int, StudyMark>{0: StudyMark.easy},
+            updatedAt: DateTime(2026, 2, 1),
+          ),
+        },
+      ),
+    );
+    await pumpApp(
+      tester,
+      studyProgress: later,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1 vocabulary', <VocabularyWord>[_kind, _haus], id: 'setA'),
+        _NamedSet('Animals', <VocabularyWord>[_kind, _haus], id: 'setB'),
+      ]),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('all-switch')));
+    await tester.pumpAndSettle();
+    expect(find.text('1/2'), findsOneWidget);
+    expect(find.text('50%'), findsWidgets);
+    expect(find.text('Animals'), findsWidgets);
+  });
+
+  testWidgets('today and recent use the stored study', (tester) async {
+    final progress = _MemoryProgress(
+      home: StudyHomeData(
+        agenda: const <StudyWordRef>[
+          StudyWordRef(setId: 'setA', index: 0),
+          StudyWordRef(setId: 'setA', index: 1),
+        ],
+        progress: <String, StudySetProgress>{
+          'setA': StudySetProgress(
+            marks: const <int, StudyMark>{0: StudyMark.easy},
+            updatedAt: DateTime(2026, 1, 1),
+          ),
+          'setB': StudySetProgress(
+            marks: const <int, StudyMark>{0: StudyMark.easy},
+            updatedAt: DateTime(2026, 3, 1),
+          ),
+          'setC': StudySetProgress(
+            marks: <int, StudyMark>{
+              0: StudyMark.easy,
+              1: StudyMark.easy,
+              2: StudyMark.easy,
+              3: StudyMark.easy,
+              4: StudyMark.easy,
+              5: StudyMark.easy,
+              6: StudyMark.easy,
+              7: StudyMark.easy,
+              8: StudyMark.easy,
+              9: StudyMark.easy,
+              10: StudyMark.easy,
+              11: StudyMark.easy,
+              12: StudyMark.easy,
+              13: StudyMark.easy,
+              14: StudyMark.easy,
+            },
+            updatedAt: DateTime(2026, 2, 1),
+          ),
+        },
+      ),
+    );
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet(
+          'German A1 vocabulary',
+          <VocabularyWord>[_kind, _haus, _plain('A'), _plain('B')],
+          id: 'setA',
+        ),
+        _NamedSet('Animals', <VocabularyWord>[_kind, _haus], id: 'setB'),
+        _NamedSet(
+          'Green',
+          <VocabularyWord>[
+            for (var index = 0; index < 16; index++) _plain('W$index'),
+          ],
+          id: 'setC',
+        ),
+      ]),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Kind'), findsWidgets);
+    expect(find.text('das, -er'), findsWidgets);
+    expect(find.text('Haus'), findsWidgets);
+    expect(find.text('Practice'), findsOneWidget);
+    expect(find.byKey(const Key('recent-card-0')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recent-card-0')),
+        matching: find.text('Animals'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('The process is 50% complete.'), findsOneWidget);
+    expect(find.text('The process is 25% complete.'), findsOneWidget);
+    expect(find.text('The process is 94% complete.'), findsOneWidget);
+    expect(_barColor(tester, 0), HomeSample.learning);
+    expect(_barColor(tester, 1), HomeSample.progressGreen);
+    expect(_barColor(tester, 2), HomeSample.forgot);
+
+    await tester.tap(find.byKey(const Key('today-practice')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('set-study-page')), findsOneWidget);
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(find.text('My vocab'), findsOneWidget);
+
+    await tester.tap(find.text('Homepage'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('recent-card-0')),
+        matching: find.text('Continue'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Animals'), findsWidgets);
+    expect(find.byKey(const Key('set-study-page')), findsOneWidget);
+    expect(find.text('My vocab'), findsOneWidget);
+  });
+
+  testWidgets('an empty day list keeps Practice on the home', (tester) async {
+    await pumpApp(
+      tester,
+      studyProgress: _MemoryProgress(),
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind], id: 'setA'),
+      ]),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Practice'), findsOneWidget);
+    expect(find.text('Kind'), findsNothing);
+    await tester.tap(find.byKey(const Key('today-practice')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('set-study-page')), findsNothing);
+    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('0/0'), findsOneWidget);
+  });
+}
+
+Finder _cardText(String text) {
+  return find.descendant(
+    of: find.byKey(const Key('set-study-card')),
+    matching: find.text(text),
+  );
+}
+
+Color? _barColor(WidgetTester tester, int index) {
+  final box = tester.widget<DecoratedBox>(
+    find.descendant(
+      of: find.byKey(Key('recent-bar-$index')),
+      matching: find.byType(DecoratedBox),
+    ).last,
+  );
+  final decoration = box.decoration;
+  return decoration is BoxDecoration ? decoration.color : null;
+}
+
+const _kind = VocabularyWord(
+  term: 'Kind',
+  definition: 'child',
+  sentence: 'Das Kind',
+  ipa: 'kɪnt',
+  singularPlural: 'das, -er',
+  note: 'noun',
+);
+
+const _haus = VocabularyWord(
+  term: 'Haus',
+  definition: 'house',
+  sentence: 'Das Haus',
+  ipa: 'haʊs',
+  singularPlural: 'das, -er',
+  note: 'noun',
+);
+
+VocabularyWord _plain(String term) {
+  return VocabularyWord(
+    term: term,
+    definition: term,
+    sentence: '',
+    ipa: '',
+    singularPlural: '',
+    note: '',
+  );
+}
+
+class _NamedSet {
+  const _NamedSet(this.title, this.words, {this.id});
+
+  final String title;
+  final List<VocabularyWord> words;
+  final String? id;
+}
+
+VocabularyLibrary _libraryOf(List<_NamedSet> sets) {
+  return VocabularyLibrary(
+    folders: <VocabularyFolder>[
+      VocabularyFolder(
+        name: 'My vocab',
+        sets: <String>[for (final set in sets) set.title],
+        contents: <VocabularySet?>[
+          for (final set in sets)
+            VocabularySet(
+              id: set.id,
+              title: set.title,
+              description: '',
+              words: set.words,
+            ),
+        ],
+      ),
+    ],
+  );
+}
+
+Future<void> _startPractice(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('set-study-today-practice')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openSet(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('nav-library')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('library-set-My vocab-0')));
+  await tester.pumpAndSettle();
+}
+
+class _MemoryProgress implements StudyProgressStore {
+  _MemoryProgress({
+    this.home = StudyHomeData.empty,
+    Map<String, Map<int, StudyMark>>? marks,
+  }) : marks = marks ?? <String, Map<int, StudyMark>>{};
+
+  final StudyHomeData home;
+  final Map<String, Map<int, StudyMark>> marks;
+  final rates = <(String, int, StudyMark)>[];
+
+  @override
+  Future<StudyHomeData> loadHome(List<StudySetInput> sets) async => home;
+
+  @override
+  Future<Map<int, StudyMark>> marksFor(String setId) async {
+    return marks[setId] ?? const <int, StudyMark>{};
+  }
+
+  @override
+  Future<void> rate({
+    required String setId,
+    required int index,
+    required StudyMark mark,
+  }) async {
+    rates.add((setId, index, mark));
+  }
 }
 
 class _RecordingStore implements VocabularySetStore {

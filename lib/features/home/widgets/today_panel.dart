@@ -5,10 +5,16 @@ import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
 class TodayPanel extends StatelessWidget {
-  const TodayPanel({super.key, required this.sample, this.width = 302});
+  const TodayPanel({
+    super.key,
+    required this.sample,
+    this.width = 302,
+    this.onPractice,
+  });
 
   final HomeSample sample;
   final double width;
+  final VoidCallback? onPractice;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +36,8 @@ class TodayPanel extends StatelessWidget {
               const SizedBox(height: 16),
               Expanded(child: _TodayList(rows: sample.today)),
               FilledButton(
-                onPressed: () {},
+                key: const Key('today-practice'),
+                onPressed: onPractice,
                 style: FilledButton.styleFrom(
                   backgroundColor: HomePalette.of(context).practice,
                   foregroundColor: HomePalette.of(context).onAccent,

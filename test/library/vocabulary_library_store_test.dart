@@ -75,6 +75,49 @@ void main() {
     expect(loaded.editorFolder, isNull);
   });
 
+  test('a saved set id round-trips and a missing id still loads', () async {
+    final store = await open(<String, Object>{});
+    const word = VocabularyWord(
+      term: 'Kind',
+      definition: 'child',
+      sentence: '',
+      ipa: '',
+      singularPlural: '',
+      note: '',
+    );
+    final library = VocabularyLibrary(
+      folders: <VocabularyFolder>[
+        VocabularyFolder(
+          name: 'My vocab',
+          sets: const <String>['German A1', 'Haus'],
+          contents: <VocabularySet?>[
+            const VocabularySet(
+              id: 'setA',
+              title: 'German A1',
+              description: '',
+              words: <VocabularyWord>[word],
+            ),
+            const VocabularySet(
+              title: 'Haus',
+              description: '',
+              words: <VocabularyWord>[word],
+            ),
+          ],
+        ),
+      ],
+    );
+
+    await store.write(library);
+    final loaded = await store.read();
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(VocabularyLibraryStore.storageKey);
+
+    expect(loaded.folders.single.contentAt(0)?.id, 'setA');
+    expect(loaded.folders.single.contentAt(1)?.id, isNull);
+    expect(raw, isNot(contains('learnedCount')));
+    expect(raw, isNot(contains('today')));
+  });
+
   test('a saved set keeps its words', () async {
     final store = await open(<String, Object>{});
     const word = VocabularyWord(

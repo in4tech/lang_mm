@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:lang/features/home/vocabulary_home.dart';
+import 'package:lang/library/study_progress.dart';
 import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/library/vocabulary_set.dart';
 import 'package:lang/l10n/app_localizations.dart';
@@ -19,12 +20,14 @@ class LangApp extends StatefulWidget {
     this.themeController,
     this.library = VocabularyLibrary.empty,
     this.setStore,
+    this.studyProgress,
   });
 
   final AppLanguageController controller;
   final AppThemeController? themeController;
   final VocabularyLibrary library;
   final VocabularySetStore? setStore;
+  final StudyProgressStore? studyProgress;
 
   @override
   State<LangApp> createState() => _LangAppState();
@@ -103,6 +106,7 @@ class _LangAppState extends State<LangApp> {
           home: VocabularyHome(
             library: widget.library,
             setStore: widget.setStore,
+            studyProgress: widget.studyProgress,
           ),
         ),
       ),

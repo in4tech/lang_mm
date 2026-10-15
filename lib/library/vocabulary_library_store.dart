@@ -37,9 +37,7 @@ class SharedPreferencesVocabularyLibraryStore
             if (folder.id != null) 'id': folder.id!,
             'sets': <Object>[
               for (var index = 0; index < folder.sets.length; index++)
-                folder.contentAt(index) == null
-                    ? folder.sets[index]
-                    : vocabularySetDocument(folder.contentAt(index)!),
+                _storedSet(folder, index),
             ],
           },
       ],
@@ -114,6 +112,19 @@ VocabularyLibrary? _decode(String raw) {
     folders: List<VocabularyFolder>.unmodifiable(folders),
     editorFolder: editorFolderValue is String ? editorFolderValue : null,
   );
+}
+
+Object _storedSet(VocabularyFolder folder, int index) {
+  final set = folder.contentAt(index);
+  if (set == null) {
+    return folder.sets[index];
+  }
+  final document = vocabularySetDocument(set);
+  final id = set.id;
+  if (id == null || id.isEmpty) {
+    return document;
+  }
+  return <String, Object>{...document, 'id': id};
 }
 
 Future<VocabularyLibrary> loadVocabularyLibrary() async {

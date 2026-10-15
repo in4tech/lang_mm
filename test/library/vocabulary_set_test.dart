@@ -64,6 +64,7 @@ void main() {
 
     expect(document, isNotNull);
     expect(document!.containsKey('ownerId'), isFalse);
+    expect(document.containsKey('id'), isFalse);
     expect(document['title'], 'German A1');
     expect(document['description'], 'Basics');
     expect(wordAt(document, 0), <String, Object>{

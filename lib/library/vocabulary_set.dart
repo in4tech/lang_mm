@@ -53,12 +53,24 @@ class VocabularySet {
     required this.description,
     required this.words,
     this.folderId,
+    this.id,
   });
 
   final String title;
   final String description;
   final List<VocabularyWord> words;
   final String? folderId;
+  final String? id;
+
+  VocabularySet withId(String id) {
+    return VocabularySet(
+      id: id,
+      title: title,
+      description: description,
+      words: words,
+      folderId: folderId,
+    );
+  }
 }
 
 String? _keptImage(String? imageUrl) {
@@ -118,10 +130,12 @@ VocabularySet? vocabularySetFromDocument(Object? value) {
   final description = value['description'];
   final wordsValue = value['words'];
   final folderId = value['folderId'];
+  final id = value['id'];
   if (title is! String ||
       description is! String ||
       wordsValue is! List ||
-      (folderId != null && folderId is! String)) {
+      (folderId != null && folderId is! String) ||
+      (id != null && id is! String)) {
     return null;
   }
   final words = <VocabularyWord>[];
@@ -165,6 +179,7 @@ VocabularySet? vocabularySetFromDocument(Object? value) {
     description: description,
     words: List<VocabularyWord>.unmodifiable(words),
     folderId: folderId is String ? folderId : null,
+    id: id is String && id.isNotEmpty ? id : null,
   );
 }
 

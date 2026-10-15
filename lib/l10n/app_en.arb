@@ -210,6 +210,18 @@
   "@studyEasy": {
     "description": "Rating that marks a word as easy."
   },
+  "studyShortcut": "Shortcut",
+  "@studyShortcut": {
+    "description": "Label on the flashcard hint that explains how to reveal the meaning."
+  },
+  "studyTapForMeaning": "Tap the card to see the meaning",
+  "@studyTapForMeaning": {
+    "description": "Flashcard hint shown until the learner taps the card."
+  },
+  "studyKnow": "Know",
+  "@studyKnow": {
+    "description": "Count of words marked easy on the study page."
+  },
   "studyList": "Vocabulary list",
   "@studyList": {
     "description": "Heading above the words in a flashcard set."

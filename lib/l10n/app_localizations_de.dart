@@ -164,6 +164,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get studyEasy => 'Leicht';
 
   @override
+  String get studyShortcut => 'Tipp';
+
+  @override
+  String get studyTapForMeaning =>
+      'Tippe auf die Karte, um die Bedeutung zu sehen';
+
+  @override
+  String get studyKnow => 'Bekannt';
+
+  @override
   String get studyList => 'Vokabelliste';
 
   @override

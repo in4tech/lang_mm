@@ -5,10 +5,16 @@ import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
 class RecentPanel extends StatelessWidget {
-  const RecentPanel({super.key, required this.sample, this.width = 1074});
+  const RecentPanel({
+    super.key,
+    required this.sample,
+    this.width = 1074,
+    this.onContinue,
+  });
 
   final HomeSample sample;
   final double width;
+  final ValueChanged<RecentSet>? onContinue;
 
   @override
   Widget build(BuildContext context) {
@@ -18,17 +24,26 @@ class RecentPanel extends StatelessWidget {
       children: [
         Text(localizations.recent, style: HomeText.of(context).title),
         const SizedBox(height: 16),
-        _RecentStrip(sets: sample.recent, width: width),
+        _RecentStrip(
+          sets: sample.recent,
+          width: width,
+          onContinue: onContinue,
+        ),
       ],
     );
   }
 }
 
 class _RecentStrip extends StatefulWidget {
-  const _RecentStrip({required this.sets, required this.width});
+  const _RecentStrip({
+    required this.sets,
+    required this.width,
+    this.onContinue,
+  });
 
   final List<RecentSet> sets;
   final double width;
+  final ValueChanged<RecentSet>? onContinue;
 
   @override
   State<_RecentStrip> createState() => _RecentStripState();
@@ -99,7 +114,11 @@ class _RecentStripState extends State<_RecentStrip> {
                 children: [
                   for (var index = 0; index < widget.sets.length; index++) ...[
                     if (index > 0) const SizedBox(width: cardGap),
-                    _RecentCard(set: widget.sets[index]),
+                    _RecentCard(
+                      set: widget.sets[index],
+                      index: index,
+                      onContinue: widget.onContinue,
+                    ),
                   ],
                 ],
               ),
@@ -130,14 +149,17 @@ class _RecentStripState extends State<_RecentStrip> {
 }
 
 class _RecentCard extends StatelessWidget {
-  const _RecentCard({required this.set});
+  const _RecentCard({required this.set, required this.index, this.onContinue});
 
   final RecentSet set;
+  final int index;
+  final ValueChanged<RecentSet>? onContinue;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     return SizedBox(
+      key: Key('recent-card-$index'),
       width: _RecentStripState.cardWidth,
       height: 188,
       child: DecoratedBox(
@@ -155,14 +177,21 @@ class _RecentCard extends StatelessWidget {
                 style: HomeText.of(context).subtitle.copyWith(color: HomePalette.of(context).ink),
               ),
               const SizedBox(height: 16),
-              _ThinBar(percent: set.percent, color: set.color),
+              _ThinBar(
+                key: Key('recent-bar-$index'),
+                percent: set.percent,
+                color: set.color,
+              ),
               const SizedBox(height: 8),
               Text(
                 localizations.progressComplete(set.percent),
                 style: HomeText.of(context).caption,
               ),
               const Spacer(),
-              _ContinueButton(label: localizations.continueAction),
+              _ContinueButton(
+                label: localizations.continueAction,
+                onPressed: onContinue == null ? null : () => onContinue!(set),
+              ),
             ],
           ),
         ),
@@ -172,7 +201,7 @@ class _RecentCard extends StatelessWidget {
 }
 
 class _ThinBar extends StatelessWidget {
-  const _ThinBar({required this.percent, required this.color});
+  const _ThinBar({super.key, required this.percent, required this.color});
 
   final int percent;
   final Color color;
@@ -201,9 +230,10 @@ class _ThinBar extends StatelessWidget {
 }
 
 class _ContinueButton extends StatelessWidget {
-  const _ContinueButton({required this.label});
+  const _ContinueButton({required this.label, this.onPressed});
 
   final String label;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +248,7 @@ class _ContinueButton extends StatelessWidget {
         ),
       ),
       child: TextButton(
-        onPressed: () {},
+        onPressed: onPressed,
         style: TextButton.styleFrom(
           foregroundColor: HomePalette.of(context).onAccent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

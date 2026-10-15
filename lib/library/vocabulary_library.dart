@@ -156,14 +156,14 @@ VocabularyLibrary libraryFromCloud({
       }
       used.add(setId);
       names.add(set.title);
-      contents.add(set);
+      contents.add(set.withId(setId));
     }
     for (final record in sets) {
       if (used.contains(record.id) || record.set.folderId != folder.id) {
         continue;
       }
       names.add(record.set.title);
-      contents.add(record.set);
+      contents.add(record.set.withId(record.id));
     }
     built.add(
       VocabularyFolder(
