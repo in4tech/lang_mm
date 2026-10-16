@@ -35,6 +35,28 @@ class VocabularyLibrary {
   final List<VocabularyFolder> folders;
   final String? editorFolder;
 
+  VocabularyLibrary replaceSet(VocabularySet set) {
+    final id = set.id;
+    if (id == null || id.isEmpty) {
+      return this;
+    }
+    return VocabularyLibrary(
+      editorFolder: editorFolder,
+      folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
+        for (final folder in folders)
+          VocabularyFolder(
+            name: folder.name,
+            id: folder.id,
+            sets: folder.sets,
+            contents: List<VocabularySet?>.unmodifiable(<VocabularySet?>[
+              for (final content in folder.contents)
+                content?.id == id ? set : content,
+            ]),
+          ),
+      ]),
+    );
+  }
+
   VocabularyLibrary addFolder(String name, {String? id}) {
     return VocabularyLibrary(
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[

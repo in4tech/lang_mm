@@ -74,6 +74,8 @@ class HomeSample {
     required this.recent,
     required this.homepageSelected,
     required this.folders,
+    this.statisticsSetId,
+    this.statisticsAll = false,
   });
 
   static const Color forgot = Color(0xFFEE3C31);
@@ -146,6 +148,8 @@ class HomeSample {
   );
 
   final String statisticsSetName;
+  final String? statisticsSetId;
+  final bool statisticsAll;
   final int learnedCount;
   final int totalCount;
   final int percent;

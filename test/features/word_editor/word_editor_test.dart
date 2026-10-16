@@ -76,10 +76,10 @@ void main() {
     expect(find.text('Enter IPA'), findsOneWidget);
     expect(find.text('Enter singular and plural'), findsOneWidget);
     expect(find.text('Enter a note'), findsOneWidget);
-    expect(typeChip(tester, 'chunking').color, const Color(0xFFF4EBFF));
-    expect(typeChip(tester, 'noun').color, const Color(0xFFE0F2FE));
-    expect(typeChip(tester, 'verb').color, const Color(0xFFDCFAE6));
-    expect(typeChip(tester, 'adj').color, const Color(0xFFFFE4E8));
+    expect(typeChip(tester, 'chunking').color, Colors.transparent);
+    expect(typeChip(tester, 'noun').color, Colors.transparent);
+    expect(typeChip(tester, 'verb').color, Colors.transparent);
+    expect(typeChip(tester, 'adj').color, Colors.transparent);
     expect(find.text('ein Kind haben'), findsNothing);
     expect(find.text('have a child'), findsNothing);
     expect(find.text('All posts'), findsOneWidget);
@@ -260,23 +260,23 @@ void main() {
 
     expect(typeChip(tester, 'noun').color, const Color(0xFF026AA2));
     expect(typeLabel(tester, 'noun').style?.color, Colors.white);
-    expect(typeChip(tester, 'chunking').color, const Color(0xFFF4EBFF));
-    expect(typeChip(tester, 'verb').color, const Color(0xFFDCFAE6));
-    expect(typeChip(tester, 'adj').color, const Color(0xFFFFE4E8));
+    expect(typeChip(tester, 'chunking').color, Colors.transparent);
+    expect(typeChip(tester, 'verb').color, Colors.transparent);
+    expect(typeChip(tester, 'adj').color, Colors.transparent);
 
     await tester.tap(find.byKey(const Key('word-type-verb')));
     await tester.pump();
 
     expect(typeChip(tester, 'verb').color, const Color(0xFF067647));
     expect(typeLabel(tester, 'verb').style?.color, Colors.white);
-    expect(typeChip(tester, 'noun').color, const Color(0xFFE0F2FE));
-    expect(typeLabel(tester, 'noun').style?.color, const Color(0xFF026AA2));
+    expect(typeChip(tester, 'noun').color, Colors.transparent);
+    expect(typeLabel(tester, 'noun').style?.color, const Color(0xFFD0D5DD));
 
     await tester.tap(find.byKey(const Key('word-type-verb')));
     await tester.pump();
 
-    expect(typeChip(tester, 'verb').color, const Color(0xFFDCFAE6));
-    expect(typeChip(tester, 'noun').color, const Color(0xFFE0F2FE));
+    expect(typeChip(tester, 'verb').color, Colors.transparent);
+    expect(typeChip(tester, 'noun').color, Colors.transparent);
 
     await tester.tap(find.byKey(const Key('word-editor-type-add')));
     await tester.pump();
@@ -781,35 +781,36 @@ void main() {
     expect(find.text('Open editor'), findsOneWidget);
   });
 
-  testWidgets('add new word requires term, definition, and sentence', (
+  testWidgets('add new word requires a term and a definition', (
     tester,
   ) async {
     await pumpEditor(tester);
+
+    await tester.tap(find.text('Add new word'));
+    await tester.pump();
+
+    expect(find.byKey(const Key('word-card-2')), findsNothing);
+    expect(find.text('Enter a term'), findsOneWidget);
+    expect(find.text('Enter a definition'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('word-term')), 'Kind');
     await tester.tap(find.text('Add new word'));
     await tester.pump();
 
     expect(find.byKey(const Key('word-card-2')), findsNothing);
-    expect(find.text('Required'), findsNWidgets(2));
+    expect(find.text('Enter a term'), findsNothing);
+    expect(find.text('Enter a definition'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('word-definition')), 'child');
-    await tester.enterText(find.byKey(const Key('word-sentence')), '   ');
-    await tester.tap(find.text('Add new word'));
-    await tester.pump();
-
-    expect(find.byKey(const Key('word-card-2')), findsNothing);
-    expect(find.text('Required'), findsOneWidget);
-
-    await tester.enterText(find.byKey(const Key('word-sentence')), 'Das Kind');
     await tester.tap(find.text('Add new word'));
     await tester.pump();
 
     expect(find.byKey(const Key('word-card-2')), findsOneWidget);
-    expect(find.text('Required'), findsNothing);
+    expect(find.text('Enter a term'), findsNothing);
+    expect(find.text('Enter a definition'), findsNothing);
   });
 
-  testWidgets('done requires a title and a description', (tester) async {
+  testWidgets('done requires a title', (tester) async {
     await prepareView(tester);
     final store = _RecordingStore();
     await tester.pumpWidget(
@@ -828,16 +829,12 @@ void main() {
     await tester.pump();
 
     expect(store.saved, isEmpty);
-    expect(find.text('Required'), findsNWidgets(2));
+    expect(find.text('Enter a title'), findsOneWidget);
     expect(find.text('Add new word'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('word-editor-title')),
       'German',
-    );
-    await tester.enterText(
-      find.byKey(const Key('word-editor-description')),
-      'basics',
     );
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
@@ -863,6 +860,9 @@ class _RecordingStore implements VocabularySetStore {
     }
     saved.add(set);
   }
+
+  @override
+  Future<void> updateWords(VocabularySet set) async {}
 }
 
 class _Opener extends StatelessWidget {

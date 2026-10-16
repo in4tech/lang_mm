@@ -5,10 +5,16 @@ import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
 
 class StatisticsPanel extends StatelessWidget {
-  const StatisticsPanel({super.key, required this.sample, this.onAllChanged});
+  const StatisticsPanel({
+    super.key,
+    required this.sample,
+    this.onAllChanged,
+    this.onOpenSet,
+  });
 
   final HomeSample sample;
   final ValueChanged<bool>? onAllChanged;
+  final VoidCallback? onOpenSet;
 
   @override
   Widget build(BuildContext context) {
@@ -23,26 +29,34 @@ class StatisticsPanel extends StatelessWidget {
     ];
     return _Card(
       child: Stack(
+        fit: StackFit.expand,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SetHeading(sample: sample),
+              _SetHeading(sample: sample, onOpenSet: onOpenSet),
               const SizedBox(height: 8),
               _ScoreRow(sample: sample),
               const SizedBox(height: 24),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(child: _BarChart(bars: sample.bars)),
-                  const SizedBox(width: 24),
-                  _Legend(labels: levels, levels: sample.levels),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _ChartFooter(
-                learned: localizations.wordsLearned,
-                notLearned: localizations.wordsNotLearned,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(child: _BarChart(bars: sample.bars)),
+                        const SizedBox(width: 24),
+                        _Legend(labels: levels, levels: sample.levels),
+                      ],
+                    ),
+                    const Spacer(),
+                    _ChartFooter(
+                      learned: localizations.wordsLearned,
+                      notLearned: localizations.wordsNotLearned,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -81,12 +95,18 @@ class _Card extends StatelessWidget {
 }
 
 class _SetHeading extends StatelessWidget {
-  const _SetHeading({required this.sample});
+  const _SetHeading({required this.sample, this.onOpenSet});
 
   final HomeSample sample;
+  final VoidCallback? onOpenSet;
 
   @override
   Widget build(BuildContext context) {
+    final name = sample.statisticsSetName.isNotEmpty
+        ? sample.statisticsSetName
+        : (sample.statisticsAll && sample.totalCount > 0
+              ? AppLocalizations.of(context).allVocabulary
+              : '');
     return Row(
       children: [
         Icon(
@@ -95,7 +115,9 @@ class _SetHeading extends StatelessWidget {
           color: HomePalette.of(context).ink,
         ),
         const SizedBox(width: 8),
-        Text(sample.statisticsSetName, style: HomeText.of(context).heading),
+        Flexible(
+          child: _SetTitle(name: name, onTap: onOpenSet),
+        ),
         const SizedBox(width: 8),
         _ProgressBar(
           width: 224,
@@ -104,6 +126,83 @@ class _SetHeading extends StatelessWidget {
           color: HomeSample.progressGreen,
         ),
       ],
+    );
+  }
+}
+
+class _SetTitle extends StatefulWidget {
+  const _SetTitle({required this.name, this.onTap});
+
+  final String name;
+  final VoidCallback? onTap;
+
+  @override
+  State<_SetTitle> createState() => _SetTitleState();
+}
+
+class _SetTitleState extends State<_SetTitle> {
+  final _labelKey = GlobalKey<_UnderlineTextState>();
+
+  void _setHover(bool hover) {
+    final label = _labelKey.currentState;
+    if (label == null) {
+      return;
+    }
+    // Mouse enter runs inside the tracker's device update. Changing the
+    // label on the next task keeps that update from running again.
+    Future<void>(() {
+      label.setHovered(hover);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.onTap != null && widget.name.isNotEmpty;
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+      onEnter: enabled ? (_) => _setHover(true) : null,
+      onExit: enabled ? (_) => _setHover(false) : null,
+      child: _UnderlineText(
+        key: _labelKey,
+        name: widget.name,
+        onTap: enabled ? widget.onTap : null,
+      ),
+    );
+  }
+}
+
+class _UnderlineText extends StatefulWidget {
+  const _UnderlineText({super.key, required this.name, this.onTap});
+
+  final String name;
+  final VoidCallback? onTap;
+
+  @override
+  State<_UnderlineText> createState() => _UnderlineTextState();
+}
+
+class _UnderlineTextState extends State<_UnderlineText> {
+  bool _hover = false;
+
+  void setHovered(bool hover) {
+    if (!mounted || _hover == hover) {
+      return;
+    }
+    setState(() => _hover = hover);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Text(
+        widget.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: HomeText.of(context).heading.copyWith(
+          decoration: _hover ? TextDecoration.underline : TextDecoration.none,
+        ),
+      ),
     );
   }
 }
@@ -190,6 +289,14 @@ class _ProgressBar extends StatelessWidget {
   }
 }
 
+double _barHeight(double height, double tallest, double plotHeight) {
+  if (height <= 0 || tallest <= 0) {
+    return 4;
+  }
+  final scaled = plotHeight * height / tallest;
+  return scaled < 4 ? 4 : scaled;
+}
+
 class _BarChart extends StatelessWidget {
   const _BarChart({required this.bars});
 
@@ -200,37 +307,46 @@ class _BarChart extends StatelessWidget {
     if (bars.isEmpty) {
       return const SizedBox(height: 161, width: double.infinity);
     }
+    var tallest = 0.0;
+    for (final bar in bars) {
+      if (bar.height > tallest) {
+        tallest = bar.height;
+      }
+    }
+    const plotHeight = 128.0;
     return SizedBox(
       height: 161,
       width: double.infinity,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        alignment: Alignment.bottomLeft,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            for (final bar in bars)
-              Padding(
-                padding: const EdgeInsets.only(right: 26),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (bar.label != null)
-                      Text(bar.label!, style: HomeText.of(context).caption),
-                    const SizedBox(height: 3),
-                    Container(
-                      width: 62,
-                      height: bar.height,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final bar in bars)
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (bar.label != null)
+                    Text(
+                      bar.label!,
+                      textAlign: TextAlign.center,
+                      style: HomeText.of(context).caption,
+                    ),
+                  const SizedBox(height: 3),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Container(
+                      height: _barHeight(bar.height, tallest, plotHeight),
                       decoration: BoxDecoration(
                         color: bar.color,
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

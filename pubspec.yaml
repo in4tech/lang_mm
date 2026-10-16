@@ -68,6 +68,7 @@ flutter:
 
   assets:
     - assets/images/lang_logo.png
+    - assets/images/lang_logo_dark.png
     - assets/images/avatar.jpg
 
   fonts:

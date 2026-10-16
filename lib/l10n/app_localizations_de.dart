@@ -89,6 +89,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get allLabel => 'Alle';
 
   @override
+  String get allVocabulary => 'Alle Vokabeln';
+
+  @override
   String get wordsLearned => 'Gelernte Wörter';
 
   @override
@@ -140,6 +143,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get studyTodayPractice => 'Heute üben';
 
   @override
+  String get studyPracticeAlert => 'Du bist in einer Übungssitzung.';
+
+  @override
+  String get studyPracticeOk => 'OK';
+
+  @override
   String get studyLearnNew => 'Neue Vokabeln lernen';
 
   @override
@@ -171,7 +180,20 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe auf die Karte, um die Bedeutung zu sehen';
 
   @override
-  String get studyKnow => 'Bekannt';
+  String get studyTrackProgress => 'Fortschritt verfolgen';
+
+  @override
+  String get studyNotYetStudied => 'Noch nicht gelernt';
+
+  @override
+  String get studyStudiedAction => 'Gelernt';
+
+  @override
+  String get studyFlipShortcut =>
+      'Leertaste drücken oder auf die Karte klicken zum Umdrehen';
+
+  @override
+  String get studyKnow => 'Gewusst';
 
   @override
   String get studyList => 'Vokabelliste';
@@ -181,6 +203,20 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get studyMastered => 'Gemeistert';
+
+  @override
+  String get studyCompleteTitle => 'Glückwunsch!';
+
+  @override
+  String get studyCompleteOne => 'Du hast 1 Wort geschafft.';
+
+  @override
+  String studyCompleteMany(int count) {
+    return 'Du hast $count Wörter geschafft.';
+  }
+
+  @override
+  String get studyCompleteDone => 'Fertig';
 
   @override
   String progressComplete(int percent) {
@@ -286,7 +322,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editorAddWord => 'Neues Wort hinzufügen';
 
   @override
-  String get requiredField => 'Pflichtfeld';
+  String get termRequired => 'Begriff eingeben';
+
+  @override
+  String get definitionRequired => 'Definition eingeben';
+
+  @override
+  String get titleRequired => 'Titel eingeben';
 
   @override
   String get themeLight => 'Hell';

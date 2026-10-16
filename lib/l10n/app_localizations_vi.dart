@@ -89,6 +89,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get allLabel => 'Tất cả';
 
   @override
+  String get allVocabulary => 'Tất cả từ vựng';
+
+  @override
   String get wordsLearned => 'Từ đã học';
 
   @override
@@ -140,6 +143,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studyTodayPractice => 'Luyện hôm nay';
 
   @override
+  String get studyPracticeAlert => 'Bạn đang trong buổi luyện tập.';
+
+  @override
+  String get studyPracticeOk => 'Đóng';
+
+  @override
   String get studyLearnNew => 'Học từ mới';
 
   @override
@@ -170,7 +179,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studyTapForMeaning => 'Chạm vào thẻ để xem nghĩa';
 
   @override
-  String get studyKnow => 'Biết';
+  String get studyTrackProgress => 'Theo dõi tiến độ';
+
+  @override
+  String get studyNotYetStudied => 'Chưa học';
+
+  @override
+  String get studyStudiedAction => 'Đã học';
+
+  @override
+  String get studyFlipShortcut => 'Nhấn Space hoặc nhấn thẻ để lật';
+
+  @override
+  String get studyKnow => 'Đã biết';
 
   @override
   String get studyList => 'Danh sách từ';
@@ -180,6 +201,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get studyMastered => 'Đã thuộc';
+
+  @override
+  String get studyCompleteTitle => 'Chúc mừng!';
+
+  @override
+  String get studyCompleteOne => 'Bạn đã hoàn thành 1 từ.';
+
+  @override
+  String studyCompleteMany(int count) {
+    return 'Bạn đã hoàn thành $count từ.';
+  }
+
+  @override
+  String get studyCompleteDone => 'Xong';
 
   @override
   String progressComplete(int percent) {
@@ -285,7 +320,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get editorAddWord => 'Thêm từ mới';
 
   @override
-  String get requiredField => 'Bắt buộc';
+  String get termRequired => 'Hãy nhập từ';
+
+  @override
+  String get definitionRequired => 'Hãy nhập định nghĩa';
+
+  @override
+  String get titleRequired => 'Hãy nhập tiêu đề';
 
   @override
   String get themeLight => 'Sáng';

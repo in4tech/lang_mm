@@ -170,6 +170,41 @@ void main() {
     expect(loaded?.folderId, 'folder-1');
   });
 
+  test('a starred word is stored and a plain word omits the key', () {
+    const set = VocabularySet(
+      title: 'German A1',
+      description: 'Basics',
+      words: <VocabularyWord>[
+        VocabularyWord(
+          term: 'Kind',
+          definition: 'child',
+          sentence: 'Das Kind',
+          ipa: '',
+          singularPlural: '',
+          note: '',
+          starred: true,
+        ),
+        VocabularyWord(
+          term: 'Haus',
+          definition: 'house',
+          sentence: 'Das Haus',
+          ipa: '',
+          singularPlural: '',
+          note: '',
+        ),
+      ],
+    );
+
+    final document = vocabularySetDocument(set);
+    final words = document['words']! as List<Object>;
+    final loaded = vocabularySetFromDocument(document);
+
+    expect((words[0] as Map<String, Object>)['starred'], isTrue);
+    expect((words[1] as Map<String, Object>).containsKey('starred'), isFalse);
+    expect(loaded?.words[0].starred, isTrue);
+    expect(loaded?.words[1].starred, isFalse);
+  });
+
   test('a missing type omits the type key', () {
     final document = documentFor(
       cards: <VocabularyCardDraft>[card(term: 'Kind')],

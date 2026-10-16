@@ -250,6 +250,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get allLabel;
 
+  /// Statistics title shown when the All switch includes every set.
+  ///
+  /// In en, this message translates to:
+  /// **'All vocabulary'**
+  String get allVocabulary;
+
   /// Caption under the learned side of the statistics chart.
   ///
   /// In en, this message translates to:
@@ -352,6 +358,18 @@ abstract class AppLocalizations {
   /// **'Today practice'**
   String get studyTodayPractice;
 
+  /// Alert shown when a sidebar item is clicked during practice.
+  ///
+  /// In en, this message translates to:
+  /// **'You are in a practice session.'**
+  String get studyPracticeAlert;
+
+  /// Button that dismisses the practice-session alert.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get studyPracticeOk;
+
   /// Action that opens the editor for a flashcard set.
   ///
   /// In en, this message translates to:
@@ -412,6 +430,30 @@ abstract class AppLocalizations {
   /// **'Tap the card to see the meaning'**
   String get studyTapForMeaning;
 
+  /// Switch that shows or hides practice ratings.
+  ///
+  /// In en, this message translates to:
+  /// **'Track progress'**
+  String get studyTrackProgress;
+
+  /// Left swipe on a new flashcard.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet studied'**
+  String get studyNotYetStudied;
+
+  /// Right swipe on a new flashcard.
+  ///
+  /// In en, this message translates to:
+  /// **'Studied'**
+  String get studyStudiedAction;
+
+  /// Flashcard hint for the Space key and a click.
+  ///
+  /// In en, this message translates to:
+  /// **'Press Space or click the card to flip'**
+  String get studyFlipShortcut;
+
   /// Count of words marked easy on the study page.
   ///
   /// In en, this message translates to:
@@ -435,6 +477,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mastered'**
   String get studyMastered;
+
+  /// Heading on the page shown when practice finishes.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations!'**
+  String get studyCompleteTitle;
+
+  /// Message when a practice session of one word is complete.
+  ///
+  /// In en, this message translates to:
+  /// **'You finished 1 word.'**
+  String get studyCompleteOne;
+
+  /// Message when a practice session of several words is complete.
+  ///
+  /// In en, this message translates to:
+  /// **'You finished {count} words.'**
+  String studyCompleteMany(int count);
+
+  /// Button that leaves the finished practice page.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get studyCompleteDone;
 
   /// Progress sentence on a recent vocabulary card.
   ///
@@ -634,11 +700,23 @@ abstract class AppLocalizations {
   /// **'Add new word'**
   String get editorAddWord;
 
-  /// Shown when a required editor field is empty.
+  /// Shown when a new word is saved without a term.
   ///
   /// In en, this message translates to:
-  /// **'Required'**
-  String get requiredField;
+  /// **'Enter a term'**
+  String get termRequired;
+
+  /// Shown when a new word is saved without a definition.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a definition'**
+  String get definitionRequired;
+
+  /// Shown when Done is pressed without a set title.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a title'**
+  String get titleRequired;
 
   /// Switches the app to light mode.
   ///

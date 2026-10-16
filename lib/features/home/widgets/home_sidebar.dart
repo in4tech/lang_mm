@@ -14,6 +14,10 @@ class HomeSidebar extends StatefulWidget {
     this.onLibrary,
     this.onAddFolder,
     this.librarySelected = false,
+    this.focusedFolder,
+    this.focusedSetIndex,
+    this.practiceLocked = false,
+    this.onPracticeLocked,
   });
 
   final HomeSample sample;
@@ -23,6 +27,10 @@ class HomeSidebar extends StatefulWidget {
   final VoidCallback? onLibrary;
   final VoidCallback? onAddFolder;
   final bool librarySelected;
+  final String? focusedFolder;
+  final int? focusedSetIndex;
+  final bool practiceLocked;
+  final VoidCallback? onPracticeLocked;
 
   static const width = 288.0;
   static const collapsedWidth = 72.0;
@@ -43,6 +51,10 @@ class _HomeSidebarState extends State<HomeSidebar> {
     for (final folder in widget.sample.folders) {
       _expanded[folder.name] = false;
     }
+    final focus = widget.focusedFolder;
+    if (focus != null) {
+      _expanded[focus] = true;
+    }
   }
 
   @override
@@ -51,6 +63,18 @@ class _HomeSidebarState extends State<HomeSidebar> {
     for (final folder in widget.sample.folders) {
       _expanded.putIfAbsent(folder.name, () => false);
     }
+    final focus = widget.focusedFolder;
+    if (focus != null && focus != oldWidget.focusedFolder) {
+      _expanded[focus] = true;
+    }
+  }
+
+  void _tap(VoidCallback? action) {
+    if (widget.practiceLocked) {
+      widget.onPracticeLocked?.call();
+      return;
+    }
+    action?.call();
   }
 
   bool _isExpanded(VocabFolder folder) {
@@ -81,7 +105,7 @@ class _HomeSidebarState extends State<HomeSidebar> {
               selected: sample.homepageSelected && !widget.librarySelected,
               collapsed: collapsed,
               labelKey: const Key('nav-home-label'),
-              onTap: widget.onHome,
+              onTap: () => _tap(widget.onHome),
             ),
             const SizedBox(height: 4),
             _NavRow(
@@ -90,14 +114,14 @@ class _HomeSidebarState extends State<HomeSidebar> {
               label: localizations.navLibrary,
               collapsed: collapsed,
               selected: widget.librarySelected,
-              onTap: widget.onLibrary,
+              onTap: () => _tap(widget.onLibrary),
             ),
             const SizedBox(height: 4),
             _NavRow(
               icon: Icons.notifications_none,
               label: localizations.navNotification,
               collapsed: collapsed,
-              onTap: () {},
+              onTap: () => _tap(null),
             ),
             const SizedBox(height: 8),
             _SidebarDivider(collapsed: collapsed),
@@ -121,7 +145,7 @@ class _HomeSidebarState extends State<HomeSidebar> {
                     const SizedBox(height: 8),
                     _SectionAction(
                       label: localizations.setOfWords,
-                      onAdd: widget.onAddFolder,
+                      onAdd: () => _tap(widget.onAddFolder),
                     ),
                   ],
                 ),
@@ -141,24 +165,32 @@ class _HomeSidebarState extends State<HomeSidebar> {
                 folder: folder,
                 collapsed: collapsed,
                 expanded: _isExpanded(folder),
-                onTap: () {
+                selected: folder.name == widget.focusedFolder,
+                onTap: () => _tap(() {
                   setState(() {
                     _expanded[folder.name] = !_isExpanded(folder);
                   });
-                },
-                onToggle: () {
+                }),
+                onToggle: () => _tap(() {
                   setState(() {
                     _expanded[folder.name] = !_isExpanded(folder);
                   });
-                },
+                }),
               ),
               if (!collapsed && _isExpanded(folder))
-                for (var index = 0; index < folder.sets.length; index++)
+                for (var index = 0; index < folder.sets.length; index++) ...[
+                  const SizedBox(height: 4),
                   _SetRow(
                     name: folder.sets[index],
                     rowKey: Key('vocab-set-${folder.name}-$index'),
-                    onTap: () => widget.onOpenSet?.call(folder.name, index),
+                    selected:
+                        folder.name == widget.focusedFolder &&
+                        index == widget.focusedSetIndex,
+                    onTap: () => _tap(
+                      () => widget.onOpenSet?.call(folder.name, index),
+                    ),
                   ),
+                ],
             ],
           ],
         ),
@@ -351,6 +383,7 @@ class _FolderRow extends StatelessWidget {
     required this.folder,
     required this.collapsed,
     required this.expanded,
+    required this.selected,
     required this.onTap,
     required this.onToggle,
   });
@@ -358,22 +391,22 @@ class _FolderRow extends StatelessWidget {
   final VocabFolder folder;
   final bool collapsed;
   final bool expanded;
+  final bool selected;
   final VoidCallback onTap;
   final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final icon = Icon(
-      Icons.folder_outlined,
-      size: 18,
-      color: HomePalette.of(context).ink,
-    );
+    final colors = HomePalette.of(context);
+    final color = selected ? colors.selected : colors.ink;
+    final icon = Icon(Icons.folder_outlined, size: 18, color: color);
+    final fill = selected ? colors.selectedFill : colors.folderFill;
     if (collapsed) {
       return Align(
         alignment: Alignment.centerLeft,
         child: Material(
           key: Key('folder-${folder.name}'),
-          color: HomePalette.of(context).folderFill,
+          color: fill,
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             onTap: onTap,
@@ -392,7 +425,7 @@ class _FolderRow extends StatelessWidget {
       expanded: expanded,
       child: Material(
         key: Key('folder-${folder.name}'),
-        color: HomePalette.of(context).folderFill,
+        color: fill,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
@@ -406,7 +439,7 @@ class _FolderRow extends StatelessWidget {
                 Expanded(
                   child: Text(
                     folder.name,
-                    style: HomeText.of(context).subtitle,
+                    style: HomeText.of(context).subtitle.copyWith(color: color),
                   ),
                 ),
                 IconButton(
@@ -434,30 +467,40 @@ class _SetRow extends StatelessWidget {
   const _SetRow({
     required this.name,
     required this.rowKey,
+    required this.selected,
     required this.onTap,
   });
 
   final String name;
   final Key rowKey;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      key: rowKey,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-        child: Row(
-          children: [
-            Icon(
-              Icons.menu_book_outlined,
-              size: 18,
-              color: HomePalette.of(context).ink,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(name, style: HomeText.of(context).subtitle)),
-          ],
+    final colors = HomePalette.of(context);
+    final color = selected ? colors.selected : colors.ink;
+    return Material(
+      color: selected ? colors.selectedSetFill : Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        key: rowKey,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+          child: Row(
+            children: [
+              Icon(Icons.menu_book_outlined, size: 18, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  name,
+                  style: HomeText.of(context).subtitle.copyWith(color: color),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

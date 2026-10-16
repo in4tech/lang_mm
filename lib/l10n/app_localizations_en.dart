@@ -89,6 +89,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allLabel => 'All';
 
   @override
+  String get allVocabulary => 'All vocabulary';
+
+  @override
   String get wordsLearned => 'Words learned';
 
   @override
@@ -140,6 +143,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studyTodayPractice => 'Today practice';
 
   @override
+  String get studyPracticeAlert => 'You are in a practice session.';
+
+  @override
+  String get studyPracticeOk => 'OK';
+
+  @override
   String get studyLearnNew => 'Learn new vocab';
 
   @override
@@ -170,6 +179,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studyTapForMeaning => 'Tap the card to see the meaning';
 
   @override
+  String get studyTrackProgress => 'Track progress';
+
+  @override
+  String get studyNotYetStudied => 'Not yet studied';
+
+  @override
+  String get studyStudiedAction => 'Studied';
+
+  @override
+  String get studyFlipShortcut => 'Press Space or click the card to flip';
+
+  @override
   String get studyKnow => 'Know';
 
   @override
@@ -180,6 +201,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studyMastered => 'Mastered';
+
+  @override
+  String get studyCompleteTitle => 'Congratulations!';
+
+  @override
+  String get studyCompleteOne => 'You finished 1 word.';
+
+  @override
+  String studyCompleteMany(int count) {
+    return 'You finished $count words.';
+  }
+
+  @override
+  String get studyCompleteDone => 'Done';
 
   @override
   String progressComplete(int percent) {
@@ -285,7 +320,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editorAddWord => 'Add new word';
 
   @override
-  String get requiredField => 'Required';
+  String get termRequired => 'Enter a term';
+
+  @override
+  String get definitionRequired => 'Enter a definition';
+
+  @override
+  String get titleRequired => 'Enter a title';
 
   @override
   String get themeLight => 'Light';

@@ -30,7 +30,6 @@ class _Draft {
   bool imageLinkOpen = false;
   bool termInvalid = false;
   bool definitionInvalid = false;
-  bool sentenceInvalid = false;
 
   void dispose() {
     term.dispose();
@@ -48,7 +47,6 @@ class _WordEditorState extends State<WordEditor> {
   final _description = TextEditingController();
   final _drafts = <_Draft>[_Draft()];
   bool _titleInvalid = false;
-  bool _descriptionInvalid = false;
 
   @override
   void initState() {
@@ -96,19 +94,16 @@ class _WordEditorState extends State<WordEditor> {
     final draft = _drafts.last;
     final termMissing = draft.term.text.trim().isEmpty;
     final definitionMissing = draft.definition.text.trim().isEmpty;
-    final sentenceMissing = draft.sentence.text.trim().isEmpty;
-    if (termMissing || definitionMissing || sentenceMissing) {
+    if (termMissing || definitionMissing) {
       setState(() {
         draft.termInvalid = termMissing;
         draft.definitionInvalid = definitionMissing;
-        draft.sentenceInvalid = sentenceMissing;
       });
       return;
     }
     setState(() {
       draft.termInvalid = false;
       draft.definitionInvalid = false;
-      draft.sentenceInvalid = false;
       _drafts.add(_Draft());
     });
   }
@@ -138,12 +133,8 @@ class _WordEditorState extends State<WordEditor> {
 
   Future<void> _save() async {
     final titleMissing = _title.text.trim().isEmpty;
-    final descriptionMissing = _description.text.trim().isEmpty;
-    if (titleMissing || descriptionMissing) {
-      setState(() {
-        _titleInvalid = titleMissing;
-        _descriptionInvalid = descriptionMissing;
-      });
+    if (titleMissing) {
+      setState(() => _titleInvalid = true);
       return;
     }
     final set = buildVocabularySet(
@@ -199,7 +190,7 @@ class _WordEditorState extends State<WordEditor> {
                 controller: _title,
                 hint: localizations.editorTitleHint,
                 errorText: _titleInvalid && _title.text.trim().isEmpty
-                    ? localizations.requiredField
+                    ? localizations.titleRequired
                     : null,
                 onChanged: _titleInvalid ? (_) => setState(() {}) : null,
               ),
@@ -211,11 +202,6 @@ class _WordEditorState extends State<WordEditor> {
                 fieldKey: const Key('word-editor-description'),
                 controller: _description,
                 hint: localizations.editorDescriptionHint,
-                errorText:
-                    _descriptionInvalid && _description.text.trim().isEmpty
-                    ? localizations.requiredField
-                    : null,
-                onChanged: _descriptionInvalid ? (_) => setState(() {}) : null,
               ),
             ),
           ],
@@ -444,16 +430,14 @@ class _WordCard extends StatelessWidget {
     );
   }
 
-  Widget _cardTools(
-    BuildContext context, {
-    VoidCallback? onImage,
-    Color? numberColor,
-  }) {
+  Widget _cardTools(BuildContext context, {VoidCallback? onImage}) {
     return Row(
       children: [
         Text(
           '$number',
-          style: HomeText.of(context).heading.copyWith(color: numberColor),
+          style: HomeText.of(context).heading.copyWith(
+            color: HomePalette.of(context).selected,
+          ),
         ),
         const Spacer(),
         _toolIcon(
@@ -514,7 +498,7 @@ class _WordCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _cardTools(context, numberColor: HomePalette.of(context).selected),
+        _cardTools(context),
         const SizedBox(height: 8),
         IntrinsicHeight(
           child: Row(
@@ -609,7 +593,7 @@ class _WordCard extends StatelessWidget {
                 controller: draft.term,
                 hint: localizations.editorTermHint,
                 errorText: draft.termInvalid && draft.term.text.trim().isEmpty
-                    ? localizations.requiredField
+                    ? localizations.termRequired
                     : null,
                 onChanged: draft.termInvalid ? (_) => onImageEdited() : null,
               ),
@@ -624,7 +608,7 @@ class _WordCard extends StatelessWidget {
                 errorText:
                     draft.definitionInvalid &&
                         draft.definition.text.trim().isEmpty
-                    ? localizations.requiredField
+                    ? localizations.definitionRequired
                     : null,
                 onChanged: draft.definitionInvalid
                     ? (_) => onImageEdited()
@@ -639,10 +623,6 @@ class _WordCard extends StatelessWidget {
           fieldKey: const Key('word-sentence'),
           controller: draft.sentence,
           hint: localizations.editorSentenceHint,
-          errorText: draft.sentenceInvalid && draft.sentence.text.trim().isEmpty
-              ? localizations.requiredField
-              : null,
-          onChanged: draft.sentenceInvalid ? (_) => onImageEdited() : null,
         ),
         const SizedBox(height: 16),
         Row(
@@ -1008,33 +988,25 @@ class _TypeChip extends StatelessWidget {
     final tone = this.tone;
     final Color fill;
     final Color ink;
-    final Color border;
-    if (tone == null) {
-      fill = selected ? colors.selectedFill : colors.surface;
-      ink = selected ? colors.selected : colors.text;
-      border = selected ? colors.selected : colors.border;
-    } else if (selected) {
+    if (tone != null && selected) {
       final dark = Theme.of(context).brightness == Brightness.dark;
       fill = tone.ink;
       ink = dark ? tone.fill : colors.onAccent;
-      border = tone.ink;
     } else {
-      fill = tone.fill;
-      ink = tone.ink;
-      border = tone.ink;
+      fill = Colors.transparent;
+      ink = colors.placeholder;
     }
     return Material(
       key: chipKey,
       color: fill,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: border),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           child: Text(
             label,
             style: HomeText.of(context).body.copyWith(color: ink),

@@ -198,4 +198,7 @@ class _Store implements VocabularySetStore {
   Future<void> save(VocabularySet set) async {
     saved.add(set);
   }
+
+  @override
+  Future<void> updateWords(VocabularySet set) async {}
 }

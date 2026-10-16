@@ -55,12 +55,13 @@ Future<_OpenedLibrary> _openDeviceLibrary(VocabularyLibrary local) async {
     if (ownerId == null) {
       return _OpenedLibrary(library: local, store: null);
     }
+    final libraryOwner = ownerIdForLibraryRead(
+      debugMode: kDebugMode,
+      signedInOwnerId: ownerId,
+    );
     final cloudStore = FirestoreVocabularySetStore(
       ownerId: ownerId,
-      readOwnerId: ownerIdForLibraryRead(
-        debugMode: kDebugMode,
-        signedInOwnerId: ownerId,
-      ),
+      readOwnerId: libraryOwner,
     );
     final library = await libraryForDevice(
       local: local,
@@ -74,7 +75,7 @@ Future<_OpenedLibrary> _openDeviceLibrary(VocabularyLibrary local) async {
     return _OpenedLibrary(
       library: library,
       store: cloudStore,
-      studyProgress: FirestoreStudyProgressStore(ownerId: ownerId),
+      studyProgress: FirestoreStudyProgressStore(ownerId: libraryOwner),
     );
   } catch (_) {
     return _OpenedLibrary(library: local, store: null);

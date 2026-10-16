@@ -16,12 +16,14 @@ class TodayPanel extends StatelessWidget {
   final double width;
   final VoidCallback? onPractice;
 
+  static const height = 372.0;
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     return SizedBox(
       width: width,
-      height: 372,
+      height: height,
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border.all(color: HomePalette.of(context).border),

@@ -4,6 +4,23 @@ import 'package:lang/library/vocabulary_set.dart';
 
 enum StudyMark { hard, familiar, easy }
 
+enum StudyAction { easy, familiar, hard, studied }
+
+class StudyWordState {
+  const StudyWordState({required this.level, required this.dueAt});
+
+  final int level;
+  final DateTime dueAt;
+
+  @override
+  bool operator ==(Object other) {
+    return other is StudyWordState && other.level == level && other.dueAt == dueAt;
+  }
+
+  @override
+  int get hashCode => Object.hash(level, dueAt);
+}
+
 class StudyWordRef {
   const StudyWordRef({required this.setId, required this.index});
 
@@ -28,20 +45,24 @@ class StudySetInput {
     required this.setId,
     required this.wordCount,
     this.marks = const <int, StudyMark>{},
+    this.levels = const <int, StudyWordState>{},
   });
 
   final String setId;
   final int wordCount;
   final Map<int, StudyMark> marks;
+  final Map<int, StudyWordState> levels;
 }
 
 class StudySetProgress {
   const StudySetProgress({
     required this.marks,
+    this.levels = const <int, StudyWordState>{},
     this.updatedAt,
   });
 
   final Map<int, StudyMark> marks;
+  final Map<int, StudyWordState> levels;
   final DateTime? updatedAt;
 }
 
@@ -55,6 +76,43 @@ class StudyHomeData {
 
   final Map<String, StudySetProgress> progress;
   final List<StudyWordRef> agenda;
+}
+
+Duration studyDelay(int level) {
+  return switch (level) {
+    1 => const Duration(hours: 1),
+    2 => const Duration(days: 1),
+    3 => const Duration(days: 3),
+    4 => const Duration(days: 7),
+    5 => const Duration(days: 15),
+    _ => const Duration(days: 30),
+  };
+}
+
+StudyWordState? levelAfter({
+  required StudyAction action,
+  required int? level,
+  required DateTime at,
+}) {
+  final next = switch (action) {
+    StudyAction.easy => level == null ? null : (level >= 6 ? 6 : level + 1),
+    StudyAction.familiar => level,
+    StudyAction.hard => level == null ? null : 1,
+    StudyAction.studied => 1,
+  };
+  if (next == null || next < 1 || next > 6) {
+    return null;
+  }
+  return StudyWordState(level: next, dueAt: at.add(studyDelay(next)));
+}
+
+StudyWordState levelFromStoredMark(StudyMark mark, DateTime readAt) {
+  final level = switch (mark) {
+    StudyMark.hard => 2,
+    StudyMark.familiar => 4,
+    StudyMark.easy => 6,
+  };
+  return StudyWordState(level: level, dueAt: readAt);
 }
 
 String studyMarkValue(StudyMark mark) {
@@ -113,6 +171,45 @@ Map<String, Object> recordStudyMark({
   };
 }
 
+List<StudyWordRef> choosePracticeQueue(
+  List<StudySetInput> sets,
+  DateTime now, {
+  String? setId,
+}) {
+  final due = <({StudyWordRef ref, DateTime dueAt, int order})>[];
+  final fresh = <StudyWordRef>[];
+  var order = 0;
+  for (final set in sets) {
+    if (set.setId.isEmpty) {
+      continue;
+    }
+    if (setId != null && set.setId != setId) {
+      continue;
+    }
+    for (var index = 0; index < set.wordCount; index++) {
+      final ref = StudyWordRef(setId: set.setId, index: index);
+      final state = set.levels[index];
+      order += 1;
+      if (state == null) {
+        fresh.add(ref);
+      } else if (!state.dueAt.isAfter(now)) {
+        due.add((ref: ref, dueAt: state.dueAt, order: order));
+      }
+    }
+  }
+  due.sort((a, b) {
+    final byTime = a.dueAt.compareTo(b.dueAt);
+    if (byTime != 0) {
+      return byTime;
+    }
+    return a.order.compareTo(b.order);
+  });
+  return <StudyWordRef>[
+    for (final item in due) item.ref,
+    ...fresh.take(8),
+  ];
+}
+
 List<StudyWordRef> chooseDayList(List<StudySetInput> sets) {
   final hard = <StudyWordRef>[];
   final familiar = <StudyWordRef>[];
@@ -154,6 +251,86 @@ Map<int, StudyMark> marksFromDocument(Object? value) {
   return marks;
 }
 
+DateTime? studyDueAt(Object? value) {
+  return switch (value) {
+    DateTime due => due,
+    Timestamp due => due.toDate(),
+    String due => DateTime.tryParse(due),
+    _ => null,
+  };
+}
+
+Map<String, Object> studyLevelUpdate({
+  required int index,
+  required StudyWordState state,
+}) {
+  if (state.level < 1 || state.level > 6) {
+    throw ArgumentError.value(state.level, 'level');
+  }
+  return <String, Object>{
+    'words.$index': <String, Object>{
+      'level': state.level,
+      'dueAt': state.dueAt,
+    },
+  };
+}
+
+Map<String, Object> applyStudyLevelUpdate(
+  Map<String, Object>? existing,
+  Map<String, Object> update,
+) {
+  final next = <String, Object>{...?existing};
+  for (final entry in update.entries) {
+    final parts = entry.key.split('.');
+    if (parts.length == 2 && parts[0] == 'words' && entry.value is Map) {
+      final current = next['words'];
+      final words = <String, Object>{
+        if (current is Map)
+          for (final word in current.entries) '${word.key}': word.value,
+      };
+      words[parts[1]] = entry.value;
+      next['words'] = words;
+    } else {
+      next[entry.key] = entry.value;
+    }
+  }
+  return next;
+}
+
+Map<int, StudyWordState> levelsFromDocument({
+  Object? words,
+  Object? marks,
+  required DateTime readAt,
+}) {
+  final levels = <int, StudyWordState>{};
+  if (words is Map) {
+    for (final entry in words.entries) {
+      final index = int.tryParse('${entry.key}');
+      final value = entry.value;
+      if (index == null || value is! Map) {
+        continue;
+      }
+      final level = value['level'];
+      final dueAt = studyDueAt(value['dueAt']);
+      if (level is! int || level < 1 || level > 6 || dueAt == null) {
+        continue;
+      }
+      levels[index] = StudyWordState(level: level, dueAt: dueAt);
+    }
+  }
+  if (marks is Map) {
+    for (final entry in marks.entries) {
+      final index = int.tryParse('${entry.key}');
+      final mark = studyMarkFromValue(entry.value);
+      if (index == null || mark == null || levels.containsKey(index)) {
+        continue;
+      }
+      levels[index] = levelFromStoredMark(mark, readAt);
+    }
+  }
+  return levels;
+}
+
 List<StudyWordRef> agendaFromDocument(Object? value) {
   if (value is! List) {
     return const <StudyWordRef>[];
@@ -178,10 +355,18 @@ abstract class StudyProgressStore {
 
   Future<Map<int, StudyMark>> marksFor(String setId);
 
+  Future<Map<int, StudyWordState>> levelsFor(String setId);
+
   Future<void> rate({
     required String setId,
     required int index,
     required StudyMark mark,
+  });
+
+  Future<void> saveLevel({
+    required String setId,
+    required int index,
+    required StudyWordState state,
   });
 }
 
@@ -211,56 +396,30 @@ class FirestoreStudyProgressStore implements StudyProgressStore {
         continue;
       }
       final updatedAt = data['updatedAt'];
+      final readAt = _clock();
       progress[setId] = StudySetProgress(
         marks: marksFromDocument(data['marks']),
+        levels: levelsFromDocument(
+          words: data['words'],
+          marks: data['marks'],
+          readAt: readAt,
+        ),
         updatedAt: updatedAt is Timestamp ? updatedAt.toDate() : null,
       );
     }
-    final agenda = await _agendaFor(sets, progress);
-    return StudyHomeData(progress: progress, agenda: agenda);
-  }
-
-  Future<List<StudyWordRef>> _agendaFor(
-    List<StudySetInput> sets,
-    Map<String, StudySetProgress> progress,
-  ) async {
-    final instant = _clock();
-    final date = localStudyDate(instant);
-    final reference = _firestore.collection('agenda').doc(
-      agendaDocumentId(ownerId, instant),
-    );
-    final snapshot = await reference.get();
+    final readAt = _clock();
     final inputs = <StudySetInput>[
       for (final set in sets)
         StudySetInput(
           setId: set.setId,
           wordCount: set.wordCount,
-          marks: progress[set.setId]?.marks ?? set.marks,
+          levels: progress[set.setId]?.levels ?? const <int, StudyWordState>{},
         ),
     ];
-    final chosen = chooseDayList(inputs);
-    if (!snapshot.exists) {
-      await reference.set(<String, Object>{
-        'ownerId': ownerId,
-        'date': date,
-        'words': _wordMaps(chosen),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      return chosen;
-    }
-    final stored = agendaFromDocument(snapshot.data()?['words']);
-    if (stored.isEmpty && chosen.isNotEmpty) {
-      await reference.update(<String, Object>{'words': _wordMaps(chosen)});
-      return chosen;
-    }
-    return stored;
-  }
-
-  List<Map<String, Object>> _wordMaps(List<StudyWordRef> words) {
-    return <Map<String, Object>>[
-      for (final word in words)
-        <String, Object>{'setId': word.setId, 'index': word.index},
-    ];
+    return StudyHomeData(
+      progress: progress,
+      agenda: choosePracticeQueue(inputs, readAt),
+    );
   }
 
   @override
@@ -273,6 +432,49 @@ class FirestoreStudyProgressStore implements StudyProgressStore {
       return const <int, StudyMark>{};
     }
     return marksFromDocument(snapshot.data()?['marks']);
+  }
+
+  @override
+  Future<Map<int, StudyWordState>> levelsFor(String setId) async {
+    final snapshot = await _firestore
+        .collection('progress')
+        .doc(progressDocumentId(ownerId, setId))
+        .get();
+    if (!snapshot.exists) {
+      return const <int, StudyWordState>{};
+    }
+    final data = snapshot.data();
+    return levelsFromDocument(
+      words: data?['words'],
+      marks: data?['marks'],
+      readAt: _clock(),
+    );
+  }
+
+  @override
+  Future<void> saveLevel({
+    required String setId,
+    required int index,
+    required StudyWordState state,
+  }) async {
+    final update = studyLevelUpdate(index: index, state: state);
+    final reference = _firestore
+        .collection('progress')
+        .doc(progressDocumentId(ownerId, setId));
+    final snapshot = await reference.get();
+    if (!snapshot.exists) {
+      final created = applyStudyLevelUpdate(<String, Object>{
+        'ownerId': ownerId,
+        'setId': setId,
+      }, update);
+      created['updatedAt'] = FieldValue.serverTimestamp();
+      await reference.set(created);
+      return;
+    }
+    await reference.update(<String, Object>{
+      ...update,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   @override

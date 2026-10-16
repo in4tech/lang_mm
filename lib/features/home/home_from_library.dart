@@ -21,12 +21,61 @@ Color studyProgressColor(int percent) {
   return HomeSample.progressGreen;
 }
 
+Map<int, StudyWordState> studyStates(StudySetProgress? progress, DateTime now) {
+  final levels = <int, StudyWordState>{
+    if (progress != null) ...progress.levels,
+  };
+  if (progress == null) {
+    return levels;
+  }
+  for (final entry in progress.marks.entries) {
+    levels.putIfAbsent(
+      entry.key,
+      () => levelFromStoredMark(entry.value, now),
+    );
+  }
+  return levels;
+}
+
+bool studyHasLevel(StudySetProgress? progress) {
+  if (progress == null) {
+    return false;
+  }
+  return progress.levels.isNotEmpty || progress.marks.isNotEmpty;
+}
+
+List<StudySetInput> studyInputs(
+  VocabularyLibrary library,
+  Map<String, StudySetProgress> progress,
+  DateTime now,
+) {
+  final inputs = <StudySetInput>[];
+  for (final folder in library.folders) {
+    for (var index = 0; index < folder.sets.length; index++) {
+      final set = folder.contentAt(index);
+      final id = set?.id;
+      if (set == null || id == null || id.isEmpty) {
+        continue;
+      }
+      inputs.add(
+        StudySetInput(
+          setId: id,
+          wordCount: set.words.length,
+          levels: studyStates(progress[id], now),
+        ),
+      );
+    }
+  }
+  return inputs;
+}
+
 HomeSample homeSampleFromLibrary(
   VocabularyLibrary library, {
   Map<String, StudySetProgress> progress = const <String, StudySetProgress>{},
-  List<StudyWordRef> agenda = const <StudyWordRef>[],
+  DateTime? now,
   bool allSets = true,
 }) {
+  final clock = now ?? DateTime.now();
   final sets = <VocabularySet>[
     for (final folder in library.folders)
       for (var index = 0; index < folder.sets.length; index++)
@@ -37,7 +86,7 @@ HomeSample homeSampleFromLibrary(
     if (id == null) {
       return false;
     }
-    return progress[id]?.marks.isNotEmpty ?? false;
+    return studyHasLevel(progress[id]);
   }).toList();
   VocabularySet? focus;
   if (!allSets && marked.isNotEmpty) {
@@ -61,16 +110,21 @@ HomeSample homeSampleFromLibrary(
   final counts = _LevelCounts();
   if (marked.isNotEmpty) {
     for (final set in scope) {
-      counts.add(set, progress[set.id]?.marks ?? const <int, StudyMark>{});
+      counts.add(set, studyStates(progress[set.id], clock));
     }
   }
-  final today = _todayRows(library, agenda);
+  final today = _todayRows(
+    library,
+    choosePracticeQueue(studyInputs(library, progress, clock), clock),
+  );
   final recent = _recent(marked, progress);
   return HomeSample(
     statisticsSetName: focus?.title ?? '',
-    learnedCount: counts.easy,
+    statisticsSetId: focus?.id,
+    statisticsAll: allSets,
+    learnedCount: counts.mastered,
     totalCount: marked.isEmpty ? 0 : counts.total,
-    percent: studyPercent(counts.easy, marked.isEmpty ? 0 : counts.total),
+    percent: studyPercent(counts.mastered, marked.isEmpty ? 0 : counts.total),
     bars: marked.isEmpty ? const <HomeBar>[] : counts.bars(),
     levels: counts.levels(marked.isEmpty ? 0 : counts.total),
     today: today,
@@ -84,42 +138,36 @@ HomeSample homeSampleFromLibrary(
 }
 
 class _LevelCounts {
-  int easy = 0;
-  int familiar = 0;
-  int hard = 0;
-  int unmarked = 0;
+  final counts = List<int>.filled(6, 0);
   int total = 0;
 
-  void add(VocabularySet set, Map<int, StudyMark> marks) {
+  int get mastered => counts[5];
+
+  void add(VocabularySet set, Map<int, StudyWordState> levels) {
     for (var index = 0; index < set.words.length; index++) {
       total += 1;
-      switch (marks[index]) {
-        case StudyMark.easy:
-          easy += 1;
-        case StudyMark.familiar:
-          familiar += 1;
-        case StudyMark.hard:
-          hard += 1;
-        case null:
-          unmarked += 1;
+      final level = levels[index]?.level;
+      if (level != null && level >= 1 && level <= 6) {
+        counts[level - 1] += 1;
       }
     }
   }
 
   List<HomeLevel> levels(int total) {
+    final colors = <Color>[
+      HomeSample.forgot,
+      HomeSample.hard,
+      HomeSample.learning,
+      HomeSample.familiar,
+      HomeSample.good,
+      HomeSample.mastered,
+    ];
     return <HomeLevel>[
-      HomeLevel(color: HomeSample.mastered, percent: studyPercent(easy, total)),
-      const HomeLevel(color: HomeSample.good, percent: 0),
-      HomeLevel(
-        color: HomeSample.familiar,
-        percent: studyPercent(familiar, total),
-      ),
-      const HomeLevel(color: HomeSample.learning, percent: 0),
-      HomeLevel(color: HomeSample.hard, percent: studyPercent(hard, total)),
-      HomeLevel(
-        color: HomeSample.forgot,
-        percent: studyPercent(unmarked, total),
-      ),
+      for (var level = 6; level >= 1; level--)
+        HomeLevel(
+          color: colors[level - 1],
+          percent: studyPercent(counts[level - 1], total),
+        ),
     ];
   }
 
@@ -132,15 +180,30 @@ class _LevelCounts {
       );
     }
 
+    final colors = <Color>[
+      HomeSample.forgot,
+      HomeSample.hard,
+      HomeSample.learning,
+      HomeSample.familiar,
+      HomeSample.good,
+      HomeSample.mastered,
+    ];
     return <HomeBar>[
-      bar(HomeSample.forgot, unmarked),
-      bar(HomeSample.hard, hard),
-      bar(HomeSample.learning, 0),
-      bar(HomeSample.familiar, familiar),
-      bar(HomeSample.good, 0),
-      bar(HomeSample.mastered, easy),
+      for (var index = 0; index < counts.length; index++)
+        bar(colors[index], counts[index]),
     ];
   }
+}
+
+int _masteredCount(VocabularySet set, Map<String, StudySetProgress> progress) {
+  final states = studyStates(progress[set.id], DateTime.now());
+  var count = 0;
+  for (var index = 0; index < set.words.length; index++) {
+    if (states[index]?.level == 6) {
+      count += 1;
+    }
+  }
+  return count;
 }
 
 List<TodayRow> _todayRows(VocabularyLibrary library, List<StudyWordRef> agenda) {
@@ -186,19 +249,9 @@ List<RecentSet> _recent(
       RecentSet(
         id: set.id,
         name: set.title,
-        percent: studyPercent(
-          (progress[set.id]?.marks.values ?? const <StudyMark>[])
-              .where((mark) => mark == StudyMark.easy)
-              .length,
-          set.words.length,
-        ),
+        percent: studyPercent(_masteredCount(set, progress), set.words.length),
         color: studyProgressColor(
-          studyPercent(
-            (progress[set.id]?.marks.values ?? const <StudyMark>[])
-                .where((mark) => mark == StudyMark.easy)
-                .length,
-            set.words.length,
-          ),
+          studyPercent(_masteredCount(set, progress), set.words.length),
         ),
       ),
   ];

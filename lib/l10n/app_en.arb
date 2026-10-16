@@ -110,6 +110,10 @@
   "@allLabel": {
     "description": "Label for the All switch on the statistics card."
   },
+  "allVocabulary": "All vocabulary",
+  "@allVocabulary": {
+    "description": "Statistics title shown when the All switch includes every set."
+  },
   "wordsLearned": "Words learned",
   "@wordsLearned": {
     "description": "Caption under the learned side of the statistics chart."
@@ -178,6 +182,14 @@
   "@studyTodayPractice": {
     "description": "Selected practice action on a flashcard set."
   },
+  "studyPracticeAlert": "You are in a practice session.",
+  "@studyPracticeAlert": {
+    "description": "Alert shown when a sidebar item is clicked during practice."
+  },
+  "studyPracticeOk": "OK",
+  "@studyPracticeOk": {
+    "description": "Button that dismisses the practice-session alert."
+  },
   "studyLearnNew": "Learn new vocab",
   "@studyLearnNew": {
     "description": "Action that opens the editor for a flashcard set."
@@ -218,6 +230,22 @@
   "@studyTapForMeaning": {
     "description": "Flashcard hint shown until the learner taps the card."
   },
+  "studyTrackProgress": "Track progress",
+  "@studyTrackProgress": {
+    "description": "Switch that shows or hides practice ratings."
+  },
+  "studyNotYetStudied": "Not yet studied",
+  "@studyNotYetStudied": {
+    "description": "Left swipe on a new flashcard."
+  },
+  "studyStudiedAction": "Studied",
+  "@studyStudiedAction": {
+    "description": "Right swipe on a new flashcard."
+  },
+  "studyFlipShortcut": "Press Space or click the card to flip",
+  "@studyFlipShortcut": {
+    "description": "Flashcard hint for the Space key and a click."
+  },
   "studyKnow": "Know",
   "@studyKnow": {
     "description": "Count of words marked easy on the study page."
@@ -233,6 +261,27 @@
   "studyMastered": "Mastered",
   "@studyMastered": {
     "description": "Filter for words marked easy."
+  },
+  "studyCompleteTitle": "Congratulations!",
+  "@studyCompleteTitle": {
+    "description": "Heading on the page shown when practice finishes."
+  },
+  "studyCompleteOne": "You finished 1 word.",
+  "@studyCompleteOne": {
+    "description": "Message when a practice session of one word is complete."
+  },
+  "studyCompleteMany": "You finished {count} words.",
+  "@studyCompleteMany": {
+    "description": "Message when a practice session of several words is complete.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "studyCompleteDone": "Done",
+  "@studyCompleteDone": {
+    "description": "Button that leaves the finished practice page."
   },
   "progressComplete": "The process is {percent}% complete.",
   "@progressComplete": {
@@ -376,9 +425,17 @@
   "@editorAddWord": {
     "description": "Button that collapses the current word and opens a new empty card."
   },
-  "requiredField": "Required",
-  "@requiredField": {
-    "description": "Shown when a required editor field is empty."
+  "termRequired": "Enter a term",
+  "@termRequired": {
+    "description": "Shown when a new word is saved without a term."
+  },
+  "definitionRequired": "Enter a definition",
+  "@definitionRequired": {
+    "description": "Shown when a new word is saved without a definition."
+  },
+  "titleRequired": "Enter a title",
+  "@titleRequired": {
+    "description": "Shown when Done is pressed without a set title."
   },
   "themeLight": "Light",
   "@themeLight": {

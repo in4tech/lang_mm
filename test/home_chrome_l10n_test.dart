@@ -59,7 +59,9 @@ void main() {
     expect(english.editorAdj, 'Adj');
     expect(english.editorImageLinkHint, 'Enter image link');
     expect(english.editorAddWord, 'Add new word');
-    expect(english.requiredField, 'Required');
+    expect(english.termRequired, 'Enter a term');
+    expect(english.definitionRequired, 'Enter a definition');
+    expect(english.titleRequired, 'Enter a title');
     expect(english.newTerm, 'New term');
     expect(english.newFolder, 'New folder');
     expect(english.newFolderHint, 'Enter folder name');
@@ -81,6 +83,12 @@ void main() {
     expect(english.studyLearnNew, 'Learn new vocab');
     expect(english.studyFlashcard, 'Flashcard');
     expect(english.studyHard, 'Hard');
+    expect(english.studyStillLearning, 'Still learning');
+    expect(english.studyKnow, 'Know');
+    expect(english.studyTrackProgress, 'Track progress');
+    expect(english.studyNotYetStudied, 'Not yet studied');
+    expect(english.studyStudiedAction, 'Studied');
+    expect(english.studyFlipShortcut, 'Press Space or click the card to flip');
     expect(english.studyList, 'Vocabulary list');
     expect(english.studyMastered, 'Mastered');
     expect(english.themeLight, 'Light');
@@ -128,7 +136,9 @@ void main() {
     expect(vietnamese.editorAdj, 'Tính từ');
     expect(vietnamese.editorImageLinkHint, 'Nhập link ảnh');
     expect(vietnamese.editorAddWord, 'Thêm từ mới');
-    expect(vietnamese.requiredField, 'Bắt buộc');
+    expect(vietnamese.termRequired, 'Hãy nhập từ');
+    expect(vietnamese.definitionRequired, 'Hãy nhập định nghĩa');
+    expect(vietnamese.titleRequired, 'Hãy nhập tiêu đề');
     expect(vietnamese.newTerm, 'Từ mới');
     expect(vietnamese.newFolder, 'Thư mục mới');
     expect(vietnamese.newFolderHint, 'Nhập tên thư mục');
@@ -150,6 +160,12 @@ void main() {
     expect(vietnamese.studyLearnNew, 'Học từ mới');
     expect(vietnamese.studyFlashcard, 'Thẻ học');
     expect(vietnamese.studyHard, 'Khó');
+    expect(vietnamese.studyStillLearning, 'Đang học');
+    expect(vietnamese.studyKnow, 'Đã biết');
+    expect(vietnamese.studyTrackProgress, 'Theo dõi tiến độ');
+    expect(vietnamese.studyNotYetStudied, 'Chưa học');
+    expect(vietnamese.studyStudiedAction, 'Đã học');
+    expect(vietnamese.studyFlipShortcut, 'Nhấn Space hoặc nhấn thẻ để lật');
     expect(vietnamese.studyList, 'Danh sách từ');
     expect(vietnamese.studyMastered, 'Đã thuộc');
     expect(vietnamese.themeLight, 'Sáng');
@@ -197,7 +213,9 @@ void main() {
     expect(german.editorAdj, 'Adjektiv');
     expect(german.editorImageLinkHint, 'Bildlink eingeben');
     expect(german.editorAddWord, 'Neues Wort hinzufügen');
-    expect(german.requiredField, 'Pflichtfeld');
+    expect(german.termRequired, 'Begriff eingeben');
+    expect(german.definitionRequired, 'Definition eingeben');
+    expect(german.titleRequired, 'Titel eingeben');
     expect(german.newTerm, 'Neuer Begriff');
     expect(german.newFolder, 'Neuer Ordner');
     expect(german.newFolderHint, 'Ordnernamen eingeben');
@@ -219,6 +237,15 @@ void main() {
     expect(german.studyLearnNew, 'Neue Vokabeln lernen');
     expect(german.studyFlashcard, 'Karteikarte');
     expect(german.studyHard, 'Schwer');
+    expect(german.studyStillLearning, 'Noch am Lernen');
+    expect(german.studyKnow, 'Gewusst');
+    expect(german.studyTrackProgress, 'Fortschritt verfolgen');
+    expect(german.studyNotYetStudied, 'Noch nicht gelernt');
+    expect(german.studyStudiedAction, 'Gelernt');
+    expect(
+      german.studyFlipShortcut,
+      'Leertaste drücken oder auf die Karte klicken zum Umdrehen',
+    );
     expect(german.studyList, 'Vokabelliste');
     expect(german.studyMastered, 'Gemeistert');
     expect(german.themeLight, 'Hell');

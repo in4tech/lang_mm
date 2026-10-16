@@ -88,12 +88,7 @@ class _NarrowHeader extends StatelessWidget {
               icon: Icon(Icons.menu, color: HomePalette.of(context).ink),
             ),
             const SizedBox(width: 8),
-            const Image(
-              key: Key('header-logo'),
-              image: AssetImage('assets/images/lang_logo.png'),
-              width: 139,
-              height: 48,
-            ),
+            const _HeaderLogo(),
             const Spacer(),
             const LanguageSwitcher(child: _Avatar()),
           ],
@@ -115,6 +110,26 @@ class _NarrowHeader extends StatelessWidget {
           expand: true,
         ),
       ],
+    );
+  }
+}
+
+class _HeaderLogo extends StatelessWidget {
+  const _HeaderLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Image(
+      key: const Key('header-logo'),
+      image: AssetImage(
+        dark
+            ? 'assets/images/lang_logo_dark.png'
+            : 'assets/images/lang_logo.png',
+      ),
+      width: 139,
+      height: 48,
+      fit: BoxFit.contain,
     );
   }
 }
@@ -142,12 +157,7 @@ class _Brand extends StatelessWidget {
             ),
             const Padding(
               padding: EdgeInsets.only(left: 8),
-              child: Image(
-                key: Key('header-logo'),
-                image: AssetImage('assets/images/lang_logo.png'),
-                width: 139,
-                height: 48,
-              ),
+              child: _HeaderLogo(),
             ),
           ],
         ),

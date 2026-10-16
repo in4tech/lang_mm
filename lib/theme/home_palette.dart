@@ -5,6 +5,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
   const HomePalette({
     required this.border,
     required this.selectedFill,
+    required this.selectedSetFill,
     required this.selected,
     required this.text,
     required this.ink,
@@ -27,6 +28,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
 
   final Color border;
   final Color selectedFill;
+  final Color selectedSetFill;
   final Color selected;
   final Color text;
   final Color ink;
@@ -49,6 +51,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
   static const light = HomePalette(
     border: Color(0xFFD0D5DD),
     selectedFill: Color(0xFFE4ECFA),
+    selectedSetFill: Color(0xFFD1E9FF),
     selected: Color(0xFF2E76C9),
     text: Color(0xFF344054),
     ink: Color(0xFF000000),
@@ -76,6 +79,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
   static const dark = HomePalette(
     border: Color(0xFF344054),
     selectedFill: Color(0xFF102A43),
+    selectedSetFill: Color(0xFF1849A9),
     selected: Color(0xFF84CAFF),
     text: Color(0xFFD0D5DD),
     ink: Color(0xFFF5F8FF),
@@ -85,7 +89,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
     continueEnd: Color(0xFF175CD3),
     folderFill: Color(0xFF182230),
     placeholder: Color(0xFF667085),
-    chip: Color(0xFF3A2C24),
+    chip: Color(0xFF1D2939),
     toggleKnob: Color(0xFF84CAFF),
     scrollTrack: Color(0xFF344054),
     scrollThumb: Color(0xFF2E90FA),
@@ -100,6 +104,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
   HomePalette copyWith({
     Color? border,
     Color? selectedFill,
+    Color? selectedSetFill,
     Color? selected,
     Color? text,
     Color? ink,
@@ -122,6 +127,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
     return HomePalette(
       border: border ?? this.border,
       selectedFill: selectedFill ?? this.selectedFill,
+      selectedSetFill: selectedSetFill ?? this.selectedSetFill,
       selected: selected ?? this.selected,
       text: text ?? this.text,
       ink: ink ?? this.ink,
@@ -151,6 +157,7 @@ class HomePalette extends ThemeExtension<HomePalette> {
     return HomePalette(
       border: Color.lerp(border, other.border, t)!,
       selectedFill: Color.lerp(selectedFill, other.selectedFill, t)!,
+      selectedSetFill: Color.lerp(selectedSetFill, other.selectedSetFill, t)!,
       selected: Color.lerp(selected, other.selected, t)!,
       text: Color.lerp(text, other.text, t)!,
       ink: Color.lerp(ink, other.ink, t)!,

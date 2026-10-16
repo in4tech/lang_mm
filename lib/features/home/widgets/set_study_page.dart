@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:lang/features/home/home_from_library.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/library/study_progress.dart';
+import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/library/vocabulary_set.dart';
 import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
@@ -22,6 +25,11 @@ class SetStudyPage extends StatefulWidget {
     this.progress,
     this.initialMarks = const <int, StudyMark>{},
     this.cues,
+    this.onPracticing,
+    this.onWordsChanged,
+    this.statisticsLibrary,
+    this.statisticsProgress = const <String, StudySetProgress>{},
+    this.statisticsAll = true,
   });
 
   final VocabularySet set;
@@ -30,6 +38,11 @@ class SetStudyPage extends StatefulWidget {
   final StudyProgressStore? progress;
   final Map<int, StudyMark> initialMarks;
   final List<StudyCue>? cues;
+  final ValueChanged<bool>? onPracticing;
+  final ValueChanged<VocabularySet>? onWordsChanged;
+  final VocabularyLibrary? statisticsLibrary;
+  final Map<String, StudySetProgress> statisticsProgress;
+  final bool statisticsAll;
 
   @override
   State<SetStudyPage> createState() => _SetStudyPageState();
@@ -42,16 +55,64 @@ class _SetStudyPageState extends State<SetStudyPage> {
   var _filter = _ListFilter.all;
   var _cursor = 0;
   var _faceToken = 0;
+  var _place = 1;
+  var _finished = false;
+  var _sessionHard = 0;
+  var _sessionFamiliar = 0;
+  var _sessionEasy = 0;
+  var _sessionStudied = 0;
+  var _sessionSkipped = 0;
+  late List<VocabularyWord> _words = List<VocabularyWord>.of(widget.set.words);
   late List<StudyCue> _order = _sessionOf(widget);
-  late final Map<int, StudyMark> _marks = Map<int, StudyMark>.from(
-    widget.initialMarks,
-  );
+  late int _sessionTotal = _order.length;
+  late final Map<int, StudyWordState> _levels = <int, StudyWordState>{
+    for (final entry in widget.initialMarks.entries)
+      entry.key: levelFromStoredMark(entry.value, DateTime.now()),
+  };
+  late final Map<String, StudySetProgress> _homeProgress = {
+    for (final entry in widget.statisticsProgress.entries)
+      entry.key: StudySetProgress(
+        marks: Map<int, StudyMark>.of(entry.value.marks),
+        levels: Map<int, StudyWordState>.of(entry.value.levels),
+        updatedAt: entry.value.updatedAt,
+      ),
+  };
 
   @override
   void initState() {
     super.initState();
     _practicing = widget.cues != null;
+    final openId = widget.set.id;
+    if (widget.statisticsLibrary != null && openId != null) {
+      _levels.addAll(studyStates(_homeProgress[openId], DateTime.now()));
+    }
+    if (_practicing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onPracticing?.call(true);
+        }
+      });
+    }
     _loadMarks();
+  }
+
+  @override
+  void didUpdateWidget(SetStudyPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.set == oldWidget.set) {
+      return;
+    }
+    _words = List<VocabularyWord>.of(widget.set.words);
+    _order = <StudyCue>[
+      for (final cue in _order)
+        cue.index >= 0 && cue.index < _words.length
+            ? StudyCue(
+                word: _words[cue.index],
+                setId: cue.setId,
+                index: cue.index,
+              )
+            : cue,
+    ];
   }
 
   @override
@@ -94,12 +155,171 @@ class _SetStudyPageState extends State<SetStudyPage> {
       return;
     }
     try {
-      final stored = await store.marksFor(id);
-      if (!mounted || stored.isEmpty) {
+      final marks = await store.marksFor(id);
+      final levels = await store.levelsFor(id);
+      if (!mounted) {
         return;
       }
-      setState(() => _marks.addAll(stored));
+      final now = DateTime.now();
+      setState(() {
+        for (final entry in marks.entries) {
+          _levels.putIfAbsent(
+            entry.key,
+            () => levelFromStoredMark(entry.value, now),
+          );
+        }
+        _levels.addAll(levels);
+        if (widget.statisticsLibrary != null && levels.isNotEmpty) {
+          _rememberHomeLevels(id, levels);
+        }
+      });
     } catch (_) {}
+  }
+
+  StudyWordState? _stateFor(StudyCue cue) {
+    final id = cue.setId;
+    if (widget.statisticsLibrary != null && id != null) {
+      return studyStates(_homeProgress[id], DateTime.now())[cue.index];
+    }
+    return _levels[cue.index];
+  }
+
+  Map<int, StudyWordState> _cardLevels(StudyCue? cue) {
+    if (cue == null || widget.statisticsLibrary == null) {
+      return _levels;
+    }
+    final state = _stateFor(cue);
+    if (state == null) {
+      return const <int, StudyWordState>{};
+    }
+    return <int, StudyWordState>{cue.index: state};
+  }
+
+  void _rememberHomeLevel(String setId, int index, StudyWordState state) {
+    if (widget.statisticsLibrary == null) {
+      return;
+    }
+    final current = _homeProgress[setId];
+    final levels = Map<int, StudyWordState>.of(
+      current?.levels ?? const <int, StudyWordState>{},
+    );
+    levels[index] = state;
+    _homeProgress[setId] = StudySetProgress(
+      marks: current?.marks ?? const <int, StudyMark>{},
+      levels: levels,
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  void _rememberHomeLevels(String setId, Map<int, StudyWordState> levels) {
+    for (final entry in levels.entries) {
+      _rememberHomeLevel(setId, entry.key, entry.value);
+    }
+  }
+
+  HomeSample? get _overview {
+    final library = widget.statisticsLibrary;
+    if (library == null) {
+      return null;
+    }
+    return homeSampleFromLibrary(
+      library,
+      progress: _homeProgress,
+      allSets: widget.statisticsAll,
+    );
+  }
+
+  List<StudyCue> _queue() {
+    final refs = choosePracticeQueue(<StudySetInput>[
+      StudySetInput(
+        setId: widget.set.id ?? '_open',
+        wordCount: _words.length,
+        levels: _levels,
+      ),
+    ], DateTime.now());
+    return <StudyCue>[
+      for (final ref in refs)
+        if (ref.index >= 0 && ref.index < _words.length)
+          StudyCue(
+            word: _words[ref.index],
+            setId: widget.set.id,
+            index: ref.index,
+          ),
+    ];
+  }
+
+  VocabularySet get _shown {
+    return VocabularySet(
+      id: widget.set.id,
+      title: widget.set.title,
+      description: widget.set.description,
+      folderId: widget.set.folderId,
+      words: List<VocabularyWord>.unmodifiable(_words),
+    );
+  }
+
+  void _toggleStar(int index) {
+    if (index < 0 || index >= _words.length) {
+      return;
+    }
+    final next = _words[index].copyWith(starred: !_words[index].starred);
+    setState(() {
+      _words[index] = next;
+      _order = <StudyCue>[
+        for (final cue in _order)
+          cue.index == index
+              ? StudyCue(word: next, setId: cue.setId, index: cue.index)
+              : cue,
+      ];
+    });
+    widget.onWordsChanged?.call(_shown);
+  }
+
+  void _begin(List<StudyCue> order) {
+    _practicing = true;
+    _mode = _PracticeMode.flashcard;
+    _order = order;
+    _cursor = 0;
+    _place = 1;
+    _sessionTotal = order.length;
+    _finished = false;
+    _sessionHard = 0;
+    _sessionFamiliar = 0;
+    _sessionEasy = 0;
+    _sessionStudied = 0;
+    _sessionSkipped = 0;
+    _faceToken += 1;
+    _typing.clear();
+  }
+
+  void _advance() {
+    if (_cursor >= _order.length - 1) {
+      _finished = true;
+      return;
+    }
+    _order.removeAt(_cursor);
+    _place += 1;
+  }
+
+  void _leavePractice() {
+    setState(() {
+      _practicing = false;
+      _finished = false;
+    });
+    widget.onPracticing?.call(false);
+  }
+
+  void _countSession(StudyAction action) {
+    switch (action) {
+      case StudyAction.hard:
+        _sessionHard += 1;
+      case StudyAction.familiar:
+        _sessionFamiliar += 1;
+      case StudyAction.easy:
+        _sessionEasy += 1;
+      case StudyAction.studied:
+        _sessionStudied += 1;
+    }
   }
 
   void _step(int delta) {
@@ -121,37 +341,58 @@ class _SetStudyPageState extends State<SetStudyPage> {
       _mode = mode;
       _typing.clear();
       _faceToken += 1;
-      if (mode == _PracticeMode.flashcard) {
-        _order = _sessionOf(widget);
-        if (_order.isEmpty) {
-          _cursor = 0;
-        } else if (_cursor >= _order.length) {
-          _cursor = _order.length - 1;
-        }
-      }
     });
   }
 
-  void _mark(StudyMark mark) {
+  void _rate(StudyAction action) {
+    if (_mode != _PracticeMode.flashcard) {
+      return;
+    }
     final cue = _current;
     if (cue == null) {
       return;
     }
-    final advance =
-        _mode == _PracticeMode.flashcard && _cursor < _order.length - 1;
+    final next = levelAfter(
+      action: action,
+      level: _stateFor(cue)?.level,
+      at: DateTime.now(),
+    );
+    if (next == null) {
+      return;
+    }
     setState(() {
-      _marks[cue.index] = mark;
-      _faceToken += 1;
-      if (advance) {
-        _cursor += 1;
+      if (cue.setId == null || cue.setId == widget.set.id) {
+        _levels[cue.index] = next;
       }
+      if (cue.setId != null) {
+        _rememberHomeLevel(cue.setId!, cue.index, next);
+      }
+      _countSession(action);
+      _faceToken += 1;
+      _advance();
       _typing.clear();
     });
     final id = cue.setId;
     final store = widget.progress;
     if (id != null && store != null) {
-      store.rate(setId: id, index: cue.index, mark: mark);
+      store.saveLevel(setId: id, index: cue.index, state: next);
     }
+  }
+
+  void _skipNew() {
+    if (_mode != _PracticeMode.flashcard) {
+      return;
+    }
+    final cue = _current;
+    if (cue == null || _levels.containsKey(cue.index)) {
+      return;
+    }
+    setState(() {
+      _sessionSkipped += 1;
+      _faceToken += 1;
+      _advance();
+      _typing.clear();
+    });
   }
 
   void _show(int index) {
@@ -167,16 +408,29 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   bool _visible(int index) {
-    final mark = _marks[index];
     return switch (_filter) {
       _ListFilter.all => true,
-      _ListFilter.learning => mark != StudyMark.easy,
-      _ListFilter.mastered => mark == StudyMark.easy,
+      _ListFilter.learning => _levels[index]?.level != 6,
+      _ListFilter.mastered => _levels[index]?.level == 6,
     };
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_finished) {
+      return _PracticeComplete(
+        words: _words,
+        levels: _levels,
+        total: _sessionTotal,
+        hard: _sessionHard,
+        familiar: _sessionFamiliar,
+        easy: _sessionEasy,
+        studied: _sessionStudied,
+        skipped: _sessionSkipped,
+        onDone: _leavePractice,
+        overview: _overview,
+      );
+    }
     final cue = _current;
     VocabularyWord? peek;
     VocabularyWord? previous;
@@ -186,33 +440,42 @@ class _SetStudyPageState extends State<SetStudyPage> {
       previous = _order[back < 0 ? back + _order.length : back].word;
     }
     final practice = _PracticeColumn(
-      set: widget.set,
+      set: _shown,
       mode: _mode,
       filter: _filter,
       current: cue,
       peek: peek,
       previous: previous,
       faceToken: _faceToken,
-      marks: _marks,
+      levels: _cardLevels(cue),
       typing: _typing,
       visible: _visible,
       practicing: _practicing,
+      place: _place,
+      sessionTotal: _sessionTotal,
       onEdit: widget.onEdit,
       onPractice: () {
-        setState(() {
-          _practicing = true;
-          _mode = _PracticeMode.flashcard;
-          _faceToken += 1;
-        });
+        final order = _queue();
+        if (order.isEmpty) {
+          return;
+        }
+        setState(() => _begin(order));
+        widget.onPracticing?.call(true);
       },
-      onLeavePractice: () => setState(() => _practicing = false),
+      onLeavePractice: _leavePractice,
       onMode: _selectMode,
       onStep: _step,
-      onMark: _mark,
+      onRate: _rate,
+      onSkip: _skipNew,
       onFilter: (filter) => setState(() => _filter = filter),
       onShow: _show,
+      onToggleStar: _toggleStar,
     );
-    final stats = _StudyStats(words: widget.set.words, marks: _marks);
+    final stats = _StudyStats(
+      words: _words,
+      levels: _levels,
+      overview: _overview,
+    );
     if (widget.narrow) {
       return Column(
         key: const Key('set-study-page'),
@@ -245,18 +508,22 @@ class _PracticeColumn extends StatelessWidget {
     required this.peek,
     required this.previous,
     required this.faceToken,
-    required this.marks,
+    required this.levels,
     required this.typing,
     required this.visible,
     required this.practicing,
+    required this.place,
+    required this.sessionTotal,
     required this.onEdit,
     required this.onPractice,
     required this.onLeavePractice,
     required this.onMode,
     required this.onStep,
-    required this.onMark,
+    required this.onRate,
+    required this.onSkip,
     required this.onFilter,
     required this.onShow,
+    required this.onToggleStar,
   });
 
   final VocabularySet set;
@@ -266,18 +533,22 @@ class _PracticeColumn extends StatelessWidget {
   final VocabularyWord? peek;
   final VocabularyWord? previous;
   final int faceToken;
-  final Map<int, StudyMark> marks;
+  final Map<int, StudyWordState> levels;
   final TextEditingController typing;
   final bool Function(int index) visible;
   final bool practicing;
+  final int place;
+  final int sessionTotal;
   final VoidCallback onEdit;
   final VoidCallback onPractice;
   final VoidCallback onLeavePractice;
   final ValueChanged<_PracticeMode> onMode;
   final ValueChanged<int> onStep;
-  final ValueChanged<StudyMark> onMark;
+  final ValueChanged<StudyAction> onRate;
+  final VoidCallback onSkip;
   final ValueChanged<_ListFilter> onFilter;
   final ValueChanged<int> onShow;
+  final ValueChanged<int> onToggleStar;
 
   @override
   Widget build(BuildContext context) {
@@ -289,23 +560,52 @@ class _PracticeColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (practicing) ...[
-          Row(
-            children: [
-              IconButton(
-                key: const Key('set-study-practice-back'),
-                onPressed: onLeavePractice,
-                icon: Icon(Icons.arrow_back, color: colors.ink),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  set.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: HomeText.of(context).title,
+          SizedBox(
+            height: 56,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$place / $sessionTotal',
+                      textAlign: TextAlign.center,
+                      style: HomeText.of(context).title.copyWith(height: 1.15),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      set.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: HomeText.of(context).caption.copyWith(
+                        color: colors.muted,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    key: const Key('set-study-practice-back'),
+                    onPressed: onLeavePractice,
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(Icons.close, color: colors.ink),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              minHeight: 3,
+              backgroundColor: colors.border,
+              color: colors.selected,
+              value: sessionTotal == 0 ? 0 : place / sessionTotal,
+            ),
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -326,9 +626,23 @@ class _PracticeColumn extends StatelessWidget {
                 selected: mode == _PracticeMode.flashcard,
                 onTap: () => onMode(_PracticeMode.flashcard),
               ),
+              _ModeChip(
+                chipKey: const Key('set-study-mode-quiz'),
+                icon: Icons.quiz_outlined,
+                label: localizations.studyQuiz,
+                selected: mode == _PracticeMode.quiz,
+                onTap: () => onMode(_PracticeMode.quiz),
+              ),
+              _ModeChip(
+                chipKey: const Key('set-study-mode-typing'),
+                icon: Icons.text_fields,
+                label: localizations.studyTyping,
+                selected: mode == _PracticeMode.typing,
+                onTap: () => onMode(_PracticeMode.typing),
+              ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           _FlashcardStage(
             word: word,
             peek: peek,
@@ -336,40 +650,44 @@ class _PracticeColumn extends StatelessWidget {
             typing: typing,
             onStep: onStep,
             faceToken: faceToken,
+            newWord:
+                mode == _PracticeMode.flashcard &&
+                (cue == null || !levels.containsKey(cue.index)),
+            onSkip: onSkip,
+            onStudied: () => onRate(StudyAction.studied),
           ),
-          const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _RatingButton(
-                buttonKey: const Key('set-study-hard'),
-                icon: Icons.sentiment_dissatisfied,
-                label: localizations.studyHard,
-                color: HomeSample.forgot,
-                selected: cue != null && marks[cue.index] == StudyMark.hard,
-                onPressed: () => onMark(StudyMark.hard),
-              ),
-              const SizedBox(width: 60),
-              _RatingButton(
-                buttonKey: const Key('set-study-familiar'),
-                icon: Icons.sentiment_neutral,
-                label: localizations.studyFamiliar,
-                color: HomeSample.learning,
-                selected:
-                    cue != null && marks[cue.index] == StudyMark.familiar,
-                onPressed: () => onMark(StudyMark.familiar),
-              ),
-              const SizedBox(width: 60),
-              _RatingButton(
-                buttonKey: const Key('set-study-easy'),
-                icon: Icons.sentiment_satisfied,
-                label: localizations.studyEasy,
-                color: HomeSample.familiar,
-                selected: cue != null && marks[cue.index] == StudyMark.easy,
-                onPressed: () => onMark(StudyMark.easy),
-              ),
-            ],
-          ),
+          const SizedBox(height: 24),
+          if (mode == _PracticeMode.flashcard &&
+              cue != null &&
+              levels.containsKey(cue.index))
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _RatingButton(
+                  buttonKey: const Key('set-study-hard'),
+                  icon: Icons.sentiment_dissatisfied,
+                  label: localizations.studyHard,
+                  color: HomeSample.forgot,
+                  onPressed: () => onRate(StudyAction.hard),
+                ),
+                const SizedBox(width: 60),
+                _RatingButton(
+                  buttonKey: const Key('set-study-familiar'),
+                  icon: Icons.sentiment_neutral,
+                  label: localizations.studyFamiliar,
+                  color: HomeSample.learning,
+                  onPressed: () => onRate(StudyAction.familiar),
+                ),
+                const SizedBox(width: 60),
+                _RatingButton(
+                  buttonKey: const Key('set-study-easy'),
+                  icon: Icons.sentiment_satisfied,
+                  label: localizations.studyEasy,
+                  color: HomeSample.familiar,
+                  onPressed: () => onRate(StudyAction.easy),
+                ),
+              ],
+            ),
         ] else ...[
           Row(
             children: [
@@ -414,6 +732,41 @@ class _PracticeColumn extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ModeChip(
+                chipKey: const Key('set-study-mode-random'),
+                icon: Icons.shuffle,
+                label: localizations.studyRandom,
+                selected: mode == _PracticeMode.random,
+                onTap: () => onMode(_PracticeMode.random),
+              ),
+              _ModeChip(
+                chipKey: const Key('set-study-mode-flashcard'),
+                icon: Icons.style_outlined,
+                label: localizations.studyFlashcard,
+                selected: mode == _PracticeMode.flashcard,
+                onTap: () => onMode(_PracticeMode.flashcard),
+              ),
+              _ModeChip(
+                chipKey: const Key('set-study-mode-quiz'),
+                icon: Icons.quiz_outlined,
+                label: localizations.studyQuiz,
+                selected: mode == _PracticeMode.quiz,
+                onTap: () => onMode(_PracticeMode.quiz),
+              ),
+              _ModeChip(
+                chipKey: const Key('set-study-mode-typing'),
+                icon: Icons.text_fields,
+                label: localizations.studyTyping,
+                selected: mode == _PracticeMode.typing,
+                onTap: () => onMode(_PracticeMode.typing),
+              ),
+            ],
+          ),
           const SizedBox(height: 60),
           _WordPreview(
             word: word,
@@ -421,8 +774,40 @@ class _PracticeColumn extends StatelessWidget {
             previousWord: previous,
             onStep: onStep,
             onEdit: onEdit,
+            onToggleStar: cue == null ? null : () => onToggleStar(cue.index),
           ),
-          const SizedBox(height: 100),
+          if (cue != null) ...[
+            const SizedBox(height: 80),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _RatingButton(
+                  buttonKey: const Key('set-study-hard'),
+                  icon: Icons.sentiment_dissatisfied,
+                  label: localizations.studyHard,
+                  color: HomeSample.forgot,
+                  onPressed: () => onRate(StudyAction.hard),
+                ),
+                const SizedBox(width: 60),
+                _RatingButton(
+                  buttonKey: const Key('set-study-familiar'),
+                  icon: Icons.sentiment_neutral,
+                  label: localizations.studyFamiliar,
+                  color: HomeSample.learning,
+                  onPressed: () => onRate(StudyAction.familiar),
+                ),
+                const SizedBox(width: 60),
+                _RatingButton(
+                  buttonKey: const Key('set-study-easy'),
+                  icon: Icons.sentiment_satisfied,
+                  label: localizations.studyEasy,
+                  color: HomeSample.familiar,
+                  onPressed: () => onRate(StudyAction.easy),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 32),
         ],
         if (!practicing) ...[
         Row(
@@ -485,6 +870,7 @@ class _PracticeColumn extends StatelessWidget {
                 word: set.words[index],
                 onTap: () => onShow(index),
                 onEdit: onEdit,
+                onToggleStar: () => onToggleStar(index),
               ),
               const SizedBox(height: 16),
             ],
@@ -501,6 +887,7 @@ class _WordPreview extends StatefulWidget {
     required this.previousWord,
     required this.onStep,
     required this.onEdit,
+    this.onToggleStar,
   });
 
   final VocabularyWord? word;
@@ -508,6 +895,7 @@ class _WordPreview extends StatefulWidget {
   final VocabularyWord? previousWord;
   final ValueChanged<int> onStep;
   final VoidCallback onEdit;
+  final VoidCallback? onToggleStar;
 
   static const _termColor = Color(0xFF1D4ED8);
   static const _sentenceColor = Color(0xFFC47B4A);
@@ -619,6 +1007,7 @@ class _WordPreviewState extends State<_WordPreview>
       text: text,
       colors: colors,
       onEdit: widget.onEdit,
+      onToggleStar: widget.onToggleStar,
       keyed: keyed,
     );
   }
@@ -751,10 +1140,17 @@ class _WordPreviewState extends State<_WordPreview>
 }
 
 class _PreviewTool extends StatelessWidget {
-  const _PreviewTool({required this.icon, this.onPressed});
+  const _PreviewTool({
+    required this.icon,
+    this.onPressed,
+    this.size = _SpeakButton.iconSize,
+    this.color,
+  });
 
   final IconData icon;
   final VoidCallback? onPressed;
+  final double size;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -765,8 +1161,8 @@ class _PreviewTool extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
       icon: Icon(
         icon,
-        size: _SpeakButton.iconSize,
-        color: HomePalette.of(context).muted,
+        size: size,
+        color: color ?? HomePalette.of(context).muted,
       ),
     );
   }
@@ -814,39 +1210,32 @@ class _PreviewTypeBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = HomePalette.of(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final Color fill;
     final Color ink;
     final Color border;
     switch (type) {
       case 'chunking':
-        fill = dark ? const Color(0xFF3B2764) : const Color(0xFFF4EBFF);
         ink = dark ? const Color(0xFFD6BBFB) : const Color(0xFF6941C6);
         border = ink;
       case 'noun':
-        fill = dark ? const Color(0xFF0B3A5B) : const Color(0xFFE0F2FE);
         ink = dark ? const Color(0xFF7CD4FD) : const Color(0xFF026AA2);
         border = ink;
       case 'verb':
-        fill = dark ? const Color(0xFF053321) : const Color(0xFFDCFAE6);
         ink = dark ? const Color(0xFF75E0A7) : const Color(0xFF067647);
         border = ink;
       case 'adj':
-        fill = dark ? const Color(0xFF4A1224) : const Color(0xFFFFE4E8);
         ink = dark ? const Color(0xFFFEA3B4) : const Color(0xFFC01048);
         border = ink;
       default:
-        fill = colors.surface;
         ink = colors.text;
         border = colors.border;
     }
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: border),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
         child: Text(
           label,
           style: HomeText.of(context).caption.copyWith(color: ink),
@@ -877,6 +1266,7 @@ class _PreviewFace extends StatelessWidget {
     required this.text,
     required this.colors,
     required this.onEdit,
+    this.onToggleStar,
     this.keyed = true,
   });
 
@@ -885,6 +1275,7 @@ class _PreviewFace extends StatelessWidget {
   final HomeText text;
   final HomePalette colors;
   final VoidCallback onEdit;
+  final VoidCallback? onToggleStar;
   final bool keyed;
 
   @override
@@ -908,7 +1299,9 @@ class _PreviewFace extends StatelessWidget {
           current.term,
           textAlign: TextAlign.center,
           style: text.title.copyWith(
-            color: _WordPreview._termColor,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? colors.selected
+                : _WordPreview._termColor,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1000,11 +1393,20 @@ class _PreviewFace extends StatelessWidget {
         children: [
           Row(
             children: [
-              _PreviewTool(icon: Icons.edit_outlined, onPressed: onEdit),
+              _PreviewTool(
+                icon: Icons.edit_outlined,
+                onPressed: onEdit,
+                size: 16,
+              ),
               const Spacer(),
               if (current != null && current.term.trim().isNotEmpty)
-                _SpeakButton(term: current.term, keyed: keyed),
-              const _PreviewTool(icon: Icons.star_border),
+                _SpeakButton(term: current.term, keyed: keyed, size: 16),
+              _PreviewTool(
+                icon: current?.starred == true ? Icons.star : Icons.star_border,
+                onPressed: current == null ? null : onToggleStar,
+                size: 16,
+                color: current?.starred == true ? _starColor : null,
+              ),
             ],
           ),
           Row(
@@ -1035,6 +1437,9 @@ class _FlashcardStage extends StatefulWidget {
     required this.typing,
     required this.onStep,
     required this.faceToken,
+    required this.newWord,
+    required this.onSkip,
+    required this.onStudied,
   });
 
   final VocabularyWord? word;
@@ -1043,6 +1448,9 @@ class _FlashcardStage extends StatefulWidget {
   final TextEditingController typing;
   final ValueChanged<int> onStep;
   final int faceToken;
+  final bool newWord;
+  final VoidCallback onSkip;
+  final VoidCallback onStudied;
 
   @override
   State<_FlashcardStage> createState() => _FlashcardStageState();
@@ -1125,7 +1533,16 @@ class _FlashcardStageState extends State<_FlashcardStage>
   Widget build(BuildContext context) {
     final colors = HomePalette.of(context);
     final showArrows = widget.mode != _PracticeMode.flashcard;
-    return Row(
+    final localizations = AppLocalizations.of(context);
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        SingleActivator(LogicalKeyboardKey.space): _flipCard,
+      },
+      child: Focus(
+        autofocus: widget.mode == _PracticeMode.flashcard,
+        child: Column(
+          children: [
+            Row(
       children: [
         if (showArrows)
           IconButton(
@@ -1137,6 +1554,17 @@ class _FlashcardStageState extends State<_FlashcardStage>
           child: GestureDetector(
             key: const Key('set-study-card-tap'),
             onTap: _flipCard,
+            onHorizontalDragEnd: (details) {
+              if (!widget.newWord) {
+                return;
+              }
+              final velocity = details.primaryVelocity ?? 0;
+              if (velocity <= -100) {
+                widget.onSkip();
+              } else if (velocity >= 100) {
+                widget.onStudied();
+              }
+            },
             child: AnimatedBuilder(
               animation: Listenable.merge(<Listenable>[_flip, _slide]),
               builder: (context, child) {
@@ -1175,6 +1603,48 @@ class _FlashcardStageState extends State<_FlashcardStage>
             icon: Icon(Icons.chevron_right, color: colors.ink),
           ),
       ],
+            ),
+            if (widget.newWord) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      key: const Key('set-study-skip'),
+                      onPressed: widget.onSkip,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colors.text,
+                        side: BorderSide(color: colors.border),
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(localizations.studyNotYetStudied),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      key: const Key('set-study-studied'),
+                      onPressed: widget.onStudied,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colors.practice,
+                        foregroundColor: colors.onAccent,
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(localizations.studyStudiedAction),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1310,7 +1780,7 @@ class _Flashcard extends StatelessWidget {
     return Container(
       key: const Key('set-study-card'),
       alignment: null,
-      constraints: BoxConstraints(minHeight: centered ? 300 : 180),
+      constraints: BoxConstraints(minHeight: centered ? 420 : 180),
       padding: centered
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(24, 20, 24, 20),
@@ -1328,15 +1798,16 @@ class _Flashcard extends StatelessWidget {
       ),
       child: centered
           ? SizedBox(
-              height: 300,
+              height: 420,
               width: double.infinity,
               child: Column(
                 children: [
                   Expanded(
                     child: Stack(
+                      fit: StackFit.expand,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                          padding: const EdgeInsets.fromLTRB(24, 28, 56, 12),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -1420,49 +1891,35 @@ class _MeaningHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final ink = dark ? const Color(0xFFF5F8FF) : const Color(0xFF1D2939);
+    final colors = HomePalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: DecoratedBox(
         key: const Key('set-study-meaning-hint'),
         decoration: BoxDecoration(
-          color: dark ? const Color(0xFF243056) : const Color(0xFFE4E7FF),
-          borderRadius: BorderRadius.circular(12),
+          color: colors.folderFill,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 22,
-                height: 22,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5C451),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(
-                  Icons.touch_app,
-                  size: 14,
-                  color: Color(0xFF7A5410),
+              Text(
+                localizations.studyShortcut,
+                style: HomeText.of(context).caption.copyWith(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                localizations.studyShortcut,
-                style: HomeText.of(context).body.copyWith(
-                  color: ink,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 10),
               Flexible(
                 child: Text(
-                  localizations.studyTapForMeaning,
+                  localizations.studyFlipShortcut,
                   textAlign: TextAlign.center,
-                  style: HomeText.of(context).body.copyWith(color: ink),
+                  style: HomeText.of(context).caption.copyWith(
+                    color: colors.text,
+                  ),
                 ),
               ),
             ],
@@ -1495,8 +1952,15 @@ class _CardLines extends StatelessWidget {
             lines[index],
             textAlign: centered ? TextAlign.center : TextAlign.start,
             style: index == 0
-                ? text.title.copyWith(fontWeight: FontWeight.w600)
-                : text.body.copyWith(color: colors.muted),
+                ? text.title.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: centered ? 32 : null,
+                    height: centered ? 1.2 : null,
+                  )
+                : text.body.copyWith(
+                    color: colors.muted,
+                    fontStyle: centered ? FontStyle.italic : null,
+                  ),
           ),
         ],
       ],
@@ -1530,12 +1994,17 @@ class _CardPhoto extends StatelessWidget {
 }
 
 class _SpeakButton extends StatelessWidget {
-  const _SpeakButton({required this.term, this.keyed = true});
+  const _SpeakButton({
+    required this.term,
+    this.keyed = true,
+    this.size = iconSize,
+  });
 
   static const iconSize = 18.0;
 
   final String term;
   final bool keyed;
+  final double size;
 
   Future<void> _speak() async {
     final spoken = term.trim();
@@ -1564,7 +2033,7 @@ class _SpeakButton extends StatelessWidget {
       icon: Icon(
         Icons.volume_up_outlined,
         color: HomePalette.of(context).muted,
-        size: iconSize,
+        size: size,
       ),
     );
   }
@@ -1576,12 +2045,14 @@ class _StudyWordCard extends StatelessWidget {
     required this.word,
     required this.onTap,
     required this.onEdit,
+    required this.onToggleStar,
   });
 
   final int index;
   final VocabularyWord word;
   final VoidCallback onTap;
   final VoidCallback onEdit;
+  final VoidCallback onToggleStar;
 
   @override
   Widget build(BuildContext context) {
@@ -1604,9 +2075,13 @@ class _StudyWordCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _WordToolIcon(icon: Icons.volume_up_outlined),
+                  _SpeakButton(term: word.term, keyed: false),
                   const SizedBox(width: 8),
-                  _WordToolIcon(icon: Icons.star_border),
+                  _WordToolIcon(
+                    icon: word.starred ? Icons.star : Icons.star_border,
+                    color: word.starred ? _starColor : null,
+                    onPressed: onToggleStar,
+                  ),
                   const Spacer(),
                   _WordToolIcon(
                     icon: Icons.edit_outlined,
@@ -1673,11 +2148,14 @@ class _StudyWordCard extends StatelessWidget {
   }
 }
 
+const _starColor = Color(0xFFF5B942);
+
 class _WordToolIcon extends StatelessWidget {
-  const _WordToolIcon({required this.icon, this.onPressed});
+  const _WordToolIcon({required this.icon, this.onPressed, this.color});
 
   final IconData icon;
   final VoidCallback? onPressed;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -1686,46 +2164,64 @@ class _WordToolIcon extends StatelessWidget {
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-      icon: Icon(icon, size: 18, color: HomePalette.of(context).muted),
+      icon: Icon(
+        icon,
+        size: 18,
+        color: color ?? HomePalette.of(context).muted,
+      ),
     );
   }
 }
 
 class _StudyStats extends StatelessWidget {
-  const _StudyStats({required this.words, required this.marks});
+  const _StudyStats({
+    required this.words,
+    required this.levels,
+    this.overview,
+  });
 
   final List<VocabularyWord> words;
-  final Map<int, StudyMark> marks;
+  final Map<int, StudyWordState> levels;
+  final HomeSample? overview;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     final colors = HomePalette.of(context);
-    final learned = marks.values.where((mark) => mark == StudyMark.easy).length;
-    final counts = <StudyMark?, int>{
-      StudyMark.hard: 0,
-      StudyMark.familiar: 0,
-      StudyMark.easy: 0,
-      null: 0,
-    };
-    for (var index = 0; index < words.length; index++) {
-      final mark = marks[index];
-      counts[mark] = (counts[mark] ?? 0) + 1;
+    final home = overview;
+    final counts = List<int>.filled(6, 0);
+    final int learned;
+    final int total;
+    if (home == null) {
+      for (var index = 0; index < words.length; index++) {
+        final level = levels[index]?.level;
+        if (level != null && level >= 1 && level <= 6) {
+          counts[level - 1] += 1;
+        }
+      }
+      learned = counts[5];
+      total = words.length;
+    } else {
+      learned = home.learnedCount;
+      total = home.totalCount;
+      for (var index = 0; index < home.bars.length && index < counts.length; index++) {
+        counts[index] = int.tryParse(home.bars[index].label ?? '') ?? 0;
+      }
     }
+    final colorsForLevel = <Color>[
+      HomeSample.forgot,
+      HomeSample.hard,
+      HomeSample.learning,
+      HomeSample.familiar,
+      HomeSample.good,
+      HomeSample.mastered,
+    ];
     final bars = <HomeBar>[
-      HomeBar(
-        color: HomeSample.forgot,
-        height: counts[StudyMark.hard]!.toDouble(),
-      ),
-      HomeBar(
-        color: HomeSample.learning,
-        height: counts[StudyMark.familiar]!.toDouble(),
-      ),
-      HomeBar(
-        color: HomeSample.familiar,
-        height: counts[StudyMark.easy]!.toDouble(),
-      ),
-      HomeBar(color: HomeSample.mastered, height: counts[null]!.toDouble()),
+      for (var index = 0; index < counts.length; index++)
+        HomeBar(
+          color: colorsForLevel[index],
+          height: counts[index].toDouble(),
+        ),
     ];
     final peak = bars.fold<double>(1, (peak, bar) {
       return bar.height > peak ? bar.height : peak;
@@ -1751,7 +2247,7 @@ class _StudyStats extends StatelessWidget {
                 children: [
                   TextSpan(text: '$learned'),
                   TextSpan(
-                    text: '/${words.length}',
+                    text: '/$total',
                     style: HomeText.of(context).subtitle.copyWith(
                       color: colors.ink,
                     ),
@@ -1759,6 +2255,13 @@ class _StudyStats extends StatelessWidget {
                 ],
               ),
             ),
+            if (home != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${home.percent}%',
+                style: HomeText.of(context).subtitle.copyWith(color: colors.ink),
+              ),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               height: 140,
@@ -1825,6 +2328,206 @@ class _StudyStats extends StatelessWidget {
   }
 }
 
+class _PracticeComplete extends StatelessWidget {
+  const _PracticeComplete({
+    required this.words,
+    required this.levels,
+    required this.total,
+    required this.hard,
+    required this.familiar,
+    required this.easy,
+    required this.studied,
+    required this.skipped,
+    required this.onDone,
+    this.overview,
+  });
+
+  final List<VocabularyWord> words;
+  final Map<int, StudyWordState> levels;
+  final int total;
+  final int hard;
+  final int familiar;
+  final int easy;
+  final int studied;
+  final int skipped;
+  final VoidCallback onDone;
+  final HomeSample? overview;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final colors = HomePalette.of(context);
+    final text = HomeText.of(context);
+    final results = <({String label, int count, Color color})>[
+      if (hard > 0)
+        (label: localizations.studyHard, count: hard, color: HomeSample.forgot),
+      if (familiar > 0)
+        (
+          label: localizations.studyFamiliar,
+          count: familiar,
+          color: HomeSample.learning,
+        ),
+      if (easy > 0)
+        (
+          label: localizations.studyEasy,
+          count: easy,
+          color: HomeSample.familiar,
+        ),
+      if (studied > 0)
+        (
+          label: localizations.studyStudiedAction,
+          count: studied,
+          color: colors.practice,
+        ),
+      if (skipped > 0)
+        (
+          label: localizations.studyNotYetStudied,
+          count: skipped,
+          color: colors.muted,
+        ),
+    ];
+    final message = total == 1
+        ? localizations.studyCompleteOne
+        : localizations.studyCompleteMany(total);
+    return Column(
+      key: const Key('set-study-page'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: IconButton(
+            key: const Key('set-study-practice-back'),
+            onPressed: onDone,
+            visualDensity: VisualDensity.compact,
+            icon: Icon(Icons.close, color: colors.ink),
+          ),
+        ),
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.selectedFill,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Icon(
+                      Icons.celebration,
+                      size: 42,
+                      color: colors.practice,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  localizations.studyCompleteTitle,
+                  textAlign: TextAlign.center,
+                  style: text.title,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  key: const Key('set-study-complete'),
+                  textAlign: TextAlign.center,
+                  style: text.subtitle,
+                ),
+                if (results.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (final result in results)
+                        _SessionCount(
+                          label: result.label,
+                          count: result.count,
+                          color: result.color,
+                        ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 28),
+                _StudyStats(words: words, levels: levels, overview: overview),
+                const SizedBox(height: 24),
+                FilledButton(
+                  key: const Key('set-study-complete-done'),
+                  onPressed: onDone,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.practice,
+                    foregroundColor: colors.onAccent,
+                    minimumSize: const Size(220, 48),
+                    shape: const StadiumBorder(),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                  child: Text(localizations.studyCompleteDone),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SessionCount extends StatelessWidget {
+  const _SessionCount({
+    required this.label,
+    required this.count,
+    required this.color,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 96,
+      child: Column(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: Text(
+                  '$count',
+                  style: HomeText.of(context).subtitle.copyWith(
+                    color: HomePalette.of(context).onAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: HomeText.of(context).caption.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
     this.buttonKey,
@@ -1885,13 +2588,11 @@ class _ModeChip extends StatelessWidget {
     final color = selected ? colors.selected : colors.text;
     return Material(
       key: chipKey,
-      color: selected ? colors.selectedFill : colors.surface,
-      shape: StadiumBorder(
-        side: BorderSide(color: selected ? colors.selected : colors.border),
-      ),
+      color: selected ? colors.selectedFill : Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
-        customBorder: const StadiumBorder(),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
@@ -1914,13 +2615,12 @@ class _ModeChip extends StatelessWidget {
   }
 }
 
-class _RatingButton extends StatelessWidget {
+class _RatingButton extends StatefulWidget {
   const _RatingButton({
     required this.buttonKey,
     required this.icon,
     required this.label,
     required this.color,
-    required this.selected,
     required this.onPressed,
   });
 
@@ -1928,32 +2628,123 @@ class _RatingButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  final bool selected;
   final VoidCallback onPressed;
 
   @override
+  State<_RatingButton> createState() => _RatingButtonState();
+}
+
+class _RatingButtonState extends State<_RatingButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _press;
+  late final Animation<double> _scale;
+  var _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _press = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 240),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1, end: 0.84)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.84, end: 1.14)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 40,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.14, end: 1)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 30,
+      ),
+    ]).animate(_press);
+  }
+
+  @override
+  void dispose() {
+    _press.dispose();
+    super.dispose();
+  }
+
+  Future<void> _tap() async {
+    if (_busy) {
+      return;
+    }
+    _busy = true;
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      await _press.forward(from: 0);
+    }
+    if (!mounted) {
+      return;
+    }
+    widget.onPressed();
+    if (mounted) {
+      _busy = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        IconButton(
-          key: buttonKey,
-          onPressed: onPressed,
-          icon: Icon(icon, color: Colors.white, size: 28),
-          style: IconButton.styleFrom(
-            backgroundColor: color,
-            fixedSize: const Size(56, 56),
-            shape: const CircleBorder(),
-            side: selected
-                ? BorderSide(color: HomePalette.of(context).ink, width: 2)
-                : null,
-          ),
+    return AnimatedBuilder(
+      animation: _press,
+      builder: (context, child) {
+        final progress = _press.value;
+        final showRing = progress > 0 && progress < 1;
+        return Column(
+          children: [
+            SizedBox(
+              width: 56,
+              height: 56,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  if (showRing)
+                    IgnorePointer(
+                      child: Transform.scale(
+                        scale: 1 + progress * 0.75,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: widget.color.withValues(
+                                alpha: (1 - progress) * 0.8,
+                              ),
+                              width: 2.5,
+                            ),
+                          ),
+                          child: const SizedBox.square(dimension: 56),
+                        ),
+                      ),
+                    ),
+                  Transform.scale(scale: _scale.value, child: child),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.label,
+              style: HomeText.of(context).body.copyWith(color: widget.color),
+            ),
+          ],
+        );
+      },
+      child: IconButton(
+        key: widget.buttonKey,
+        onPressed: _tap,
+        icon: Icon(widget.icon, color: Colors.white, size: 28),
+        style: IconButton.styleFrom(
+          backgroundColor: widget.color,
+          fixedSize: const Size(56, 56),
+          shape: const CircleBorder(),
         ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: HomeText.of(context).body.copyWith(color: color),
-        ),
-      ],
+      ),
     );
   }
 }

@@ -91,4 +91,15 @@ class FirestoreVocabularySetStore implements VocabularySetStore {
     );
     await batch.commit();
   }
+
+  @override
+  Future<void> updateWords(VocabularySet set) async {
+    final id = set.id;
+    if (id == null || id.isEmpty) {
+      return;
+    }
+    await _firestore.collection('sets').doc(id).update(<String, Object>{
+      'words': vocabularySetDocument(set)['words'] as Object,
+    });
+  }
 }

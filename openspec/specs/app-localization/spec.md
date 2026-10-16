@@ -180,3 +180,36 @@ The word editor chrome SHALL have copy in Vietnamese, English, and German. Chrom
 #### Scenario: Vietnamese word editor chrome
 - **WHEN** the word editor is shown in Vietnamese
 - **THEN** it shows "Tất cả bài viết", "Xong", "Tiêu đề", "Nhập tiêu đề...", "Thêm mô tả...", "Nhập", "Từ", "Nhập từ", "Định nghĩa", "Nhập định nghĩa", "Câu", "Nhập câu", "Chi tiết", "IPA", "Nhập IPA", "Số ít - Số nhiều", "Nhập số ít và số nhiều", "Ghi chú", "Nhập ghi chú", "Loại", "Chunking", "Danh từ", "Động từ", "Tính từ", and "Thêm từ mới"
+
+### Requirement: Practice chrome exists in every language
+Still learning, Know, Not yet studied, and Studied SHALL have copy in Vietnamese, English, and German. The practice screen SHALL NOT show a Track progress control.
+
+#### Scenario: English practice labels
+- **WHEN** practice is shown in English and the current word is new
+- **THEN** the screen shows "Not yet studied" and "Studied"
+- **AND** the screen does not show "Track progress"
+
+#### Scenario: Vietnamese practice labels
+- **WHEN** practice is shown in Vietnamese and the current word is new
+- **THEN** the screen shows "Chưa học" and "Đã học"
+- **AND** the screen does not show "Theo dõi tiến độ"
+
+#### Scenario: German practice labels
+- **WHEN** practice is shown in German and the current word is new
+- **THEN** the screen shows "Noch nicht gelernt" and "Gelernt"
+- **AND** the screen does not show "Fortschritt verfolgen"
+
+### Requirement: The flip shortcut exists in every language
+The Flashcard shortcut SHALL have copy in Vietnamese, English, and German. In English it SHALL say "Press Space or click the card to flip".
+
+#### Scenario: English shortcut
+- **WHEN** Flashcard is showing a term face in English
+- **THEN** the card shows "Press Space or click the card to flip"
+
+#### Scenario: Vietnamese shortcut
+- **WHEN** Flashcard is showing a term face in Vietnamese
+- **THEN** the card shows "Nhấn Space hoặc nhấn thẻ để lật"
+
+#### Scenario: German shortcut
+- **WHEN** Flashcard is showing a term face in German
+- **THEN** the card shows "Leertaste drücken oder auf die Karte klicken zum Umdrehen"

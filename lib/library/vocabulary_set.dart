@@ -34,6 +34,7 @@ class VocabularyWord {
     required this.note,
     this.type,
     this.imageUrl,
+    this.starred = false,
   });
 
   final String term;
@@ -44,6 +45,21 @@ class VocabularyWord {
   final String note;
   final String? type;
   final String? imageUrl;
+  final bool starred;
+
+  VocabularyWord copyWith({bool? starred}) {
+    return VocabularyWord(
+      term: term,
+      definition: definition,
+      sentence: sentence,
+      ipa: ipa,
+      singularPlural: singularPlural,
+      note: note,
+      type: type,
+      imageUrl: imageUrl,
+      starred: starred ?? this.starred,
+    );
+  }
 }
 
 @immutable
@@ -83,6 +99,8 @@ String? _keptImage(String? imageUrl) {
 
 abstract class VocabularySetStore {
   Future<void> save(VocabularySet set);
+
+  Future<void> updateWords(VocabularySet set) async {}
 
   Future<String> createFolder(String name, {bool editor = false});
 }
@@ -151,6 +169,7 @@ VocabularySet? vocabularySetFromDocument(Object? value) {
     final note = item['note'];
     final type = item['type'];
     final imageUrl = item['imageUrl'];
+    final starred = item['starred'];
     if (term is! String ||
         definition is! String ||
         sentence is! String ||
@@ -158,7 +177,8 @@ VocabularySet? vocabularySetFromDocument(Object? value) {
         singularPlural is! String ||
         note is! String ||
         (type != null && type is! String) ||
-        (imageUrl != null && imageUrl is! String)) {
+        (imageUrl != null && imageUrl is! String) ||
+        (starred != null && starred is! bool)) {
       return null;
     }
     words.add(
@@ -171,6 +191,7 @@ VocabularySet? vocabularySetFromDocument(Object? value) {
         note: note,
         type: type is String ? type : null,
         imageUrl: imageUrl is String ? imageUrl : null,
+        starred: starred == true,
       ),
     );
   }
@@ -199,6 +220,7 @@ Map<String, Object> vocabularySetDocument(VocabularySet set) {
           'note': word.note,
           if (word.type != null) 'type': word.type!,
           if (word.imageUrl != null) 'imageUrl': word.imageUrl!,
+          if (word.starred) 'starred': true,
         },
     ],
   };
