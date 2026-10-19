@@ -351,6 +351,7 @@ void main() {
     expect(find.byKey(const Key('library-folder-add-sets')), findsOneWidget);
     expect(find.text('Nothing here yet'), findsOneWidget);
     expect(find.text('Add a set and it will show up here.'), findsOneWidget);
+    expect(find.text('Add flashcard sets'), findsOneWidget);
     expect(find.byKey(const Key('library-folder-empty')), findsOneWidget);
     expect(find.text('Your library'), findsNothing);
     expect(find.text('Hot search'), findsNothing);
@@ -363,6 +364,60 @@ void main() {
     expect(raw, isNot(contains('editorFolder')));
     expect(store.createdFolders, <String>['Travel']);
     expect(store.editorFolders, <bool>[false]);
+  });
+
+  testWidgets('the folder add button opens the set picker', (tester) async {
+    await pumpApp(
+      tester,
+      library: VocabularyLibrary(
+        folders: <VocabularyFolder>[
+          const VocabularyFolder(name: 'Travel'),
+          VocabularyFolder(
+            name: 'My vocab',
+            sets: const <String>['German A1'],
+            contents: <VocabularySet?>[
+              VocabularySet(
+                title: 'German A1',
+                description: '',
+                words: <VocabularyWord>[_kind],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('nav-library')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-chip-folders')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('library-folder-Travel')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-add-sets')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('add-materials-dialog')), findsOneWidget);
+    expect(find.text('Add study materials'), findsOneWidget);
+    expect(find.text('Recents'), findsOneWidget);
+    expect(find.text('Your library'), findsOneWidget);
+    expect(find.text('German A1'), findsOneWidget);
+    expect(find.text('Create new'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('add-materials-add-My vocab-0')));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.check), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('add-materials-done')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('add-materials-dialog')), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('German A1'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the set of words plus creates a sidebar folder', (
@@ -450,6 +505,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('library-folder-delete')));
     await tester.pumpAndSettle();
+    expect(find.text('Delete this folder?'), findsOneWidget);
+    expect(find.byKey(const Key('folder-Trips')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('folder-delete-confirm')));
+    await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('library-page')), findsOneWidget);
     expect(find.text('Your library'), findsOneWidget);
@@ -460,7 +519,9 @@ void main() {
   testWidgets('delete removes the folder when the store rejects it', (
     tester,
   ) async {
-    final store = _RecordingStore()..deleteError = StateError('denied');
+    final store = _RecordingStore()
+      ..deleteError = StateError('denied')
+      ..deleteGate = Completer<void>();
     await pumpApp(tester, setStore: store);
 
     await tester.tap(find.byKey(const Key('sidebar-add-folder')));
@@ -472,6 +533,12 @@ void main() {
     await tester.tap(find.byKey(const Key('library-folder-more')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('library-folder-delete')));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete this folder?'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('folder-delete-confirm')));
+    await tester.pump();
+    expect(find.byKey(const Key('folder-delete-progress')), findsOneWidget);
+    store.releaseDelete();
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('library-page')), findsOneWidget);
@@ -2010,6 +2077,67 @@ void main() {
     expect(find.byKey(const Key('collapsed-folder-divider')), findsOneWidget);
   });
 
+  testWidgets('learned captions open the matching word list', (tester) async {
+    const kind = VocabularyWord(
+      term: 'Kind',
+      definition: 'child',
+      sentence: 'Das Kind spielt.',
+      ipa: '/kɪnt/',
+      singularPlural: 'das, -er',
+      note: '',
+      type: 'noun',
+    );
+    final progress = _MemoryProgress(
+      home: StudyHomeData(
+        progress: <String, StudySetProgress>{
+          'setA': StudySetProgress(
+            marks: const <int, StudyMark>{},
+            levels: <int, StudyWordState>{
+              0: StudyWordState(level: 6, dueAt: DateTime(2020)),
+            },
+          ),
+        },
+      ),
+    );
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[kind, _haus], id: 'setA'),
+      ]),
+    );
+
+    await tester.ensureVisible(find.byKey(const Key('statistics-learned')));
+    await tester.tap(find.byKey(const Key('statistics-learned')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Words learned (1)'), findsOneWidget);
+    expect(_dialogText('Kind'), findsOneWidget);
+    expect(_dialogText('noun'), findsOneWidget);
+    expect(_dialogText('/kɪnt/'), findsOneWidget);
+    expect(_dialogText('Das Kind spielt.'), findsOneWidget);
+    expect(_dialogText('Haus'), findsNothing);
+    expect(find.byIcon(Icons.image_outlined), findsNothing);
+    expect(find.text('Search vocabulary'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('learned-words-close')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('statistics-not-learned')));
+    await tester.tap(find.byKey(const Key('statistics-not-learned')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Words not yet learned (1)'), findsOneWidget);
+    expect(_dialogText('Haus'), findsOneWidget);
+    expect(_dialogText('Kind'), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('learned-words-search')), 'zzz');
+    await tester.pump();
+    expect(find.text('Words not yet learned (1)'), findsOneWidget);
+    expect(_dialogText('Haus'), findsNothing);
+    expect(_dialogText('Nothing here yet'), findsOneWidget);
+  });
+
   testWidgets('an empty day list keeps Practice on the home', (tester) async {
     await pumpApp(
       tester,
@@ -2028,6 +2156,13 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('0/0'), findsOneWidget);
   });
+}
+
+Finder _dialogText(String text) {
+  return find.descendant(
+    of: find.byKey(const Key('learned-words-dialog')),
+    matching: find.text(text),
+  );
 }
 
 Finder _cardText(String text) {
@@ -2181,6 +2316,7 @@ class _MemoryProgress implements StudyProgressStore {
 class _RecordingStore implements VocabularySetStore {
   Object? error;
   Object? deleteError;
+  Completer<void>? deleteGate;
   final saved = <VocabularySet>[];
   final createdFolders = <String>[];
   final editorFolders = <bool>[];
@@ -2217,9 +2353,17 @@ class _RecordingStore implements VocabularySetStore {
   Future<void> renameFolder(String id, String name) async {}
 
   @override
+  void releaseDelete() {
+    deleteGate?.complete();
+  }
+
   Future<void> deleteFolder(String id) async {
     final deleteError = this.deleteError;
     deletedFolders.add(id);
+    final gate = deleteGate;
+    if (gate != null) {
+      await gate.future;
+    }
     if (deleteError != null) {
       throw deleteError;
     }

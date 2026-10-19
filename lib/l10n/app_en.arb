@@ -98,6 +98,22 @@
   "@libraryFolderEmpty": {
     "description": "Hint under the empty folder title."
   },
+  "addFlashcardSets": "Add flashcard sets",
+  "@addFlashcardSets": {
+    "description": "Button that opens the picker for adding sets to a folder."
+  },
+  "addStudyMaterials": "Add study materials",
+  "@addStudyMaterials": {
+    "description": "Title of the dialog that adds flashcard sets to a folder."
+  },
+  "addMaterialsRecents": "Recents",
+  "@addMaterialsRecents": {
+    "description": "Picker tab for the most recently listed flashcard sets."
+  },
+  "createNew": "Create new",
+  "@createNew": {
+    "description": "Action in the add-sets dialog that starts a new flashcard set."
+  },
   "navNotification": "Notification",
   "@navNotification": {
     "description": "Sidebar navigation label for notifications."
@@ -125,6 +141,10 @@
   "wordsNotLearned": "Words not yet learned",
   "@wordsNotLearned": {
     "description": "Caption under the not-yet-learned side of the statistics chart."
+  },
+  "wordSearch": "Search vocabulary",
+  "@wordSearch": {
+    "description": "Search field in the learned and not-yet-learned word list."
   },
   "levelMastered": "Lv.6 - Mastered",
   "@levelMastered": {
@@ -209,6 +229,18 @@
   "folderDelete": "Delete",
   "@folderDelete": {
     "description": "Folder menu action that deletes the folder."
+  },
+  "folderDeleteTitle": "Delete this folder?",
+  "@folderDeleteTitle": {
+    "description": "Title of the dialog that confirms deleting a folder."
+  },
+  "folderDeleteBody": "The folder will be permanently deleted, but you'll be able to find the items from it in your library.",
+  "@folderDeleteBody": {
+    "description": "Explanation in the dialog that confirms deleting a folder."
+  },
+  "folderDeleteConfirm": "Delete folder",
+  "@folderDeleteConfirm": {
+    "description": "Button that confirms deleting a folder."
   },
   "studyTodayPractice": "Today practice",
   "@studyTodayPractice": {

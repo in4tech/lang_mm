@@ -82,6 +82,7 @@ class _HomeFrameState extends State<_HomeFrame> {
   int? _editWordIndex;
   late VocabularyLibrary _library;
   String? _createdEditorFolderId;
+  String? _addSetsFolder;
   StudyHomeData _study = StudyHomeData.empty;
   var _allSets = true;
 
@@ -94,6 +95,7 @@ class _HomeFrameState extends State<_HomeFrame> {
 
   void _openEditor() {
     setState(() {
+      _addSetsFolder = null;
       _editing = true;
       _studying = false;
       _studyReturn = false;
@@ -362,6 +364,7 @@ class _HomeFrameState extends State<_HomeFrame> {
 
   void _closeEditor() {
     setState(() {
+      _addSetsFolder = null;
       _editing = false;
       _editWordIndex = null;
       if (_studyReturn) {
@@ -549,6 +552,15 @@ class _HomeFrameState extends State<_HomeFrame> {
   }
 
   Future<String> _editorFolderId(VocabularySetStore store) async {
+    final adding = _addSetsFolder;
+    if (adding != null) {
+      for (final folder in _library.folders) {
+        final id = folder.id;
+        if (folder.name == adding && id != null && id.isNotEmpty) {
+          return id;
+        }
+      }
+    }
     final label = AppLocalizations.of(context).vocabularySet;
     final target = _library.editorFolder ?? label;
     for (final folder in _library.folders) {
@@ -608,13 +620,38 @@ class _HomeFrameState extends State<_HomeFrame> {
     _storeLibrary(next);
   }
 
+  Future<void> _addSetToLibraryFolder(String folderName, VocabularySet set) async {
+    final next = _library.addSetToFolder(folderName, set);
+    await _storeLibrary(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _library = next);
+  }
+
+  void _createSetInFolder(String folderName) {
+    setState(() {
+      _addSetsFolder = folderName;
+      _editing = true;
+      _studying = false;
+      _studyReturn = false;
+      _openSet = null;
+      _editWordIndex = null;
+      _editorSession += 1;
+    });
+  }
+
   Future<void> _persistSavedSet(VocabularySet set) async {
-    final next = _library.addSavedSet(
-      name: set.title,
-      folderLabel: AppLocalizations.of(context).vocabularySet,
-      content: set,
-      folderId: set.folderId,
-    );
+    final adding = _addSetsFolder;
+    final next = adding == null
+        ? _library.addSavedSet(
+            name: set.title,
+            folderLabel: AppLocalizations.of(context).vocabularySet,
+            content: set,
+            folderId: set.folderId,
+          )
+        : _library.addSetToFolder(adding, set);
+    _addSetsFolder = null;
     final preferences = await SharedPreferences.getInstance();
     await SharedPreferencesVocabularyLibraryStore(preferences).write(next);
     _createdEditorFolderId = null;
@@ -689,6 +726,8 @@ class _HomeFrameState extends State<_HomeFrame> {
         onRenameFolder: _renameLibraryFolder,
         onDeleteFolder: _deleteLibraryFolder,
         onPinFolder: _pinLibraryFolder,
+        onAddSet: _addSetToLibraryFolder,
+        onCreateSet: _createSetInFolder,
         onOpenSet: _openSavedSet,
       );
     }
@@ -698,6 +737,20 @@ class _HomeFrameState extends State<_HomeFrame> {
     return _Dashboard(
       sample: dashboard,
       narrow: narrow,
+      learnedWords: statisticsWords(
+        library: _library,
+        progress: _study.progress,
+        learned: true,
+        allSets: dashboard.statisticsAll,
+        setId: dashboard.statisticsSetId,
+      ),
+      notLearnedWords: statisticsWords(
+        library: _library,
+        progress: _study.progress,
+        learned: false,
+        allSets: dashboard.statisticsAll,
+        setId: dashboard.statisticsSetId,
+      ),
       onAllChanged: (allSets) => setState(() => _allSets = allSets),
       onPractice: _openPractice,
       onContinue: _continueRecent,
@@ -940,6 +993,8 @@ class _Dashboard extends StatelessWidget {
   const _Dashboard({
     required this.sample,
     this.narrow = false,
+    this.learnedWords = const <VocabularyWord>[],
+    this.notLearnedWords = const <VocabularyWord>[],
     this.onAllChanged,
     this.onPractice,
     this.onContinue,
@@ -948,6 +1003,8 @@ class _Dashboard extends StatelessWidget {
 
   final HomeSample sample;
   final bool narrow;
+  final List<VocabularyWord> learnedWords;
+  final List<VocabularyWord> notLearnedWords;
   final ValueChanged<bool>? onAllChanged;
   final VoidCallback? onPractice;
   final ValueChanged<RecentSet>? onContinue;
@@ -972,6 +1029,8 @@ class _Dashboard extends StatelessWidget {
               sample: sample,
               onAllChanged: onAllChanged,
               onOpenSet: onOpenStatisticsSet,
+              learnedWords: learnedWords,
+              notLearnedWords: notLearnedWords,
             ),
           ),
           const SizedBox(height: 16),
@@ -1004,6 +1063,8 @@ class _Dashboard extends StatelessWidget {
                   sample: sample,
                   onAllChanged: onAllChanged,
                   onOpenSet: onOpenStatisticsSet,
+                  learnedWords: learnedWords,
+                  notLearnedWords: notLearnedWords,
                 ),
               ),
             ),

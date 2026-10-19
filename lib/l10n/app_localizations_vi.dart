@@ -80,6 +80,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get libraryFolderEmpty => 'Thêm một bộ từ, nó sẽ hiện ở đây.';
 
   @override
+  String get addFlashcardSets => 'Thêm bộ từ';
+
+  @override
+  String get addStudyMaterials => 'Thêm tài liệu học';
+
+  @override
+  String get addMaterialsRecents => 'Gần đây';
+
+  @override
+  String get createNew => 'Tạo mới';
+
+  @override
   String get navNotification => 'Thông báo';
 
   @override
@@ -99,6 +111,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get wordsNotLearned => 'Từ chưa học';
+
+  @override
+  String get wordSearch => 'Tìm kiếm từ vựng';
 
   @override
   String get levelMastered => 'Lv.6 - Thành thạo';
@@ -162,6 +177,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get folderDelete => 'Xóa';
+
+  @override
+  String get folderDeleteTitle => 'Xóa thư mục này?';
+
+  @override
+  String get folderDeleteBody =>
+      'Thư mục sẽ bị xóa vĩnh viễn, nhưng bạn vẫn tìm thấy các mục của nó trong thư viện.';
+
+  @override
+  String get folderDeleteConfirm => 'Xóa thư mục';
 
   @override
   String get studyTodayPractice => 'Luyện hôm nay';

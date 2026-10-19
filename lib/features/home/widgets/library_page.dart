@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lang/features/home/widgets/add_sets_dialog.dart';
 import 'package:lang/library/vocabulary_library.dart';
+import 'package:lang/library/vocabulary_set.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
@@ -14,6 +16,8 @@ class LibraryPage extends StatefulWidget {
     this.onRenameFolder,
     this.onDeleteFolder,
     this.onPinFolder,
+    this.onAddSet,
+    this.onCreateSet,
     this.narrow = false,
   });
 
@@ -22,8 +26,10 @@ class LibraryPage extends StatefulWidget {
   final String? openFolder;
   final ValueChanged<String?>? onOpenFolder;
   final ValueChanged<String>? onRenameFolder;
-  final ValueChanged<String>? onDeleteFolder;
+  final Future<void> Function(String name)? onDeleteFolder;
   final void Function(String name, bool pinned)? onPinFolder;
+  final void Function(String folderName, VocabularySet set)? onAddSet;
+  final ValueChanged<String>? onCreateSet;
   final bool narrow;
 
   @override
@@ -228,7 +234,7 @@ class _LibraryPageState extends State<LibraryPage> {
             const SizedBox(width: 12),
             IconButton(
               key: const Key('library-folder-add-sets'),
-              onPressed: () {},
+              onPressed: () => _openAddSets(folder),
               tooltip: localizations.libraryAddSets,
               style: IconButton.styleFrom(
                 backgroundColor: colors.folderFill,
@@ -242,7 +248,9 @@ class _LibraryPageState extends State<LibraryPage> {
             _FolderMoreButton(
               pinned: folder.pinned,
               onEdit: () => widget.onRenameFolder?.call(folder.name),
-              onDelete: () => widget.onDeleteFolder?.call(folder.name),
+              onDelete: () async {
+                await widget.onDeleteFolder?.call(folder.name);
+              },
               onTogglePin: () =>
                   widget.onPinFolder?.call(folder.name, !folder.pinned),
             ),
@@ -292,7 +300,7 @@ class _LibraryPageState extends State<LibraryPage> {
         Divider(height: 1, color: colors.border),
         const SizedBox(height: 12),
         if (folder.sets.isEmpty)
-          const _FolderEmpty()
+          _FolderEmpty(onAdd: () => _openAddSets(folder))
         else if (sets.isEmpty)
           Text(
             localizations.libraryEmpty,
@@ -313,6 +321,18 @@ class _LibraryPageState extends State<LibraryPage> {
             const SizedBox(height: 12),
           ],
       ],
+    );
+  }
+
+  Future<void> _openAddSets(VocabularyFolder folder) {
+    return showAddSetsDialog(
+      context: context,
+      folder: folder,
+      folders: widget.folders,
+      onAdd: (set) => widget.onAddSet?.call(folder.name, set),
+      onCreate: widget.onCreateSet == null
+          ? null
+          : () => widget.onCreateSet!.call(folder.name),
     );
   }
 
@@ -388,7 +408,7 @@ class _FolderMoreButton extends StatelessWidget {
 
   final bool pinned;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final Future<void> Function() onDelete;
   final VoidCallback onTogglePin;
 
   static const _delete = Color(0xFFFF5A6A);
@@ -451,7 +471,9 @@ class _FolderMoreButton extends StatelessWidget {
           label: localizations.folderDelete,
           color: _delete,
           style: label.copyWith(color: _delete),
-          onPressed: onDelete,
+          onPressed: () {
+            _confirmDelete(context);
+          },
         ),
       ],
       builder: (context, controller, child) {
@@ -476,6 +498,13 @@ class _FolderMoreButton extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmDelete(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => _DeleteFolderDialog(onDelete: onDelete),
+    );
+  }
+
   Widget _item({
     required Key itemKey,
     required IconData icon,
@@ -494,6 +523,116 @@ class _FolderMoreButton extends StatelessWidget {
       ),
       leadingIcon: Icon(icon, size: 20, color: color),
       child: Text(label, style: style),
+    );
+  }
+}
+
+class _DeleteFolderDialog extends StatefulWidget {
+  const _DeleteFolderDialog({required this.onDelete});
+
+  final Future<void> Function() onDelete;
+
+  @override
+  State<_DeleteFolderDialog> createState() => _DeleteFolderDialogState();
+}
+
+class _DeleteFolderDialogState extends State<_DeleteFolderDialog> {
+  static const _danger = Color(0xFFFF5A6A);
+  var _deleting = false;
+
+  Future<void> _confirm() async {
+    setState(() => _deleting = true);
+    try {
+      await widget.onDelete();
+    } finally {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final text = HomeText.of(context);
+    final localizations = AppLocalizations.of(context);
+    return PopScope(
+      canPop: !_deleting,
+      child: Dialog(
+        key: const Key('folder-delete-dialog'),
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(localizations.folderDeleteTitle, style: text.heading),
+                const SizedBox(height: 12),
+                Text(
+                  localizations.folderDeleteBody,
+                  style: text.body.copyWith(color: colors.muted),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      key: const Key('folder-delete-cancel'),
+                      onPressed: _deleting
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colors.text,
+                        side: BorderSide(color: colors.border),
+                        minimumSize: const Size(96, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: text.subtitle,
+                      ),
+                      child: Text(localizations.cancelAction),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      key: const Key('folder-delete-confirm'),
+                      onPressed: _deleting ? null : _confirm,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _danger,
+                        disabledBackgroundColor: _danger,
+                        foregroundColor: colors.onAccent,
+                        disabledForegroundColor: colors.onAccent,
+                        minimumSize: const Size(132, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: text.subtitle.copyWith(
+                          color: colors.onAccent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: _deleting
+                          ? const SizedBox(
+                              key: Key('folder-delete-progress'),
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(localizations.folderDeleteConfirm),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -644,7 +783,9 @@ class _SearchField extends StatelessWidget {
 }
 
 class _FolderEmpty extends StatelessWidget {
-  const _FolderEmpty();
+  const _FolderEmpty({required this.onAdd});
+
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -681,6 +822,26 @@ class _FolderEmpty extends StatelessWidget {
             localizations.libraryFolderEmpty,
             textAlign: TextAlign.center,
             style: text.body.copyWith(color: colors.muted),
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            key: const Key('library-folder-add-sets-label'),
+            onPressed: onAdd,
+            style: FilledButton.styleFrom(
+              backgroundColor: colors.newVocab,
+              foregroundColor: colors.onAccent,
+              minimumSize: const Size(0, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: text.subtitle.copyWith(
+                color: colors.onAccent,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(localizations.addFlashcardSets),
           ),
         ],
       ),

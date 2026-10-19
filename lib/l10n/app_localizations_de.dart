@@ -81,6 +81,18 @@ class AppLocalizationsDe extends AppLocalizations {
       'Füge ein Set hinzu, dann erscheint es hier.';
 
   @override
+  String get addFlashcardSets => 'Sets hinzufügen';
+
+  @override
+  String get addStudyMaterials => 'Lernmaterial hinzufügen';
+
+  @override
+  String get addMaterialsRecents => 'Zuletzt';
+
+  @override
+  String get createNew => 'Neu erstellen';
+
+  @override
   String get navNotification => 'Benachrichtigung';
 
   @override
@@ -100,6 +112,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wordsNotLearned => 'Noch nicht gelernte Wörter';
+
+  @override
+  String get wordSearch => 'Vokabeln suchen';
 
   @override
   String get levelMastered => 'Lv.6 - Gemeistert';
@@ -163,6 +178,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get folderDelete => 'Löschen';
+
+  @override
+  String get folderDeleteTitle => 'Diesen Ordner löschen?';
+
+  @override
+  String get folderDeleteBody =>
+      'Der Ordner wird dauerhaft gelöscht, die Inhalte findest du weiterhin in deiner Bibliothek.';
+
+  @override
+  String get folderDeleteConfirm => 'Ordner löschen';
 
   @override
   String get studyTodayPractice => 'Heute üben';

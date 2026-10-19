@@ -77,6 +77,10 @@ void main() {
     expect(english.librarySetCount(2), '2 sets');
     expect(english.libraryEmpty, 'Nothing here yet');
     expect(english.libraryFolderEmpty, 'Add a set and it will show up here.');
+    expect(english.addFlashcardSets, 'Add flashcard sets');
+    expect(english.addStudyMaterials, 'Add study materials');
+    expect(english.addMaterialsRecents, 'Recents');
+    expect(english.createNew, 'Create new');
     expect(english.librarySortCreated, 'Created');
     expect(english.librarySortStudied, 'Studied');
     expect(english.librarySearchFolder, 'Search this folder');
@@ -89,6 +93,8 @@ void main() {
     expect(english.folderPin, 'Pin to sidebar');
     expect(english.folderSave, 'Save');
     expect(english.folderDelete, 'Delete');
+    expect(english.folderDeleteTitle, 'Delete this folder?');
+    expect(english.folderDeleteConfirm, 'Delete folder');
     expect(english.studyTodayPractice, 'Today practice');
     expect(english.studyLearnNew, 'Learn new vocab');
     expect(english.studyFlashcard, 'Flashcard');
@@ -110,6 +116,7 @@ void main() {
     expect(english.menuLogOut, 'Log out');
     expect(english.menuPrivacy, 'Privacy policy');
     expect(english.menuHelp, 'Help and feedback');
+    expect(english.wordSearch, 'Search vocabulary');
     expect(english.menuUpgrade, 'Upgrade');
 
     final vietnamese = await load(tester, const Locale('vi'));
@@ -167,6 +174,10 @@ void main() {
       vietnamese.libraryFolderEmpty,
       'Thêm một bộ từ, nó sẽ hiện ở đây.',
     );
+    expect(vietnamese.addFlashcardSets, 'Thêm bộ từ');
+    expect(vietnamese.addStudyMaterials, 'Thêm tài liệu học');
+    expect(vietnamese.addMaterialsRecents, 'Gần đây');
+    expect(vietnamese.createNew, 'Tạo mới');
     expect(vietnamese.librarySortCreated, 'Đã tạo');
     expect(vietnamese.librarySortStudied, 'Đã học');
     expect(vietnamese.librarySearchFolder, 'Tìm trong thư mục này');
@@ -179,6 +190,8 @@ void main() {
     expect(vietnamese.folderPin, 'Ghim vào thanh bên');
     expect(vietnamese.folderSave, 'Lưu');
     expect(vietnamese.folderDelete, 'Xóa');
+    expect(vietnamese.folderDeleteTitle, 'Xóa thư mục này?');
+    expect(vietnamese.folderDeleteConfirm, 'Xóa thư mục');
     expect(vietnamese.studyTodayPractice, 'Luyện hôm nay');
     expect(vietnamese.studyLearnNew, 'Học từ mới');
     expect(vietnamese.studyFlashcard, 'Thẻ học');
@@ -200,6 +213,7 @@ void main() {
     expect(vietnamese.menuLogOut, 'Đăng xuất');
     expect(vietnamese.menuPrivacy, 'Chính sách quyền riêng tư');
     expect(vietnamese.menuHelp, 'Trợ giúp và phản hồi');
+    expect(vietnamese.wordSearch, 'Tìm kiếm từ vựng');
     expect(vietnamese.menuUpgrade, 'Nâng cấp');
 
     final german = await load(tester, const Locale('de'));
@@ -257,6 +271,10 @@ void main() {
       german.libraryFolderEmpty,
       'Füge ein Set hinzu, dann erscheint es hier.',
     );
+    expect(german.addFlashcardSets, 'Sets hinzufügen');
+    expect(german.addStudyMaterials, 'Lernmaterial hinzufügen');
+    expect(german.addMaterialsRecents, 'Zuletzt');
+    expect(german.createNew, 'Neu erstellen');
     expect(german.librarySortCreated, 'Erstellt');
     expect(german.librarySortStudied, 'Gelernt');
     expect(german.librarySearchFolder, 'Diesen Ordner durchsuchen');
@@ -269,6 +287,8 @@ void main() {
     expect(german.folderPin, 'An Seitenleiste anheften');
     expect(german.folderSave, 'Speichern');
     expect(german.folderDelete, 'Löschen');
+    expect(german.folderDeleteTitle, 'Diesen Ordner löschen?');
+    expect(german.folderDeleteConfirm, 'Ordner löschen');
     expect(german.studyTodayPractice, 'Heute üben');
     expect(german.studyLearnNew, 'Neue Vokabeln lernen');
     expect(german.studyFlashcard, 'Karteikarte');
@@ -293,6 +313,7 @@ void main() {
     expect(german.menuLogOut, 'Abmelden');
     expect(german.menuPrivacy, 'Datenschutz');
     expect(german.menuHelp, 'Hilfe und Feedback');
+    expect(german.wordSearch, 'Vokabeln suchen');
     expect(german.menuUpgrade, 'Upgrade');
     expect(german.homeTitle, 'Flutter-Demo-Startseite');
     expect(german.missingTranslationProbe, 'Missing translation probe');

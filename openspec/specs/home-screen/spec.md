@@ -135,7 +135,7 @@ When the loaded library has pinned folders, the sidebar SHALL show each pinned f
 - **AND** "0/0" is not shown
 
 ### Requirement: Adding a folder opens that folder
-After a folder is created, the main area SHALL show that folder the same way as opening it from Library. The folder page SHALL show the new folder's name, the folder search field, and the empty folder state when the folder has no sets. That empty state SHALL be centered, with a folder-fill tile, "Nothing here yet", and "Add a set and it will show up here." A newly created folder SHALL NOT appear in the sidebar until it is pinned. The folder title row SHALL end with an add-sets plus button and, on its right, a round more button. Both buttons SHALL use the folder icon's fill and ink color. The folder page SHALL NOT show Study or Add sets. Activating that button SHALL show Add tag, Edit, Share, Pin to sidebar when the folder is not pinned, Unpin from sidebar when it is pinned, and Delete. Edit SHALL rename the folder. Delete SHALL remove the folder. Pin to sidebar SHALL show that folder in the sidebar, and Unpin from sidebar SHALL hide it. Activating a folder title in the sidebar SHALL open that same folder page. The folder's expand control SHALL still show and hide that folder's set names in the sidebar.
+After a folder is created, the main area SHALL show that folder the same way as opening it from Library. The folder page SHALL show the new folder's name, the folder search field, and the empty folder state when the folder has no sets. That empty state SHALL be centered, with a folder-fill tile, "Nothing here yet", and "Add a set and it will show up here." A newly created folder SHALL NOT appear in the sidebar until it is pinned. The folder title row SHALL end with an add-sets plus button and, on its right, a round more button. Activating that plus, or "Add flashcard sets" on an empty folder, SHALL open "Add study materials". That dialog SHALL list the library's flashcard sets, and adding one SHALL place it in the open folder. Both buttons SHALL use the folder icon's fill and ink color. The folder page SHALL NOT show Study or Add sets. Activating that button SHALL show Add tag, Edit, Share, Pin to sidebar when the folder is not pinned, Unpin from sidebar when it is pinned, and Delete. Edit SHALL rename the folder. Delete SHALL ask "Delete this folder?" before removing it. Cancel SHALL leave the folder in place. Confirming SHALL show a busy state on the delete button until the folder is removed. Pin to sidebar SHALL show that folder in the sidebar, and Unpin from sidebar SHALL hide it. Activating a folder title in the sidebar SHALL open that same folder page. The folder's expand control SHALL still show and hide that folder's set names in the sidebar.
 
 #### Scenario: New folder opens its page
 - **WHEN** the user creates a folder named "Travel"
@@ -336,6 +336,19 @@ When the loaded library has folders and the user has a stored level, statistics 
 - **WHEN** set "Animals" had a level stored after set "German A1 vocabulary", "Animals" has one level 6 word of two, and the user turns All off
 - **THEN** statistics shows "1/2" and "50%"
 - **AND** statistics shows "Animals"
+
+### Requirement: Learned captions open the word list
+Activating "Words learned" SHALL open a dialog titled with that caption and the count of level 6 words in the statistics scope. Activating "Words not yet learned" SHALL open a dialog titled with that caption and the count of the other words in the same scope. The dialog SHALL show a search field and each matching word's term. A word's image, type, IPA, and sentence SHALL be shown when that word has them. A word without an image SHALL NOT show an image tile. The title count SHALL stay the full list size while search filters the cards. All on uses every loaded set. All off uses the set whose level was stored last, or no words when no set has a stored level.
+
+#### Scenario: Level 6 opens under Words learned
+- **WHEN** the only loaded set has "Kind" at level 6 and "Haus" with no level, and the user activates "Words learned"
+- **THEN** a dialog titled "Words learned (1)" shows "Kind"
+- **AND** the dialog does not show "Haus"
+
+#### Scenario: Other words open under Words not yet learned
+- **WHEN** the user activates "Words not yet learned" for that set
+- **THEN** a dialog titled "Words not yet learned (1)" shows "Haus"
+- **AND** the dialog does not show "Kind"
 
 ### Requirement: Today's vocabulary shows the day list
 When the practice queue has at least one word, Today's vocabulary SHALL show each word's term and singular and plural, in queue order, two words on a row. It SHALL show Practice.

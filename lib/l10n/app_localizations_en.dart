@@ -80,6 +80,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryFolderEmpty => 'Add a set and it will show up here.';
 
   @override
+  String get addFlashcardSets => 'Add flashcard sets';
+
+  @override
+  String get addStudyMaterials => 'Add study materials';
+
+  @override
+  String get addMaterialsRecents => 'Recents';
+
+  @override
+  String get createNew => 'Create new';
+
+  @override
   String get navNotification => 'Notification';
 
   @override
@@ -99,6 +111,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wordsNotLearned => 'Words not yet learned';
+
+  @override
+  String get wordSearch => 'Search vocabulary';
 
   @override
   String get levelMastered => 'Lv.6 - Mastered';
@@ -162,6 +177,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get folderDelete => 'Delete';
+
+  @override
+  String get folderDeleteTitle => 'Delete this folder?';
+
+  @override
+  String get folderDeleteBody =>
+      'The folder will be permanently deleted, but you\'ll be able to find the items from it in your library.';
+
+  @override
+  String get folderDeleteConfirm => 'Delete folder';
 
   @override
   String get studyTodayPractice => 'Today practice';

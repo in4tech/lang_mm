@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
+import 'package:lang/features/home/widgets/learned_words_dialog.dart';
+import 'package:lang/library/vocabulary_set.dart';
 import 'package:lang/theme/home_palette.dart';
 import 'package:lang/theme/home_text.dart';
 import 'package:lang/l10n/app_localizations.dart';
@@ -10,11 +12,15 @@ class StatisticsPanel extends StatelessWidget {
     required this.sample,
     this.onAllChanged,
     this.onOpenSet,
+    this.learnedWords = const <VocabularyWord>[],
+    this.notLearnedWords = const <VocabularyWord>[],
   });
 
   final HomeSample sample;
   final ValueChanged<bool>? onAllChanged;
   final VoidCallback? onOpenSet;
+  final List<VocabularyWord> learnedWords;
+  final List<VocabularyWord> notLearnedWords;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +60,16 @@ class StatisticsPanel extends StatelessWidget {
                     _ChartFooter(
                       learned: localizations.wordsLearned,
                       notLearned: localizations.wordsNotLearned,
+                      onLearned: () => showLearnedWordsDialog(
+                        context: context,
+                        title: localizations.wordsLearned,
+                        words: learnedWords,
+                      ),
+                      onNotLearned: () => showLearnedWordsDialog(
+                        context: context,
+                        title: localizations.wordsNotLearned,
+                        words: notLearnedWords,
+                      ),
                     ),
                   ],
                 ),
@@ -389,10 +405,17 @@ class _Legend extends StatelessWidget {
 }
 
 class _ChartFooter extends StatelessWidget {
-  const _ChartFooter({required this.learned, required this.notLearned});
+  const _ChartFooter({
+    required this.learned,
+    required this.notLearned,
+    required this.onLearned,
+    required this.onNotLearned,
+  });
 
   final String learned;
   final String notLearned;
+  final VoidCallback onLearned;
+  final VoidCallback onNotLearned;
 
   @override
   Widget build(BuildContext context) {
@@ -403,7 +426,12 @@ class _ChartFooter extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(learned, textAlign: TextAlign.center, style: style),
+          child: _FooterButton(
+            buttonKey: const Key('statistics-learned'),
+            label: learned,
+            style: style,
+            onTap: onLearned,
+          ),
         ),
         Container(
           width: 1,
@@ -411,9 +439,44 @@ class _ChartFooter extends StatelessWidget {
           color: HomePalette.of(context).scrollTrack,
         ),
         Expanded(
-          child: Text(notLearned, textAlign: TextAlign.center, style: style),
+          child: _FooterButton(
+            buttonKey: const Key('statistics-not-learned'),
+            label: notLearned,
+            style: style,
+            onTap: onNotLearned,
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _FooterButton extends StatelessWidget {
+  const _FooterButton({
+    required this.buttonKey,
+    required this.label,
+    required this.style,
+    required this.onTap,
+  });
+
+  final Key buttonKey;
+  final String label;
+  final TextStyle style;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        key: buttonKey,
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(label, textAlign: TextAlign.center, style: style),
+        ),
+      ),
     );
   }
 }

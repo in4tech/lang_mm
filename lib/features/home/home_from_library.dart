@@ -289,6 +289,47 @@ List<StudyCue> cuesForAgenda(
   return cues;
 }
 
+List<VocabularyWord> statisticsWords({
+  required VocabularyLibrary library,
+  required Map<String, StudySetProgress> progress,
+  required bool learned,
+  bool allSets = true,
+  String? setId,
+  DateTime? now,
+}) {
+  final clock = now ?? DateTime.now();
+  final sets = <VocabularySet>[];
+  if (!allSets) {
+    if (setId == null) {
+      return const <VocabularyWord>[];
+    }
+    final set = setWithId(library, setId);
+    if (set != null) {
+      sets.add(set);
+    }
+  } else {
+    for (final folder in library.folders) {
+      for (var index = 0; index < folder.sets.length; index++) {
+        final set = folder.contentAt(index);
+        if (set != null) {
+          sets.add(set);
+        }
+      }
+    }
+  }
+  final words = <VocabularyWord>[];
+  for (final set in sets) {
+    final levels = studyStates(progress[set.id], clock);
+    for (var index = 0; index < set.words.length; index++) {
+      final mastered = levels[index]?.level == 6;
+      if (mastered == learned) {
+        words.add(set.words[index]);
+      }
+    }
+  }
+  return words;
+}
+
 VocabularySet? setWithId(VocabularyLibrary library, String id) {
   for (final folder in library.folders) {
     for (var index = 0; index < folder.sets.length; index++) {

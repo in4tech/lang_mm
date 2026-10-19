@@ -232,6 +232,30 @@ abstract class AppLocalizations {
   /// **'Add a set and it will show up here.'**
   String get libraryFolderEmpty;
 
+  /// Button that opens the picker for adding sets to a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add flashcard sets'**
+  String get addFlashcardSets;
+
+  /// Title of the dialog that adds flashcard sets to a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add study materials'**
+  String get addStudyMaterials;
+
+  /// Picker tab for the most recently listed flashcard sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Recents'**
+  String get addMaterialsRecents;
+
+  /// Action in the add-sets dialog that starts a new flashcard set.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new'**
+  String get createNew;
+
   /// Sidebar navigation label for notifications.
   ///
   /// In en, this message translates to:
@@ -273,6 +297,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Words not yet learned'**
   String get wordsNotLearned;
+
+  /// Search field in the learned and not-yet-learned word list.
+  ///
+  /// In en, this message translates to:
+  /// **'Search vocabulary'**
+  String get wordSearch;
 
   /// Legend label for level 6.
   ///
@@ -399,6 +429,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get folderDelete;
+
+  /// Title of the dialog that confirms deleting a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this folder?'**
+  String get folderDeleteTitle;
+
+  /// Explanation in the dialog that confirms deleting a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder will be permanently deleted, but you\'ll be able to find the items from it in your library.'**
+  String get folderDeleteBody;
+
+  /// Button that confirms deleting a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get folderDeleteConfirm;
 
   /// Selected practice action on a flashcard set.
   ///
