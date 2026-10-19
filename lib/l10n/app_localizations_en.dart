@@ -161,6 +161,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get folderAddTag => 'Add tag';
 
   @override
+  String get setAddOrRemoveTags => 'Add or remove tags';
+
+  @override
+  String get setRemoveFromFolder => 'Remove from folder';
+
+  @override
+  String get moreOption => 'More option';
+
+  @override
   String get folderEdit => 'Edit';
 
   @override
@@ -217,6 +226,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studyQuiz => 'Quiz';
 
   @override
+  String get quizChooseAnswer => 'Choose an answer';
+
+  @override
+  String get quizDontKnow => 'Don\'t know?';
+
+  @override
+  String get quizWrongResult => 'No sweat, you\'re still learning!';
+
+  @override
+  String get quizTryLater => 'Give this one a try later!';
+
+  @override
+  String get quizPraiseNice => 'Nice!';
+
+  @override
+  String get quizPraiseGreat => 'Great job!';
+
+  @override
+  String get quizPraiseAwesome => 'Awesome!';
+
+  @override
+  String get quizPraiseGotIt => 'You got it!';
+
+  @override
+  String get quizPraiseBrilliant => 'Brilliant!';
+
+  @override
   String get studyTyping => 'Typing';
 
   @override
@@ -262,6 +298,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studyCompleteTitle => 'Congratulations!';
 
   @override
+  String get studyCompleteHeadline =>
+      'Wow, you know your stuff! You\'ve sorted all the cards.';
+
+  @override
   String get studyCompleteOne => 'You finished 1 word.';
 
   @override
@@ -271,6 +311,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studyCompleteDone => 'Done';
+
+  @override
+  String get studyCompleteContinue => 'Continue';
+
+  @override
+  String get studyHowYoureDoing => 'How you\'re doing';
+
+  @override
+  String get studyNextSteps => 'Next steps';
+
+  @override
+  String get studyTermsLeft => 'Terms left';
+
+  @override
+  String get studyPracticeWithQuestions => 'Practice with questions';
+
+  @override
+  String get studyRestartFlashcards => 'Restart Flashcards';
+
+  @override
+  String studyLevelMove(int from, int to) {
+    return 'Lv.$from → Lv.$to';
+  }
+
+  @override
+  String studyLevelMoveFromNew(int to) {
+    return 'New → Lv.$to';
+  }
 
   @override
   String progressComplete(int percent) {

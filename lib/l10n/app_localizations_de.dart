@@ -162,6 +162,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get folderAddTag => 'Tag hinzufügen';
 
   @override
+  String get setAddOrRemoveTags => 'Tags hinzufügen oder entfernen';
+
+  @override
+  String get setRemoveFromFolder => 'Aus Ordner entfernen';
+
+  @override
+  String get moreOption => 'Weitere Optionen';
+
+  @override
   String get folderEdit => 'Bearbeiten';
 
   @override
@@ -218,6 +227,33 @@ class AppLocalizationsDe extends AppLocalizations {
   String get studyQuiz => 'Quiz';
 
   @override
+  String get quizChooseAnswer => 'Wähle eine Antwort';
+
+  @override
+  String get quizDontKnow => 'Weiß nicht?';
+
+  @override
+  String get quizWrongResult => 'Kein Problem, du lernst noch!';
+
+  @override
+  String get quizTryLater => 'Versuch es später noch einmal!';
+
+  @override
+  String get quizPraiseNice => 'Super!';
+
+  @override
+  String get quizPraiseGreat => 'Gut gemacht!';
+
+  @override
+  String get quizPraiseAwesome => 'Stark!';
+
+  @override
+  String get quizPraiseGotIt => 'Richtig!';
+
+  @override
+  String get quizPraiseBrilliant => 'Brillant!';
+
+  @override
   String get studyTyping => 'Tippen';
 
   @override
@@ -265,6 +301,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get studyCompleteTitle => 'Glückwunsch!';
 
   @override
+  String get studyCompleteHeadline =>
+      'Wow, du kennst dich aus! Du hast alle Karten sortiert.';
+
+  @override
   String get studyCompleteOne => 'Du hast 1 Wort geschafft.';
 
   @override
@@ -274,6 +314,34 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get studyCompleteDone => 'Fertig';
+
+  @override
+  String get studyCompleteContinue => 'Weiter';
+
+  @override
+  String get studyHowYoureDoing => 'So läuft\'s bei dir';
+
+  @override
+  String get studyNextSteps => 'Nächste Schritte';
+
+  @override
+  String get studyTermsLeft => 'Offene Begriffe';
+
+  @override
+  String get studyPracticeWithQuestions => 'Mit Fragen üben';
+
+  @override
+  String get studyRestartFlashcards => 'Karteikarten neu starten';
+
+  @override
+  String studyLevelMove(int from, int to) {
+    return 'Lv.$from → Lv.$to';
+  }
+
+  @override
+  String studyLevelMoveFromNew(int to) {
+    return 'Neu → Lv.$to';
+  }
 
   @override
   String progressComplete(int percent) {

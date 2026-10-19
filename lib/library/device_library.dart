@@ -26,7 +26,7 @@ Future<VocabularyLibrary> libraryForDevice({
     return local;
   }
   if (cloud.folders.isNotEmpty) {
-    return _withoutRemoved(_withLocalPins(cloud, local), removedFolderIds);
+    return _withoutRemoved(cloud, removedFolderIds);
   }
   if (local.folders.isEmpty) {
     return local;
@@ -36,39 +36,6 @@ Future<VocabularyLibrary> libraryForDevice({
   } catch (_) {
     return local;
   }
-}
-
-VocabularyLibrary _withLocalPins(
-  VocabularyLibrary cloud,
-  VocabularyLibrary local,
-) {
-  bool? savedPin(VocabularyFolder folder) {
-    for (final saved in local.folders) {
-      final sameId =
-          folder.id != null && folder.id!.isNotEmpty && saved.id == folder.id;
-      if (sameId || saved.name == folder.name) {
-        return saved.pinned;
-      }
-    }
-    return null;
-  }
-
-  return VocabularyLibrary(
-    editorFolder: cloud.editorFolder,
-    folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
-      for (final folder in cloud.folders)
-        if (savedPin(folder) case final pinned?)
-          VocabularyFolder(
-            name: folder.name,
-            id: folder.id,
-            pinned: pinned,
-            sets: folder.sets,
-            contents: folder.contents,
-          )
-        else
-          folder,
-    ]),
-  );
 }
 
 VocabularyLibrary _withoutRemoved(

@@ -206,6 +206,18 @@
   "@folderAddTag": {
     "description": "Folder menu action that adds a tag."
   },
+  "setAddOrRemoveTags": "Add or remove tags",
+  "@setAddOrRemoveTags": {
+    "description": "Flashcard set menu action that adds or removes tags."
+  },
+  "setRemoveFromFolder": "Remove from folder",
+  "@setRemoveFromFolder": {
+    "description": "Flashcard set menu action that removes the set from its folder."
+  },
+  "moreOption": "More option",
+  "@moreOption": {
+    "description": "Tooltip for a three-dot more menu button."
+  },
   "folderEdit": "Edit",
   "@folderEdit": {
     "description": "Folder menu action that edits the folder."
@@ -278,6 +290,42 @@
   "@studyQuiz": {
     "description": "Practice mode that shows the definition first."
   },
+  "quizChooseAnswer": "Choose an answer",
+  "@quizChooseAnswer": {
+    "description": "Prompt above the Quiz options before the learner answers."
+  },
+  "quizDontKnow": "Don't know?",
+  "@quizDontKnow": {
+    "description": "Reveals the Quiz answer without choosing an option."
+  },
+  "quizWrongResult": "No sweat, you're still learning!",
+  "@quizWrongResult": {
+    "description": "Shown when the learner chooses the wrong Quiz option."
+  },
+  "quizTryLater": "Give this one a try later!",
+  "@quizTryLater": {
+    "description": "Shown when the learner chooses Don't know in Quiz."
+  },
+  "quizPraiseNice": "Nice!",
+  "@quizPraiseNice": {
+    "description": "Rotating praise shown after a correct Quiz answer."
+  },
+  "quizPraiseGreat": "Great job!",
+  "@quizPraiseGreat": {
+    "description": "Rotating praise shown after a correct Quiz answer."
+  },
+  "quizPraiseAwesome": "Awesome!",
+  "@quizPraiseAwesome": {
+    "description": "Rotating praise shown after a correct Quiz answer."
+  },
+  "quizPraiseGotIt": "You got it!",
+  "@quizPraiseGotIt": {
+    "description": "Rotating praise shown after a correct Quiz answer."
+  },
+  "quizPraiseBrilliant": "Brilliant!",
+  "@quizPraiseBrilliant": {
+    "description": "Rotating praise shown after a correct Quiz answer."
+  },
   "studyTyping": "Typing",
   "@studyTyping": {
     "description": "Practice mode that asks the learner to type the definition."
@@ -338,6 +386,10 @@
   "@studyCompleteTitle": {
     "description": "Heading on the page shown when practice finishes."
   },
+  "studyCompleteHeadline": "Wow, you know your stuff! You've sorted all the cards.",
+  "@studyCompleteHeadline": {
+    "description": "Headline on the finished practice summary."
+  },
   "studyCompleteOne": "You finished 1 word.",
   "@studyCompleteOne": {
     "description": "Message when a practice session of one word is complete."
@@ -354,6 +406,51 @@
   "studyCompleteDone": "Done",
   "@studyCompleteDone": {
     "description": "Button that leaves the finished practice page."
+  },
+  "studyCompleteContinue": "Continue",
+  "@studyCompleteContinue": {
+    "description": "Continue control on the finished practice summary."
+  },
+  "studyHowYoureDoing": "How you're doing",
+  "@studyHowYoureDoing": {
+    "description": "Heading above the practice session result bars."
+  },
+  "studyNextSteps": "Next steps",
+  "@studyNextSteps": {
+    "description": "Heading above the next actions after practice."
+  },
+  "studyTermsLeft": "Terms left",
+  "@studyTermsLeft": {
+    "description": "Count of terms left unstudied in a practice session."
+  },
+  "studyPracticeWithQuestions": "Practice with questions",
+  "@studyPracticeWithQuestions": {
+    "description": "Button that restarts the session in Quiz mode."
+  },
+  "studyRestartFlashcards": "Restart Flashcards",
+  "@studyRestartFlashcards": {
+    "description": "Button that restarts the session in Flashcard mode."
+  },
+  "studyLevelMove": "Lv.{from} → Lv.{to}",
+  "@studyLevelMove": {
+    "description": "Summary of words that moved from one level to another in a practice session.",
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "studyLevelMoveFromNew": "New → Lv.{to}",
+  "@studyLevelMoveFromNew": {
+    "description": "Summary of new words that reached a level in a practice session.",
+    "placeholders": {
+      "to": {
+        "type": "int"
+      }
+    }
   },
   "progressComplete": "The process is {percent}% complete.",
   "@progressComplete": {

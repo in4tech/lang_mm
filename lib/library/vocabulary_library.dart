@@ -149,6 +149,33 @@ class VocabularyLibrary {
     );
   }
 
+  VocabularyLibrary removeSetFromFolder(String folderName, int index) {
+    return VocabularyLibrary(
+      editorFolder: editorFolder,
+      folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
+        for (final folder in folders)
+          if (folder.name != folderName)
+            folder
+          else if (index < 0 || index >= folder.sets.length)
+            folder
+          else
+            VocabularyFolder(
+              name: folder.name,
+              id: folder.id,
+              pinned: folder.pinned,
+              sets: List<String>.unmodifiable(<String>[
+                for (var i = 0; i < folder.sets.length; i++)
+                  if (i != index) folder.sets[i],
+              ]),
+              contents: List<VocabularySet?>.unmodifiable(<VocabularySet?>[
+                for (var i = 0; i < folder.sets.length; i++)
+                  if (i != index) folder.contentAt(i),
+              ]),
+            ),
+      ]),
+    );
+  }
+
   VocabularyLibrary addSavedSet({
     required String name,
     required String folderLabel,

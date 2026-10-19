@@ -394,6 +394,24 @@ abstract class AppLocalizations {
   /// **'Add tag'**
   String get folderAddTag;
 
+  /// Flashcard set menu action that adds or removes tags.
+  ///
+  /// In en, this message translates to:
+  /// **'Add or remove tags'**
+  String get setAddOrRemoveTags;
+
+  /// Flashcard set menu action that removes the set from its folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from folder'**
+  String get setRemoveFromFolder;
+
+  /// Tooltip for a three-dot more menu button.
+  ///
+  /// In en, this message translates to:
+  /// **'More option'**
+  String get moreOption;
+
   /// Folder menu action that edits the folder.
   ///
   /// In en, this message translates to:
@@ -502,6 +520,60 @@ abstract class AppLocalizations {
   /// **'Quiz'**
   String get studyQuiz;
 
+  /// Prompt above the Quiz options before the learner answers.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an answer'**
+  String get quizChooseAnswer;
+
+  /// Reveals the Quiz answer without choosing an option.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t know?'**
+  String get quizDontKnow;
+
+  /// Shown when the learner chooses the wrong Quiz option.
+  ///
+  /// In en, this message translates to:
+  /// **'No sweat, you\'re still learning!'**
+  String get quizWrongResult;
+
+  /// Shown when the learner chooses Don't know in Quiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Give this one a try later!'**
+  String get quizTryLater;
+
+  /// Rotating praise shown after a correct Quiz answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice!'**
+  String get quizPraiseNice;
+
+  /// Rotating praise shown after a correct Quiz answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Great job!'**
+  String get quizPraiseGreat;
+
+  /// Rotating praise shown after a correct Quiz answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Awesome!'**
+  String get quizPraiseAwesome;
+
+  /// Rotating praise shown after a correct Quiz answer.
+  ///
+  /// In en, this message translates to:
+  /// **'You got it!'**
+  String get quizPraiseGotIt;
+
+  /// Rotating praise shown after a correct Quiz answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Brilliant!'**
+  String get quizPraiseBrilliant;
+
   /// Practice mode that asks the learner to type the definition.
   ///
   /// In en, this message translates to:
@@ -592,6 +664,12 @@ abstract class AppLocalizations {
   /// **'Congratulations!'**
   String get studyCompleteTitle;
 
+  /// Headline on the finished practice summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Wow, you know your stuff! You\'ve sorted all the cards.'**
+  String get studyCompleteHeadline;
+
   /// Message when a practice session of one word is complete.
   ///
   /// In en, this message translates to:
@@ -609,6 +687,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get studyCompleteDone;
+
+  /// Continue control on the finished practice summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get studyCompleteContinue;
+
+  /// Heading above the practice session result bars.
+  ///
+  /// In en, this message translates to:
+  /// **'How you\'re doing'**
+  String get studyHowYoureDoing;
+
+  /// Heading above the next actions after practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Next steps'**
+  String get studyNextSteps;
+
+  /// Count of terms left unstudied in a practice session.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms left'**
+  String get studyTermsLeft;
+
+  /// Button that restarts the session in Quiz mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice with questions'**
+  String get studyPracticeWithQuestions;
+
+  /// Button that restarts the session in Flashcard mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Flashcards'**
+  String get studyRestartFlashcards;
+
+  /// Summary of words that moved from one level to another in a practice session.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.{from} → Lv.{to}'**
+  String studyLevelMove(int from, int to);
+
+  /// Summary of new words that reached a level in a practice session.
+  ///
+  /// In en, this message translates to:
+  /// **'New → Lv.{to}'**
+  String studyLevelMoveFromNew(int to);
 
   /// Progress sentence on a recent vocabulary card.
   ///

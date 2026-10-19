@@ -136,15 +136,15 @@ void main() {
     expect(store.saved, isEmpty);
   });
 
-  test('a cloud library keeps a local unpin', () async {
+  test('a cloud library uses the stored pin', () async {
     const local = VocabularyLibrary(
       folders: <VocabularyFolder>[
-        VocabularyFolder(name: 'Travel', id: 'folder-9', pinned: false),
+        VocabularyFolder(name: 'Travel', id: 'folder-9'),
       ],
     );
     const cloud = VocabularyLibrary(
       folders: <VocabularyFolder>[
-        VocabularyFolder(name: 'Travel', id: 'folder-9'),
+        VocabularyFolder(name: 'Travel', id: 'folder-9', pinned: false),
       ],
     );
 

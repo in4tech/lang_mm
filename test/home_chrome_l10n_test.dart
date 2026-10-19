@@ -87,6 +87,9 @@ void main() {
     expect(english.libraryStudy, 'Study');
     expect(english.libraryAddSets, 'Add sets');
     expect(english.folderAddTag, 'Add tag');
+    expect(english.setAddOrRemoveTags, 'Add or remove tags');
+    expect(english.setRemoveFromFolder, 'Remove from folder');
+    expect(english.moreOption, 'More option');
     expect(english.folderEdit, 'Edit');
     expect(english.folderShare, 'Share');
     expect(english.folderUnpin, 'Unpin from sidebar');
@@ -98,6 +101,15 @@ void main() {
     expect(english.studyTodayPractice, 'Today practice');
     expect(english.studyLearnNew, 'Learn new vocab');
     expect(english.studyFlashcard, 'Flashcard');
+    expect(english.quizChooseAnswer, 'Choose an answer');
+    expect(english.quizDontKnow, "Don't know?");
+    expect(english.quizWrongResult, "No sweat, you're still learning!");
+    expect(english.quizTryLater, 'Give this one a try later!');
+    expect(english.quizPraiseNice, 'Nice!');
+    expect(english.quizPraiseGreat, 'Great job!');
+    expect(english.quizPraiseAwesome, 'Awesome!');
+    expect(english.quizPraiseGotIt, 'You got it!');
+    expect(english.quizPraiseBrilliant, 'Brilliant!');
     expect(english.studyHard, 'Hard');
     expect(english.studyStillLearning, 'Still learning');
     expect(english.studyKnow, 'Know');
@@ -107,6 +119,18 @@ void main() {
     expect(english.studyFlipShortcut, 'Press Space or click the card to flip');
     expect(english.studyList, 'Vocabulary list');
     expect(english.studyMastered, 'Mastered');
+    expect(english.studyLevelMove(2, 3), 'Lv.2 → Lv.3');
+    expect(english.studyLevelMoveFromNew(1), 'New → Lv.1');
+    expect(
+      english.studyCompleteHeadline,
+      'Wow, you know your stuff! You\'ve sorted all the cards.',
+    );
+    expect(english.studyHowYoureDoing, 'How you\'re doing');
+    expect(english.studyNextSteps, 'Next steps');
+    expect(english.studyTermsLeft, 'Terms left');
+    expect(english.studyPracticeWithQuestions, 'Practice with questions');
+    expect(english.studyRestartFlashcards, 'Restart Flashcards');
+    expect(english.studyCompleteContinue, 'Continue');
     expect(english.themeLight, 'Light');
     expect(english.themeDark, 'Dark');
     expect(english.menuAchievements, 'Achievements');
@@ -184,6 +208,9 @@ void main() {
     expect(vietnamese.libraryStudy, 'Học');
     expect(vietnamese.libraryAddSets, 'Thêm bộ từ');
     expect(vietnamese.folderAddTag, 'Thêm thẻ');
+    expect(vietnamese.setAddOrRemoveTags, 'Thêm hoặc xóa thẻ');
+    expect(vietnamese.setRemoveFromFolder, 'Xóa khỏi thư mục');
+    expect(vietnamese.moreOption, 'Thêm tùy chọn');
     expect(vietnamese.folderEdit, 'Sửa');
     expect(vietnamese.folderShare, 'Chia sẻ');
     expect(vietnamese.folderUnpin, 'Bỏ ghim khỏi thanh bên');
@@ -195,6 +222,15 @@ void main() {
     expect(vietnamese.studyTodayPractice, 'Luyện hôm nay');
     expect(vietnamese.studyLearnNew, 'Học từ mới');
     expect(vietnamese.studyFlashcard, 'Thẻ học');
+    expect(vietnamese.quizChooseAnswer, 'Chọn một đáp án');
+    expect(vietnamese.quizDontKnow, 'Không biết?');
+    expect(vietnamese.quizWrongResult, 'Không sao, bạn vẫn đang học!');
+    expect(vietnamese.quizTryLater, 'Hãy thử từ này sau!');
+    expect(vietnamese.quizPraiseNice, 'Tuyệt!');
+    expect(vietnamese.quizPraiseGreat, 'Giỏi lắm!');
+    expect(vietnamese.quizPraiseAwesome, 'Xuất sắc!');
+    expect(vietnamese.quizPraiseGotIt, 'Đúng rồi!');
+    expect(vietnamese.quizPraiseBrilliant, 'Quá đỉnh!');
     expect(vietnamese.studyHard, 'Khó');
     expect(vietnamese.studyStillLearning, 'Đang học');
     expect(vietnamese.studyKnow, 'Đã biết');
@@ -204,6 +240,8 @@ void main() {
     expect(vietnamese.studyFlipShortcut, 'Nhấn Space hoặc nhấn thẻ để lật');
     expect(vietnamese.studyList, 'Danh sách từ');
     expect(vietnamese.studyMastered, 'Đã thuộc');
+    expect(vietnamese.studyLevelMove(2, 3), 'Lv.2 → Lv.3');
+    expect(vietnamese.studyLevelMoveFromNew(1), 'Mới → Lv.1');
     expect(vietnamese.themeLight, 'Sáng');
     expect(vietnamese.themeDark, 'Tối');
     expect(vietnamese.menuAchievements, 'Thành tích');
@@ -281,6 +319,9 @@ void main() {
     expect(german.libraryStudy, 'Lernen');
     expect(german.libraryAddSets, 'Sets hinzufügen');
     expect(german.folderAddTag, 'Tag hinzufügen');
+    expect(german.setAddOrRemoveTags, 'Tags hinzufügen oder entfernen');
+    expect(german.setRemoveFromFolder, 'Aus Ordner entfernen');
+    expect(german.moreOption, 'Weitere Optionen');
     expect(german.folderEdit, 'Bearbeiten');
     expect(german.folderShare, 'Teilen');
     expect(german.folderUnpin, 'Von der Seitenleiste lösen');
@@ -292,6 +333,15 @@ void main() {
     expect(german.studyTodayPractice, 'Heute üben');
     expect(german.studyLearnNew, 'Neue Vokabeln lernen');
     expect(german.studyFlashcard, 'Karteikarte');
+    expect(german.quizChooseAnswer, 'Wähle eine Antwort');
+    expect(german.quizDontKnow, 'Weiß nicht?');
+    expect(german.quizWrongResult, 'Kein Problem, du lernst noch!');
+    expect(german.quizTryLater, 'Versuch es später noch einmal!');
+    expect(german.quizPraiseNice, 'Super!');
+    expect(german.quizPraiseGreat, 'Gut gemacht!');
+    expect(german.quizPraiseAwesome, 'Stark!');
+    expect(german.quizPraiseGotIt, 'Richtig!');
+    expect(german.quizPraiseBrilliant, 'Brillant!');
     expect(german.studyHard, 'Schwer');
     expect(german.studyStillLearning, 'Noch am Lernen');
     expect(german.studyKnow, 'Gewusst');
@@ -304,6 +354,8 @@ void main() {
     );
     expect(german.studyList, 'Vokabelliste');
     expect(german.studyMastered, 'Gemeistert');
+    expect(german.studyLevelMove(2, 3), 'Lv.2 → Lv.3');
+    expect(german.studyLevelMoveFromNew(1), 'Neu → Lv.1');
     expect(german.themeLight, 'Hell');
     expect(german.themeDark, 'Dunkel');
     expect(german.menuAchievements, 'Erfolge');

@@ -161,6 +161,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get folderAddTag => 'Thêm thẻ';
 
   @override
+  String get setAddOrRemoveTags => 'Thêm hoặc xóa thẻ';
+
+  @override
+  String get setRemoveFromFolder => 'Xóa khỏi thư mục';
+
+  @override
+  String get moreOption => 'Thêm tùy chọn';
+
+  @override
   String get folderEdit => 'Sửa';
 
   @override
@@ -217,6 +226,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studyQuiz => 'Quiz';
 
   @override
+  String get quizChooseAnswer => 'Chọn một đáp án';
+
+  @override
+  String get quizDontKnow => 'Không biết?';
+
+  @override
+  String get quizWrongResult => 'Không sao, bạn vẫn đang học!';
+
+  @override
+  String get quizTryLater => 'Hãy thử từ này sau!';
+
+  @override
+  String get quizPraiseNice => 'Tuyệt!';
+
+  @override
+  String get quizPraiseGreat => 'Giỏi lắm!';
+
+  @override
+  String get quizPraiseAwesome => 'Xuất sắc!';
+
+  @override
+  String get quizPraiseGotIt => 'Đúng rồi!';
+
+  @override
+  String get quizPraiseBrilliant => 'Quá đỉnh!';
+
+  @override
   String get studyTyping => 'Gõ từ';
 
   @override
@@ -262,6 +298,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studyCompleteTitle => 'Chúc mừng!';
 
   @override
+  String get studyCompleteHeadline =>
+      'Wow, bạn giỏi thật! Bạn đã xếp xong mọi thẻ.';
+
+  @override
   String get studyCompleteOne => 'Bạn đã hoàn thành 1 từ.';
 
   @override
@@ -271,6 +311,34 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get studyCompleteDone => 'Xong';
+
+  @override
+  String get studyCompleteContinue => 'Tiếp tục';
+
+  @override
+  String get studyHowYoureDoing => 'Bạn đang học thế nào';
+
+  @override
+  String get studyNextSteps => 'Bước tiếp theo';
+
+  @override
+  String get studyTermsLeft => 'Từ còn lại';
+
+  @override
+  String get studyPracticeWithQuestions => 'Luyện với câu hỏi';
+
+  @override
+  String get studyRestartFlashcards => 'Chơi lại flashcard';
+
+  @override
+  String studyLevelMove(int from, int to) {
+    return 'Lv.$from → Lv.$to';
+  }
+
+  @override
+  String studyLevelMoveFromNew(int to) {
+    return 'Mới → Lv.$to';
+  }
 
   @override
   String progressComplete(int percent) {

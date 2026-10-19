@@ -42,6 +42,7 @@ dependencies:
   cloud_firestore: ^6.10.0
   firebase_auth: ^6.7.0
   flutter_tts: ^4.2.3
+  audioplayers: ^6.5.1
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +71,8 @@ flutter:
     - assets/images/lang_logo.png
     - assets/images/lang_logo_dark.png
     - assets/images/avatar.jpg
+    - assets/sounds/quiz_correct.wav
+    - assets/sounds/quiz_wrong.wav
 
   fonts:
     - family: Poppins

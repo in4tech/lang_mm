@@ -18,6 +18,7 @@ class LibraryPage extends StatefulWidget {
     this.onPinFolder,
     this.onAddSet,
     this.onCreateSet,
+    this.onRemoveSet,
     this.narrow = false,
   });
 
@@ -30,6 +31,7 @@ class LibraryPage extends StatefulWidget {
   final void Function(String name, bool pinned)? onPinFolder;
   final void Function(String folderName, VocabularySet set)? onAddSet;
   final ValueChanged<String>? onCreateSet;
+  final void Function(String folderName, int setIndex)? onRemoveSet;
   final bool narrow;
 
   @override
@@ -316,6 +318,11 @@ class _LibraryPageState extends State<LibraryPage> {
                   : '${localizations.librarySets} · ${localizations.libraryTermCount(set.termCount!)}',
               titleFirst: true,
               leading: Icon(Icons.style_outlined, color: colors.selected),
+              trailing: _SetMoreButton(
+                setKey: 'library-set-${set.folderName}-${set.index}',
+                onRemove: () =>
+                    widget.onRemoveSet?.call(set.folderName, set.index),
+              ),
               onTap: () => widget.onOpenSet(set.folderName, set.index),
             ),
             const SizedBox(height: 12),
@@ -849,12 +856,87 @@ class _FolderEmpty extends StatelessWidget {
   }
 }
 
+class _SetMoreButton extends StatelessWidget {
+  const _SetMoreButton({required this.setKey, required this.onRemove});
+
+  final String setKey;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final localizations = AppLocalizations.of(context);
+    final label = HomeText.of(context).subtitle.copyWith(color: colors.ink);
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      style: MenuStyle(
+        alignment: AlignmentDirectional.bottomEnd,
+        backgroundColor: WidgetStatePropertyAll(colors.surface),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(8),
+        shadowColor: const WidgetStatePropertyAll(Color(0x33101828)),
+        side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 8),
+        ),
+      ),
+      menuChildren: [
+        MenuItemButton(
+          key: Key('$setKey-add-tags'),
+          onPressed: () {},
+          style: const ButtonStyle(
+            padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+          leadingIcon: Icon(Icons.sell_outlined, size: 20, color: colors.ink),
+          child: Text(localizations.setAddOrRemoveTags, style: label),
+        ),
+        MenuItemButton(
+          key: Key('$setKey-remove'),
+          onPressed: onRemove,
+          style: const ButtonStyle(
+            padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+          leadingIcon: Icon(Icons.remove, size: 20, color: colors.ink),
+          child: Text(localizations.setRemoveFromFolder, style: label),
+        ),
+      ],
+      builder: (context, controller, child) {
+        return IconButton(
+          key: Key('$setKey-more'),
+          tooltip: localizations.moreOption,
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          style: IconButton.styleFrom(
+            foregroundColor: colors.ink,
+            fixedSize: const Size(36, 36),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          icon: const Icon(Icons.more_horiz),
+        );
+      },
+    );
+  }
+}
+
 class _LibraryCard extends StatelessWidget {
   const _LibraryCard({
     required this.cardKey,
     required this.title,
     required this.meta,
     this.leading,
+    this.trailing,
     this.titleFirst = false,
     this.onTap,
   });
@@ -863,6 +945,7 @@ class _LibraryCard extends StatelessWidget {
   final String title;
   final String meta;
   final Widget? leading;
+  final Widget? trailing;
   final bool titleFirst;
   final VoidCallback? onTap;
 
@@ -880,7 +963,7 @@ class _LibraryCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: EdgeInsets.fromLTRB(16, 14, trailing == null ? 16 : 8, 14),
           child: Row(
             children: [
               if (leading != null) ...[
@@ -920,6 +1003,7 @@ class _LibraryCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (trailing != null) trailing!,
             ],
           ),
         ),

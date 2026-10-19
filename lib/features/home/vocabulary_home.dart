@@ -252,21 +252,10 @@ class _HomeFrameState extends State<_HomeFrame> {
 
   Future<void> _pinLibraryFolder(String name, bool pinned) async {
     final current = _folderNamed(name);
-    final id = current?.id;
-    final store = widget.setStore;
-    if (store != null && id != null && id.isNotEmpty) {
-      try {
-        await store.setFolderPinned(id, pinned);
-      } catch (_) {}
-      if (!mounted) {
-        return;
-      }
-    }
-    final next = _library.setPinned(name, pinned);
-    await _storeLibrary(next);
-    if (!mounted) {
+    if (current == null || current.pinned == pinned) {
       return;
     }
+    final next = _library.setPinned(name, pinned);
     setState(() {
       _library = next;
       if (pinned) {
@@ -277,6 +266,18 @@ class _HomeFrameState extends State<_HomeFrame> {
         _focusIndex = null;
       }
     });
+    await _storeLibrary(next);
+    if (!mounted) {
+      return;
+    }
+    final id = current.id;
+    final store = widget.setStore;
+    if (store == null || id == null || id.isEmpty) {
+      return;
+    }
+    try {
+      await store.setFolderPinned(id, pinned);
+    } catch (_) {}
   }
 
   List<VocabularySet> _createdSets() {
@@ -629,6 +630,18 @@ class _HomeFrameState extends State<_HomeFrame> {
     setState(() => _library = next);
   }
 
+  Future<void> _removeSetFromLibraryFolder(
+    String folderName,
+    int setIndex,
+  ) async {
+    final next = _library.removeSetFromFolder(folderName, setIndex);
+    await _storeLibrary(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _library = next);
+  }
+
   void _createSetInFolder(String folderName) {
     setState(() {
       _addSetsFolder = folderName;
@@ -728,6 +741,7 @@ class _HomeFrameState extends State<_HomeFrame> {
         onPinFolder: _pinLibraryFolder,
         onAddSet: _addSetToLibraryFolder,
         onCreateSet: _createSetInFolder,
+        onRemoveSet: _removeSetFromLibraryFolder,
         onOpenSet: _openSavedSet,
       );
     }
@@ -801,7 +815,7 @@ class _HomeFrameState extends State<_HomeFrame> {
                         right: 0,
                         top: 0,
                         bottom: 0,
-                        child: _editing
+                        child: _editing || _studying
                             ? Align(
                                 alignment: Alignment.topCenter,
                                 child: SizedBox(
@@ -897,7 +911,7 @@ class _HomeFrameState extends State<_HomeFrame> {
               Expanded(
                 child: Stack(
                   children: [
-                    if (_editing)
+                    if (_editing || _studying)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
                         child: SizedBox(
