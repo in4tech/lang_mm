@@ -105,7 +105,7 @@ Framework-provided interface text SHALL use the same language as the user's sele
 - **THEN** framework-provided interface text is Vietnamese
 
 ### Requirement: Web home chrome exists in every language
-The vocabulary home title and chrome SHALL have copy in Vietnamese, English, and German. Chrome is the search placeholder, New vocab, Homepage, Library, Notification, Your vocabulary set, Set of words, the statistics heading, All, Words learned, Words not yet learned, the six level names, Today's vocabulary, Practice, Recent, the progress sentence, and Continue.
+The vocabulary home title and chrome SHALL have copy in Vietnamese, English, and German. Chrome is the search placeholder, New vocab, Home, Library, Notification, Your vocabulary set, Set of words, the statistics heading, All, Words learned, Words not yet learned, the six level names, Today's vocabulary, Practice, Recent, the progress sentence, and Continue.
 
 #### Scenario: Web home in each language
 - **WHEN** the vocabulary home is shown and the active language is Vietnamese, English, or German
@@ -167,7 +167,7 @@ Changing language SHALL NOT reset the vocabulary home already on screen. Folder 
 - **AND** it shows "student" and "Love vocabulary"
 
 ### Requirement: Word editor chrome exists in every language
-The word editor chrome SHALL have copy in Vietnamese, English, and German. Chrome is the back label, Done, the set title and description, Import, the word fields, Details, Type, Chunking, Noun, Verb, Adj, and Add new word. Chunking and IPA stay those words in every language.
+The word editor chrome SHALL have copy in Vietnamese, English, and German. Chrome is the back label, Done, the set title and description, Import, the word fields, Details, Type, Chunking, Noun, Verb, Adj, and Add new word. The custom-type dialog SHALL say "Add type" and "Enter type" in English, "Thêm loại" and "Nhập loại" in Vietnamese, and "Typ hinzufügen" and "Typ eingeben" in German. Chunking and IPA stay those words in every language.
 
 #### Scenario: English word editor chrome
 - **WHEN** the word editor is shown in English

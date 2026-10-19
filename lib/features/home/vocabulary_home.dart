@@ -76,8 +76,10 @@ class _HomeFrameState extends State<_HomeFrame> {
   List<StudyCue>? _cues;
   bool _homePractice = false;
   bool _practicingSession = false;
+  var _endPractice = 0;
   String? _focusFolder;
   int? _focusIndex;
+  int? _editWordIndex;
   late VocabularyLibrary _library;
   String? _createdEditorFolderId;
   StudyHomeData _study = StudyHomeData.empty;
@@ -96,6 +98,7 @@ class _HomeFrameState extends State<_HomeFrame> {
       _studying = false;
       _studyReturn = false;
       _openSet = null;
+      _editWordIndex = null;
       _focusFolder = null;
       _focusIndex = null;
       _practicingSession = false;
@@ -108,6 +111,17 @@ class _HomeFrameState extends State<_HomeFrame> {
       _editing = true;
       _studying = false;
       _studyReturn = true;
+      _editWordIndex = null;
+      _editorSession += 1;
+    });
+  }
+
+  void _editWord(int index) {
+    setState(() {
+      _editing = true;
+      _studying = false;
+      _studyReturn = true;
+      _editWordIndex = index;
       _editorSession += 1;
     });
   }
@@ -125,7 +139,7 @@ class _HomeFrameState extends State<_HomeFrame> {
     String? id;
     if (store != null) {
       try {
-        id = await store.createFolder(trimmed);
+        id = await store.createFolder(trimmed, pinned: false);
       } catch (_) {
         return;
       }
@@ -134,12 +148,160 @@ class _HomeFrameState extends State<_HomeFrame> {
       }
     }
     final next = _library.addFolder(trimmed, id: id);
-    final preferences = await SharedPreferences.getInstance();
-    await SharedPreferencesVocabularyLibraryStore(preferences).write(next);
+    await _storeLibrary(next);
     if (!mounted) {
       return;
     }
-    setState(() => _library = next);
+    setState(() {
+      _library = next;
+      _libraryOpen = true;
+      _libraryFolder = trimmed;
+      _editing = false;
+      _studying = false;
+      _studyReturn = false;
+      _cues = null;
+      _homePractice = false;
+      _focusFolder = null;
+      _focusIndex = null;
+      _practicingSession = false;
+    });
+  }
+
+  Future<void> _storeLibrary(VocabularyLibrary next) async {
+    final preferences = await SharedPreferences.getInstance();
+    await SharedPreferencesVocabularyLibraryStore(preferences).write(next);
+  }
+
+  Future<void> _renameLibraryFolder(String name) async {
+    final nextName = await showRenameFolderDialog(context, name);
+    final trimmed = nextName?.trim() ?? '';
+    if (trimmed.isEmpty || trimmed == name || !mounted) {
+      return;
+    }
+    if (_library.folders.any((folder) => folder.name == trimmed)) {
+      return;
+    }
+    final current = _folderNamed(name);
+    final id = current?.id;
+    final store = widget.setStore;
+    if (store != null && id != null && id.isNotEmpty) {
+      try {
+        await store.renameFolder(id, trimmed);
+      } catch (_) {
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
+    }
+    final next = _library.renameFolder(name, trimmed);
+    await _storeLibrary(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _library = next;
+      if (_libraryFolder == name) {
+        _libraryFolder = trimmed;
+      }
+      if (_focusFolder == name) {
+        _focusFolder = trimmed;
+      }
+    });
+  }
+
+  Future<void> _deleteLibraryFolder(String name) async {
+    final current = _folderNamed(name);
+    final id = current?.id;
+    final store = widget.setStore;
+    if (store != null && id != null && id.isNotEmpty) {
+      try {
+        await store.deleteFolder(id);
+      } catch (_) {}
+      if (!mounted) {
+        return;
+      }
+    }
+    if (id != null && id.isNotEmpty) {
+      final preferences = await SharedPreferences.getInstance();
+      await SharedPreferencesVocabularyLibraryStore(
+        preferences,
+      ).rememberRemovedFolder(id);
+      if (!mounted) {
+        return;
+      }
+    }
+    final next = _library.removeFolder(name);
+    await _storeLibrary(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _library = next;
+      if (_libraryFolder == name) {
+        _libraryFolder = null;
+      }
+      if (_focusFolder == name) {
+        _focusFolder = null;
+        _focusIndex = null;
+      }
+    });
+  }
+
+  Future<void> _pinLibraryFolder(String name, bool pinned) async {
+    final current = _folderNamed(name);
+    final id = current?.id;
+    final store = widget.setStore;
+    if (store != null && id != null && id.isNotEmpty) {
+      try {
+        await store.setFolderPinned(id, pinned);
+      } catch (_) {}
+      if (!mounted) {
+        return;
+      }
+    }
+    final next = _library.setPinned(name, pinned);
+    await _storeLibrary(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _library = next;
+      if (pinned) {
+        _focusFolder = name;
+        _focusIndex = null;
+      } else if (_focusFolder == name) {
+        _focusFolder = null;
+        _focusIndex = null;
+      }
+    });
+  }
+
+  List<VocabularySet> _createdSets() {
+    final sets = <VocabularySet>[];
+    for (final folder in _library.folders) {
+      for (var index = 0; index < folder.sets.length; index++) {
+        final content = folder.contentAt(index);
+        sets.add(
+          content ??
+              VocabularySet(
+                title: folder.sets[index],
+                description: '',
+                words: const <VocabularyWord>[],
+              ),
+        );
+      }
+    }
+    return sets;
+  }
+
+  VocabularyFolder? _folderNamed(String name) {
+    for (final folder in _library.folders) {
+      if (folder.name == name) {
+        return folder;
+      }
+    }
+    return null;
   }
 
   void _openSavedSet(String folderName, int setIndex) {
@@ -201,6 +363,7 @@ class _HomeFrameState extends State<_HomeFrame> {
   void _closeEditor() {
     setState(() {
       _editing = false;
+      _editWordIndex = null;
       if (_studyReturn) {
         _studying = true;
       }
@@ -221,7 +384,7 @@ class _HomeFrameState extends State<_HomeFrame> {
     } catch (_) {}
   }
 
-  void _showHome() {
+  void _showHome({bool openSidebar = false}) {
     setState(() {
       _libraryOpen = false;
       _editing = false;
@@ -233,11 +396,14 @@ class _HomeFrameState extends State<_HomeFrame> {
       _focusFolder = null;
       _focusIndex = null;
       _practicingSession = false;
+      if (openSidebar) {
+        _collapsed = false;
+      }
     });
     _loadStudy();
   }
 
-  void _showPracticeAlert() {
+  void _showPracticeAlert(VoidCallback? action) {
     final localizations = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
@@ -246,8 +412,21 @@ class _HomeFrameState extends State<_HomeFrame> {
           content: Text(localizations.studyPracticeAlert),
           actions: [
             TextButton(
+              key: const Key('practice-alert-stay'),
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(localizations.studyPracticeOk),
+              child: Text(localizations.studyPracticeStay),
+            ),
+            TextButton(
+              key: const Key('practice-alert-leave'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                setState(() {
+                  _practicingSession = false;
+                  _endPractice += 1;
+                });
+                action?.call();
+              },
+              child: Text(localizations.studyPracticeLeave),
             ),
           ],
         );
@@ -280,7 +459,10 @@ class _HomeFrameState extends State<_HomeFrame> {
       _openSet = set;
       _cues = cues;
       _homePractice = true;
-      _focusOn(set);
+      _focusFolder = null;
+      _focusIndex = null;
+      _collapsed = true;
+      _overlayOpen = false;
     });
   }
 
@@ -324,12 +506,32 @@ class _HomeFrameState extends State<_HomeFrame> {
   void _showLibrary() {
     setState(() {
       _libraryOpen = true;
+      _libraryFolder = null;
       _editing = false;
       _studying = false;
       _studyReturn = false;
+      _cues = null;
+      _homePractice = false;
       _focusFolder = null;
       _focusIndex = null;
       _practicingSession = false;
+      _overlayOpen = false;
+    });
+  }
+
+  void _openLibraryFolder(String name) {
+    setState(() {
+      _libraryOpen = true;
+      _libraryFolder = name;
+      _editing = false;
+      _studying = false;
+      _studyReturn = false;
+      _cues = null;
+      _homePractice = false;
+      _focusFolder = name;
+      _focusIndex = null;
+      _practicingSession = false;
+      _overlayOpen = false;
     });
   }
 
@@ -397,6 +599,15 @@ class _HomeFrameState extends State<_HomeFrame> {
     }
   }
 
+  void _applyEditedWords(VocabularySet set) {
+    final next = set.id == null ? _library : _library.replaceSet(set);
+    setState(() {
+      _library = next;
+      _openSet = set;
+    });
+    _storeLibrary(next);
+  }
+
   Future<void> _persistSavedSet(VocabularySet set) async {
     final next = _library.addSavedSet(
       name: set.title,
@@ -420,16 +631,29 @@ class _HomeFrameState extends State<_HomeFrame> {
         set: openSet,
         narrow: narrow,
         onEdit: _editOpenSet,
+        onEditWord: _editWord,
         progress: widget.studyProgress,
         initialMarks: _study.progress[openSet.id]?.marks ?? const <int, StudyMark>{},
         cues: _cues,
         statisticsLibrary: _homePractice ? _library : null,
         statisticsProgress: _study.progress,
         statisticsAll: _allSets,
+        endPractice: _endPractice,
         onPracticing: (active) {
-          if (mounted) {
-            setState(() => _practicingSession = active);
+          if (!mounted) {
+            return;
           }
+          if (!active && _homePractice) {
+            _showHome(openSidebar: true);
+            return;
+          }
+          setState(() {
+            _practicingSession = active;
+            if (active) {
+              _collapsed = true;
+              _overlayOpen = false;
+            }
+          });
         },
         onWordsChanged: _saveWordStars,
       );
@@ -440,6 +664,9 @@ class _HomeFrameState extends State<_HomeFrame> {
         key: ValueKey(_editorSession),
         onClose: _closeEditor,
         initialSet: _openSet,
+        existingSets: _createdSets(),
+        focusWordIndex: _editWordIndex,
+        onWordsUpdated: _applyEditedWords,
         setStore: setStore == null
             ? null
             : _LibrarySavingSetStore(
@@ -454,7 +681,14 @@ class _HomeFrameState extends State<_HomeFrame> {
         folders: _libraryFolders(dashboard),
         narrow: narrow,
         openFolder: _libraryFolder,
-        onOpenFolder: (name) => setState(() => _libraryFolder = name),
+        onOpenFolder: (name) => setState(() {
+          _libraryFolder = name;
+          _focusFolder = name;
+          _focusIndex = null;
+        }),
+        onRenameFolder: _renameLibraryFolder,
+        onDeleteFolder: _deleteLibraryFolder,
+        onPinFolder: _pinLibraryFolder,
         onOpenSet: _openSavedSet,
       );
     }
@@ -514,31 +748,53 @@ class _HomeFrameState extends State<_HomeFrame> {
                         right: 0,
                         top: 0,
                         bottom: 0,
-                        child: Scrollbar(
-                          child: SingleChildScrollView(
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: SizedBox(
-                                key: const Key('home-canvas'),
-                                width:
-                                    VocabularyHome.designWidth -
-                                    HomeSidebar.width,
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    32,
-                                    20,
-                                    46,
-                                    48,
+                        child: _editing
+                            ? Align(
+                                alignment: Alignment.topCenter,
+                                child: SizedBox(
+                                  key: const Key('home-canvas'),
+                                  width:
+                                      VocabularyHome.designWidth -
+                                      HomeSidebar.width,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      32,
+                                      20,
+                                      46,
+                                      48,
+                                    ),
+                                    child: _center(
+                                      narrow: false,
+                                      dashboard: dashboard,
+                                    ),
                                   ),
-                                  child: _center(
-                                    narrow: false,
-                                    dashboard: dashboard,
+                                ),
+                              )
+                            : Scrollbar(
+                                child: SingleChildScrollView(
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: SizedBox(
+                                      key: const Key('home-canvas'),
+                                      width:
+                                          VocabularyHome.designWidth -
+                                          HomeSidebar.width,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          32,
+                                          20,
+                                          46,
+                                          48,
+                                        ),
+                                        child: _center(
+                                          narrow: false,
+                                          dashboard: dashboard,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
                       ),
                       Positioned(
                         left: 0,
@@ -550,7 +806,8 @@ class _HomeFrameState extends State<_HomeFrame> {
                             child: HomeSidebar(
                               sample: sidebarSample,
                               collapsed: _collapsed,
-                              librarySelected: _libraryOpen,
+                              librarySelected:
+                                  _libraryOpen && _libraryFolder == null,
                               focusedFolder: _focusFolder,
                               focusedSetIndex: _focusIndex,
                               practiceLocked: _practicingSession,
@@ -558,6 +815,7 @@ class _HomeFrameState extends State<_HomeFrame> {
                               onHome: _showHome,
                               onLibrary: _showLibrary,
                               onOpenSet: _openSavedSet,
+                              onOpenFolder: _openLibraryFolder,
                               onAddFolder: _promptNewFolder,
                             ),
                           ),
@@ -586,18 +844,36 @@ class _HomeFrameState extends State<_HomeFrame> {
               Expanded(
                 child: Stack(
                   children: [
-                    Scrollbar(
-                      child: SingleChildScrollView(
+                    if (_editing)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
                         child: SizedBox(
                           key: const Key('home-canvas'),
                           width: width,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
-                            child: _center(narrow: true, dashboard: dashboard),
+                          child: _center(narrow: true, dashboard: dashboard),
+                        ),
+                      )
+                    else
+                      Scrollbar(
+                        child: SingleChildScrollView(
+                          child: SizedBox(
+                            key: const Key('home-canvas'),
+                            width: width,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                20,
+                                16,
+                                48,
+                              ),
+                              child: _center(
+                                narrow: true,
+                                dashboard: dashboard,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     if (_overlayOpen) ...[
                       Positioned.fill(
                         child: GestureDetector(
@@ -617,7 +893,8 @@ class _HomeFrameState extends State<_HomeFrame> {
                             child: HomeSidebar(
                               sample: sidebarSample,
                               collapsed: false,
-                              librarySelected: _libraryOpen,
+                              librarySelected:
+                                  _libraryOpen && _libraryFolder == null,
                               focusedFolder: _focusFolder,
                               focusedSetIndex: _focusIndex,
                               practiceLocked: _practicingSession,
@@ -625,6 +902,7 @@ class _HomeFrameState extends State<_HomeFrame> {
                               onHome: _showHome,
                               onLibrary: _showLibrary,
                               onOpenSet: _openSavedSet,
+                              onOpenFolder: _openLibraryFolder,
                               onAddFolder: _promptNewFolder,
                             ),
                           ),
@@ -752,8 +1030,12 @@ class _LibrarySavingSetStore implements VocabularySetStore {
   final Future<String> Function() folderId;
 
   @override
-  Future<String> createFolder(String name, {bool editor = false}) {
-    return inner.createFolder(name, editor: editor);
+  Future<String> createFolder(
+    String name, {
+    bool editor = false,
+    bool pinned = true,
+  }) {
+    return inner.createFolder(name, editor: editor, pinned: pinned);
   }
 
   @override
@@ -772,5 +1054,20 @@ class _LibrarySavingSetStore implements VocabularySetStore {
   @override
   Future<void> updateWords(VocabularySet set) {
     return inner.updateWords(set);
+  }
+
+  @override
+  Future<void> renameFolder(String id, String name) {
+    return inner.renameFolder(id, name);
+  }
+
+  @override
+  Future<void> deleteFolder(String id) {
+    return inner.deleteFolder(id);
+  }
+
+  @override
+  Future<void> setFolderPinned(String id, bool pinned) {
+    return inner.setFolderPinned(id, pinned);
   }
 }

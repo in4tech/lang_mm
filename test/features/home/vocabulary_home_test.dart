@@ -64,8 +64,16 @@ void main() {
     VocabularySetStore? setStore,
     StudyProgressStore? studyProgress,
     Size size = const Size(1600, 1200),
+    bool disableAnimations = false,
   }) async {
     await prepareView(tester, size: size);
+    if (disableAnimations) {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+    }
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final controller = await loadAppLanguageController();
     await tester.pumpWidget(
@@ -268,7 +276,7 @@ void main() {
     expect(find.text('Enter term'), findsOneWidget);
     expect(find.text('Find your vocab...'), findsOneWidget);
     expect(find.text('New vocab'), findsOneWidget);
-    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.byType(HomeHeader), findsOneWidget);
     expect(find.byType(HomeSidebar), findsOneWidget);
     expect(find.text('Hot search'), findsNothing);
@@ -283,7 +291,7 @@ void main() {
     await tester.tap(find.byKey(const Key('word-editor-back')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('Hot search'), findsOneWidget);
     expect(find.text('student'), findsNWidgets(2));
     var preferences = await SharedPreferences.getInstance();
@@ -326,7 +334,25 @@ void main() {
     await tester.tap(find.byKey(const Key('new-folder-create')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Travel'), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-page')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('Travel'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('folder-Travel')), findsNothing);
+    expect(find.text('Search this folder'), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-all')), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-study')), findsNothing);
+    expect(find.text('Study'), findsNothing);
+    expect(find.text('Add sets'), findsNothing);
+    expect(find.byKey(const Key('library-folder-add-sets')), findsOneWidget);
+    expect(find.text('Nothing here yet'), findsOneWidget);
+    expect(find.text('Add a set and it will show up here.'), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-empty')), findsOneWidget);
+    expect(find.text('Your library'), findsNothing);
     expect(find.text('Hot search'), findsNothing);
     expect(find.text('Add new word'), findsNothing);
     final raw = (await SharedPreferences.getInstance()).getString(
@@ -353,10 +379,110 @@ void main() {
     await tester.tap(find.byKey(const Key('new-folder-create')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('folder-Travel')), findsOneWidget);
+    expect(find.byKey(const Key('folder-Travel')), findsNothing);
+    expect(find.byKey(const Key('library-folder-page')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('Travel'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Search this folder'), findsOneWidget);
     expect(find.text('Add new word'), findsNothing);
     expect(store.createdFolders, <String>['Travel']);
     expect(store.editorFolders, <bool>[false]);
+  });
+
+  testWidgets('a folder menu renames, pins, and deletes that folder', (
+    tester,
+  ) async {
+    await pumpApp(tester, setStore: _RecordingStore());
+
+    await tester.tap(find.byKey(const Key('sidebar-add-folder')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('new-folder-name')), 'Travel');
+    await tester.tap(find.byKey(const Key('new-folder-create')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('folder-Travel')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+    expect(find.text('Pin to sidebar'), findsOneWidget);
+    expect(find.text('Unpin from sidebar'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('library-folder-pin')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('folder-Travel')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-pin')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('folder-Travel')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-pin')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('new-folder-name')), 'Trips');
+    await tester.tap(find.byKey(const Key('folder-rename-save')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('folder-Trips')), findsOneWidget);
+    expect(find.byKey(const Key('folder-Travel')), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('Trips'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-delete')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('library-page')), findsOneWidget);
+    expect(find.text('Your library'), findsOneWidget);
+    expect(find.byKey(const Key('folder-Trips')), findsNothing);
+    expect(find.text('Trips'), findsNothing);
+  });
+
+  testWidgets('delete removes the folder when the store rejects it', (
+    tester,
+  ) async {
+    final store = _RecordingStore()..deleteError = StateError('denied');
+    await pumpApp(tester, setStore: store);
+
+    await tester.tap(find.byKey(const Key('sidebar-add-folder')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('new-folder-name')), 'Travel');
+    await tester.tap(find.byKey(const Key('new-folder-create')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-delete')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('library-page')), findsOneWidget);
+    expect(find.text('Travel'), findsNothing);
+    expect(store.deletedFolders, <String>['folder-1']);
+    expect(
+      (await SharedPreferences.getInstance()).getStringList(
+        VocabularyLibraryStore.removedFoldersKey,
+      ),
+      <String>['folder-1'],
+    );
   });
 
   testWidgets('done stores the set name in the editor folder', (tester) async {
@@ -378,7 +504,9 @@ void main() {
 
     expect(find.text('Your vocabulary set'), findsNWidgets(2));
     expect(find.text('German A1'), findsNothing);
-    await tester.tap(find.byKey(const Key('folder-Your vocabulary set')));
+    await tester.tap(
+      find.byKey(const Key('folder-toggle-Your vocabulary set')),
+    );
     await tester.pump();
     expect(find.text('German A1'), findsOneWidget);
     expect(find.text('0/0'), findsOneWidget);
@@ -446,7 +574,7 @@ void main() {
 
     expect(find.text('My vocab'), findsOneWidget);
     expect(find.text('German A1 vocabulary'), findsNothing);
-    await tester.tap(find.byKey(const Key('folder-My vocab')));
+    await tester.tap(find.byKey(const Key('folder-toggle-My vocab')));
     await tester.pump();
     expect(find.text('German A1 vocabulary'), findsOneWidget);
     expect(find.text('0/0'), findsOneWidget);
@@ -470,7 +598,7 @@ void main() {
     expect(find.text('Add new word'), findsOneWidget);
     expect(find.text('Find your vocab...'), findsOneWidget);
     expect(find.text('My vocab'), findsOneWidget);
-    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.byType(HomeHeader), findsOneWidget);
     expect(find.byType(HomeSidebar), findsOneWidget);
     expect(find.text('0/0'), findsNothing);
@@ -482,7 +610,7 @@ void main() {
     expect(find.text('My vocab'), findsOneWidget);
     expect(find.text('0/0'), findsOneWidget);
     expect(find.text('German A1 vocabulary'), findsOneWidget);
-    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('Add new word'), findsNothing);
   });
 
@@ -655,8 +783,38 @@ void main() {
     );
     expect(find.text('Search this folder'), findsOneWidget);
     expect(find.byKey(const Key('library-folder-all')), findsOneWidget);
-    expect(find.byKey(const Key('library-folder-study')), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-study')), findsNothing);
+    expect(find.text('Study'), findsNothing);
+    expect(find.text('Add sets'), findsNothing);
     expect(find.byKey(const Key('library-folder-add-sets')), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-more')), findsOneWidget);
+    expect(find.text('Add tag'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add tag'), findsOneWidget);
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Share'), findsOneWidget);
+    expect(find.text('Unpin from sidebar'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
+    await tester.tap(find.text('Add tag'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add tag'), findsNothing);
+    expect(
+      tester.getCenter(find.byKey(const Key('library-folder-more'))).dx,
+      greaterThan(
+        tester.getCenter(find.byKey(const Key('library-folder-add-sets'))).dx,
+      ),
+    );
+    expect(
+      tester.getCenter(find.byKey(const Key('library-folder-more'))).dx,
+      greaterThan(
+        tester
+            .getCenter(find.descendant(of: page, matching: find.text('Travel')))
+            .dx,
+      ),
+    );
 
     await tester.enterText(find.byKey(const Key('library-search')), 'zzz');
     await tester.pump();
@@ -676,7 +834,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-library')));
     await tester.pumpAndSettle();
-    expect(page, findsOneWidget);
+    expect(find.byKey(const Key('library-page')), findsOneWidget);
+    expect(find.text('Your library'), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-page')), findsNothing);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
@@ -701,16 +861,58 @@ void main() {
 
     expect(find.text('German A1 vocabulary'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('folder-My vocab')));
+    await tester.tap(find.byKey(const Key('folder-toggle-My vocab')));
     await tester.pump();
 
     expect(find.text('My vocab'), findsOneWidget);
     expect(find.text('German A1 vocabulary'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('folder-My vocab')));
+    await tester.tap(find.byKey(const Key('folder-toggle-My vocab')));
     await tester.pump();
 
     expect(find.text('German A1 vocabulary'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('folder-My vocab')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('library-folder-page')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('My vocab'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('German A1 vocabulary'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Search this folder'), findsOneWidget);
+    expect(
+      tester.widget<Material>(find.byKey(const Key('folder-My vocab'))).color,
+      HomePalette.dark.selectedFill,
+    );
+    expect(
+      tester
+          .widget<Material>(
+            find.descendant(
+              of: find.byKey(const Key('nav-library')),
+              matching: find.byType(Material),
+            ),
+          )
+          .color,
+      Colors.transparent,
+    );
+
+    await tester.tap(find.byKey(const Key('nav-library')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('library-page')), findsOneWidget);
+    expect(find.text('Your library'), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-page')), findsNothing);
   });
 
   testWidgets('a set click opens that set in the editor', (tester) async {
@@ -742,7 +944,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byKey(const Key('folder-My vocab')));
+    await tester.tap(find.byKey(const Key('folder-toggle-My vocab')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('vocab-set-My vocab-0')));
     await tester.pumpAndSettle();
@@ -766,7 +968,27 @@ void main() {
     );
     expect(find.byKey(const Key('word-term')), findsNothing);
 
+    await tester.tap(find.byKey(const Key('set-study-word-edit-0')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('word-editor-title')), findsNothing);
+    expect(find.byKey(const Key('word-editor-add-word')), findsNothing);
+    expect(
+      tester.widget<TextField>(find.byKey(const Key('word-term'))).controller!.text,
+      'Kind',
+    );
+    await tester.tap(find.byKey(const Key('word-editor-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('set-study-page')), findsOneWidget);
+
     await tester.tap(find.byKey(const Key('set-study-today-practice')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('set-study-mode-flashcard')), findsNothing);
+    expect(
+      find.text('Press Space or click the card to flip'),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const Key('set-study-learn-new')));
     await tester.pumpAndSettle();
     expect(_cardText('child'), findsNothing);
     expect(_cardText('Das Kind'), findsNothing);
@@ -825,7 +1047,7 @@ void main() {
       'basics',
     );
     expect(find.text('Noun'), findsNothing);
-    expect(find.text('Add new word'), findsNothing);
+    expect(find.text('Add new word'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('word-editor-back')));
     await tester.pumpAndSettle();
@@ -928,6 +1150,20 @@ void main() {
       tester.getCenter(folderDivider).dy,
       lessThan(tester.getCenter(find.byKey(const Key('folder-My vocab'))).dy),
     );
+    expect(
+      tester.getCenter(find.byKey(const Key('sidebar-add-folder'))).dy,
+      greaterThan(
+        tester.getCenter(find.byKey(const Key('folder-My vocab'))).dy,
+      ),
+    );
+    expect(
+      tester.getCenter(find.byKey(const Key('sidebar-add-folder'))).dx,
+      tester.getCenter(find.byIcon(Icons.home_outlined)).dx,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('sidebar-add-folder'))).height,
+      greaterThan(0),
+    );
     expect(find.text('My vocab'), findsNothing);
     expect(find.text('German A1 vocabulary'), findsNothing);
     expect(
@@ -948,7 +1184,7 @@ void main() {
       tester.getSize(find.byKey(const Key('nav-home-label'))).width,
       greaterThan(0),
     );
-    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.byIcon(Icons.menu), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const Key('header-logo'))).width,
@@ -1093,7 +1329,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.getSize(find.byType(HomeSidebar)).width, HomeSidebar.width);
-    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('Library'), findsOneWidget);
     expect(find.text('Notification'), findsOneWidget);
     expect(find.text('Your vocabulary set'), findsOneWidget);
@@ -1146,7 +1382,7 @@ void main() {
 
     expect(find.text('My vocab'), findsOneWidget);
     expect(find.text('German A1 vocabulary'), findsNothing);
-    await tester.tap(find.byKey(const Key('folder-My vocab')));
+    await tester.tap(find.byKey(const Key('folder-toggle-My vocab')));
     await tester.pump();
     expect(find.text('German A1 vocabulary'), findsOneWidget);
     expect(tester.getSize(find.byType(HomeSidebar)).width, HomeSidebar.width);
@@ -1195,7 +1431,7 @@ void main() {
       ]),
     );
     await _openSet(tester);
-    await _startPractice(tester);
+    await _startNew(tester);
 
     await tester.tap(find.byKey(const Key('set-study-mode-random')));
     await tester.pumpAndSettle();
@@ -1220,7 +1456,7 @@ void main() {
       _NamedSet('German A1', <VocabularyWord>[_kind]),
     ]));
     await _openSet(tester);
-    await _startPractice(tester);
+    await _startNew(tester);
     await tester.tap(find.byKey(const Key('set-study-mode-random')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('set-study-next')));
@@ -1287,7 +1523,7 @@ void main() {
     );
     await _openSet(tester);
     await _startPractice(tester);
-    expect(find.text('1 / 4'), findsOneWidget);
+    expect(find.text('1 / 1'), findsOneWidget);
     expect(find.byKey(const Key('set-study-mode-quiz')), findsOneWidget);
     await tester.tap(find.byKey(const Key('set-study-mode-quiz')));
     await tester.pumpAndSettle();
@@ -1299,11 +1535,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('set-study-easy')));
     await tester.pumpAndSettle();
-    expect(find.text('2 / 4'), findsOneWidget);
+    expect(find.text('Congratulations!'), findsOneWidget);
     expect(progress.saved, hasLength(2));
     expect(progress.saved.last.$3.level, 2);
-    expect(_cardText('Haus'), findsOneWidget);
-    expect(_cardText('house'), findsNothing);
+    expect(_cardText('Haus'), findsNothing);
 
     final untouched = _MemoryProgress();
     await pumpApp(
@@ -1314,7 +1549,7 @@ void main() {
       ]),
     );
     await _openSet(tester);
-    await _startPractice(tester);
+    await _startNew(tester);
     expect(find.text('Not yet studied'), findsOneWidget);
     expect(find.byKey(const Key('set-study-studied')), findsOneWidget);
     await tester.fling(
@@ -1325,6 +1560,196 @@ void main() {
     await tester.pumpAndSettle();
     expect(untouched.saved, isEmpty);
     expect(_cardText('Haus'), findsOneWidget);
+  });
+
+  testWidgets('a rating sends the flashcard off', (tester) async {
+    final progress = _MemoryProgress();
+    progress.levels['setA'] = <int, StudyWordState>{
+      0: StudyWordState(level: 1, dueAt: DateTime(2020)),
+      1: StudyWordState(level: 1, dueAt: DateTime(2020, 1, 2)),
+    };
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+
+    await _pressRating(tester, const Key('set-study-easy'));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(_cardText('child'), findsNothing);
+    expect(_underText('Haus'), findsOneWidget);
+    expect(_underText('house'), findsNothing);
+    expect(
+      tester.getCenter(find.byKey(const Key('set-study-card'))).dx,
+      greaterThan(
+        tester.getCenter(find.byKey(const Key('set-study-card-under'))).dx,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(_cardText('Haus'), findsOneWidget);
+    expect(_cardText('house'), findsNothing);
+    expect(find.byKey(const Key('set-study-card-under')), findsNothing);
+
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await tester.tap(find.byKey(const Key('set-study-card-tap')));
+    await tester.pumpAndSettle();
+    expect(_cardText('child'), findsOneWidget);
+    await _pressRating(tester, const Key('set-study-hard'));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(_cardText('child'), findsOneWidget);
+    expect(_cardText('Kind'), findsNothing);
+    expect(_underText('Haus'), findsOneWidget);
+    expect(_underText('house'), findsNothing);
+    expect(
+      tester.getCenter(find.byKey(const Key('set-study-card'))).dx,
+      lessThan(
+        tester.getCenter(find.byKey(const Key('set-study-card-under'))).dx,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(_cardText('Haus'), findsOneWidget);
+    expect(_cardText('house'), findsNothing);
+
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await _pressRating(tester, const Key('set-study-familiar'));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(_cardText('Kind'), findsOneWidget);
+    expect(_underText('Haus'), findsOneWidget);
+    final leaving = tester.getCenter(find.byKey(const Key('set-study-card')));
+    final under = tester.getCenter(find.byKey(const Key('set-study-card-under')));
+    expect(leaving.dy, lessThan(under.dy));
+    expect(leaving.dx, closeTo(under.dx, 1));
+    final exit = tester.widget<Transform>(find.byKey(const Key('set-study-exit')));
+    expect(exit.transform.storage[0], closeTo(1, 0.001));
+    await tester.pumpAndSettle();
+    expect(_cardText('Haus'), findsOneWidget);
+
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await _pressRating(tester, const Key('set-study-easy'));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(_cardText('Haus'), findsOneWidget);
+    expect(find.text('Congratulations!'), findsNothing);
+    await tester.pumpAndSettle();
+    expect(find.text('Congratulations!'), findsOneWidget);
+    expect(find.byKey(const Key('set-study-card')), findsNothing);
+  });
+
+  testWidgets('a rating in motion ignores a second press', (tester) async {
+    final progress = _MemoryProgress();
+    progress.levels['setA'] = <int, StudyWordState>{
+      0: StudyWordState(level: 1, dueAt: DateTime(2020)),
+      1: StudyWordState(level: 1, dueAt: DateTime(2020, 1, 2)),
+    };
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await _pressRating(tester, const Key('set-study-easy'));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.byKey(const Key('set-study-easy')));
+    await tester.pumpAndSettle();
+    expect(progress.saved, hasLength(1));
+    expect(progress.saved.single.$3.level, 2);
+    expect(_cardText('Haus'), findsOneWidget);
+
+    final closed = _MemoryProgress();
+    closed.levels['setA'] = <int, StudyWordState>{
+      0: StudyWordState(level: 1, dueAt: DateTime(2020)),
+      1: StudyWordState(level: 1, dueAt: DateTime(2020, 1, 2)),
+    };
+    await pumpApp(
+      tester,
+      studyProgress: closed,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await _pressRating(tester, const Key('set-study-easy'));
+    await tester.tap(find.byKey(const Key('set-study-practice-back')));
+    await tester.pumpAndSettle();
+    expect(closed.saved, hasLength(1));
+    expect(find.byKey(const Key('set-study-today-practice')), findsOneWidget);
+    expect(find.text('Congratulations!'), findsNothing);
+
+    final switched = _MemoryProgress();
+    switched.levels['setA'] = <int, StudyWordState>{
+      0: StudyWordState(level: 1, dueAt: DateTime(2020)),
+      1: StudyWordState(level: 1, dueAt: DateTime(2020, 1, 2)),
+    };
+    await pumpApp(
+      tester,
+      studyProgress: switched,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await _pressRating(tester, const Key('set-study-easy'));
+    await tester.tap(find.byKey(const Key('set-study-mode-quiz')));
+    await tester.pumpAndSettle();
+    expect(switched.saved, hasLength(1));
+    expect(find.text('Quiz'), findsOneWidget);
+    expect(_cardText('house'), findsOneWidget);
+    expect(_cardText('child'), findsNothing);
+
+    final quiet = _MemoryProgress();
+    quiet.levels['setA'] = <int, StudyWordState>{
+      0: StudyWordState(level: 1, dueAt: DateTime(2020)),
+      1: StudyWordState(level: 1, dueAt: DateTime(2020, 1, 2)),
+    };
+    await pumpApp(
+      tester,
+      disableAnimations: true,
+      studyProgress: quiet,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
+      ]),
+    );
+    await _openSet(tester);
+    await _startPractice(tester);
+    await tester.tap(find.byKey(const Key('set-study-easy')));
+    await tester.pump();
+    await tester.pump();
+    expect(_cardText('Haus'), findsOneWidget);
+    expect(_cardText('house'), findsNothing);
+    expect(quiet.saved, hasLength(1));
   });
 
   testWidgets('opening a set selects the stored easy mark', (tester) async {
@@ -1543,9 +1968,29 @@ void main() {
     expect(_cardText('Kind'), findsOneWidget);
     expect(find.text('17/22'), findsOneWidget);
     expect(find.text('77%'), findsOneWidget);
-    expect(find.text('My vocab'), findsOneWidget);
+    expect(find.text('My vocab'), findsNothing);
+    expect(
+      tester.widget<Material>(find.byKey(const Key('folder-My vocab'))).color,
+      HomePalette.dark.folderFill,
+    );
+    expect(find.byKey(const Key('collapsed-folder-divider')), findsOneWidget);
 
-    await tester.tap(find.text('Homepage'));
+    await tester.tap(find.byKey(const Key('set-study-practice-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('set-study-page')), findsNothing);
+    expect(find.byKey(const Key('today-practice')), findsOneWidget);
+    expect(find.text('My vocab'), findsOneWidget);
+    expect(find.byKey(const Key('collapsed-folder-divider')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('today-practice')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('You are in a practice session. Do you want to leave?'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('practice-alert-leave')));
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
@@ -1557,7 +2002,12 @@ void main() {
     expect(find.text('Animals'), findsWidgets);
     expect(find.byKey(const Key('set-study-page')), findsOneWidget);
     expect(_cardText('Kind'), findsOneWidget);
-    expect(find.text('My vocab'), findsOneWidget);
+    expect(find.text('My vocab'), findsNothing);
+    expect(
+      tester.widget<Material>(find.byKey(const Key('folder-My vocab'))).color,
+      HomePalette.dark.selectedFill,
+    );
+    expect(find.byKey(const Key('collapsed-folder-divider')), findsOneWidget);
   });
 
   testWidgets('an empty day list keeps Practice on the home', (tester) async {
@@ -1575,7 +2025,7 @@ void main() {
     await tester.tap(find.byKey(const Key('today-practice')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('set-study-page')), findsNothing);
-    expect(find.text('Homepage'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('0/0'), findsOneWidget);
   });
 }
@@ -1583,6 +2033,13 @@ void main() {
 Finder _cardText(String text) {
   return find.descendant(
     of: find.byKey(const Key('set-study-card')),
+    matching: find.text(text),
+  );
+}
+
+Finder _underText(String text) {
+  return find.descendant(
+    of: find.byKey(const Key('set-study-card-under')),
     matching: find.text(text),
   );
 }
@@ -1660,6 +2117,16 @@ Future<void> _startPractice(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _startNew(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('set-study-learn-new')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pressRating(WidgetTester tester, Key key) async {
+  await tester.tap(find.byKey(key));
+  await tester.pump();
+}
+
 Future<void> _openSet(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('nav-library')));
   await tester.pumpAndSettle();
@@ -1713,12 +2180,18 @@ class _MemoryProgress implements StudyProgressStore {
 
 class _RecordingStore implements VocabularySetStore {
   Object? error;
+  Object? deleteError;
   final saved = <VocabularySet>[];
   final createdFolders = <String>[];
   final editorFolders = <bool>[];
+  final deletedFolders = <String>[];
 
   @override
-  Future<String> createFolder(String name, {bool editor = false}) async {
+  Future<String> createFolder(
+    String name, {
+    bool editor = false,
+    bool pinned = true,
+  }) async {
     final error = this.error;
     if (error != null) {
       throw error;
@@ -1739,4 +2212,19 @@ class _RecordingStore implements VocabularySetStore {
 
   @override
   Future<void> updateWords(VocabularySet set) async {}
+
+  @override
+  Future<void> renameFolder(String id, String name) async {}
+
+  @override
+  Future<void> deleteFolder(String id) async {
+    final deleteError = this.deleteError;
+    deletedFolders.add(id);
+    if (deleteError != null) {
+      throw deleteError;
+    }
+  }
+
+  @override
+  Future<void> setFolderPinned(String id, bool pinned) async {}
 }

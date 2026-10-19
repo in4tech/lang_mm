@@ -59,6 +59,8 @@ void main() {
     expect(english.editorAdj, 'Adj');
     expect(english.editorImageLinkHint, 'Enter image link');
     expect(english.editorAddWord, 'Add new word');
+    expect(english.editorAddType, 'Add type');
+    expect(english.editorTypeNameHint, 'Enter type');
     expect(english.termRequired, 'Enter a term');
     expect(english.definitionRequired, 'Enter a definition');
     expect(english.titleRequired, 'Enter a title');
@@ -74,11 +76,19 @@ void main() {
     expect(english.libraryTermCount(4), '4 terms');
     expect(english.librarySetCount(2), '2 sets');
     expect(english.libraryEmpty, 'Nothing here yet');
+    expect(english.libraryFolderEmpty, 'Add a set and it will show up here.');
     expect(english.librarySortCreated, 'Created');
     expect(english.librarySortStudied, 'Studied');
     expect(english.librarySearchFolder, 'Search this folder');
     expect(english.libraryStudy, 'Study');
     expect(english.libraryAddSets, 'Add sets');
+    expect(english.folderAddTag, 'Add tag');
+    expect(english.folderEdit, 'Edit');
+    expect(english.folderShare, 'Share');
+    expect(english.folderUnpin, 'Unpin from sidebar');
+    expect(english.folderPin, 'Pin to sidebar');
+    expect(english.folderSave, 'Save');
+    expect(english.folderDelete, 'Delete');
     expect(english.studyTodayPractice, 'Today practice');
     expect(english.studyLearnNew, 'Learn new vocab');
     expect(english.studyFlashcard, 'Flashcard');
@@ -136,6 +146,8 @@ void main() {
     expect(vietnamese.editorAdj, 'Tính từ');
     expect(vietnamese.editorImageLinkHint, 'Nhập link ảnh');
     expect(vietnamese.editorAddWord, 'Thêm từ mới');
+    expect(vietnamese.editorAddType, 'Thêm loại');
+    expect(vietnamese.editorTypeNameHint, 'Nhập loại');
     expect(vietnamese.termRequired, 'Hãy nhập từ');
     expect(vietnamese.definitionRequired, 'Hãy nhập định nghĩa');
     expect(vietnamese.titleRequired, 'Hãy nhập tiêu đề');
@@ -151,11 +163,22 @@ void main() {
     expect(vietnamese.libraryTermCount(4), '4 từ');
     expect(vietnamese.librarySetCount(2), '2 bộ từ');
     expect(vietnamese.libraryEmpty, 'Chưa có gì ở đây');
+    expect(
+      vietnamese.libraryFolderEmpty,
+      'Thêm một bộ từ, nó sẽ hiện ở đây.',
+    );
     expect(vietnamese.librarySortCreated, 'Đã tạo');
     expect(vietnamese.librarySortStudied, 'Đã học');
     expect(vietnamese.librarySearchFolder, 'Tìm trong thư mục này');
     expect(vietnamese.libraryStudy, 'Học');
     expect(vietnamese.libraryAddSets, 'Thêm bộ từ');
+    expect(vietnamese.folderAddTag, 'Thêm thẻ');
+    expect(vietnamese.folderEdit, 'Sửa');
+    expect(vietnamese.folderShare, 'Chia sẻ');
+    expect(vietnamese.folderUnpin, 'Bỏ ghim khỏi thanh bên');
+    expect(vietnamese.folderPin, 'Ghim vào thanh bên');
+    expect(vietnamese.folderSave, 'Lưu');
+    expect(vietnamese.folderDelete, 'Xóa');
     expect(vietnamese.studyTodayPractice, 'Luyện hôm nay');
     expect(vietnamese.studyLearnNew, 'Học từ mới');
     expect(vietnamese.studyFlashcard, 'Thẻ học');
@@ -213,6 +236,8 @@ void main() {
     expect(german.editorAdj, 'Adjektiv');
     expect(german.editorImageLinkHint, 'Bildlink eingeben');
     expect(german.editorAddWord, 'Neues Wort hinzufügen');
+    expect(german.editorAddType, 'Typ hinzufügen');
+    expect(german.editorTypeNameHint, 'Typ eingeben');
     expect(german.termRequired, 'Begriff eingeben');
     expect(german.definitionRequired, 'Definition eingeben');
     expect(german.titleRequired, 'Titel eingeben');
@@ -228,11 +253,22 @@ void main() {
     expect(german.libraryTermCount(4), '4 Begriffe');
     expect(german.librarySetCount(2), '2 Sets');
     expect(german.libraryEmpty, 'Noch nichts hier');
+    expect(
+      german.libraryFolderEmpty,
+      'Füge ein Set hinzu, dann erscheint es hier.',
+    );
     expect(german.librarySortCreated, 'Erstellt');
     expect(german.librarySortStudied, 'Gelernt');
     expect(german.librarySearchFolder, 'Diesen Ordner durchsuchen');
     expect(german.libraryStudy, 'Lernen');
     expect(german.libraryAddSets, 'Sets hinzufügen');
+    expect(german.folderAddTag, 'Tag hinzufügen');
+    expect(german.folderEdit, 'Bearbeiten');
+    expect(german.folderShare, 'Teilen');
+    expect(german.folderUnpin, 'Von der Seitenleiste lösen');
+    expect(german.folderPin, 'An Seitenleiste anheften');
+    expect(german.folderSave, 'Speichern');
+    expect(german.folderDelete, 'Löschen');
     expect(german.studyTodayPractice, 'Heute üben');
     expect(german.studyLearnNew, 'Neue Vokabeln lernen');
     expect(german.studyFlashcard, 'Karteikarte');

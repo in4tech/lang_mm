@@ -6,12 +6,14 @@ class VocabularyFolder {
   const VocabularyFolder({
     required this.name,
     this.id,
+    this.pinned = true,
     this.sets = const <String>[],
     this.contents = const <VocabularySet?>[],
   });
 
   final String name;
   final String? id;
+  final bool pinned;
   final List<String> sets;
   final List<VocabularySet?> contents;
 
@@ -47,6 +49,7 @@ class VocabularyLibrary {
           VocabularyFolder(
             name: folder.name,
             id: folder.id,
+            pinned: folder.pinned,
             sets: folder.sets,
             contents: List<VocabularySet?>.unmodifiable(<VocabularySet?>[
               for (final content in folder.contents)
@@ -61,9 +64,88 @@ class VocabularyLibrary {
     return VocabularyLibrary(
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         ...folders,
-        VocabularyFolder(name: name, id: id),
+        VocabularyFolder(name: name, id: id, pinned: false),
       ]),
       editorFolder: editorFolder,
+    );
+  }
+
+  VocabularyLibrary renameFolder(String name, String nextName) {
+    return VocabularyLibrary(
+      editorFolder: editorFolder == name ? nextName : editorFolder,
+      folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
+        for (final folder in folders)
+          if (folder.name == name)
+            VocabularyFolder(
+              name: nextName,
+              id: folder.id,
+              pinned: folder.pinned,
+              sets: folder.sets,
+              contents: folder.contents,
+            )
+          else
+            folder,
+      ]),
+    );
+  }
+
+  VocabularyLibrary removeFolder(String name) {
+    return VocabularyLibrary(
+      editorFolder: editorFolder == name ? null : editorFolder,
+      folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
+        for (final folder in folders)
+          if (folder.name != name) folder,
+      ]),
+    );
+  }
+
+  VocabularyLibrary setPinned(String name, bool pinned) {
+    return VocabularyLibrary(
+      editorFolder: editorFolder,
+      folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
+        for (final folder in folders)
+          if (folder.name == name)
+            VocabularyFolder(
+              name: folder.name,
+              id: folder.id,
+              pinned: pinned,
+              sets: folder.sets,
+              contents: folder.contents,
+            )
+          else
+            folder,
+      ]),
+    );
+  }
+
+  VocabularyLibrary addSetToFolder(String folderName, VocabularySet set) {
+    return VocabularyLibrary(
+      editorFolder: editorFolder,
+      folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
+        for (final folder in folders)
+          if (folder.name != folderName || _folderHasSet(folder, set))
+            folder
+          else
+            VocabularyFolder(
+              name: folder.name,
+              id: folder.id,
+              pinned: folder.pinned,
+              sets: List<String>.unmodifiable(<String>[
+                ...folder.sets,
+                set.title,
+              ]),
+              contents: List<VocabularySet?>.unmodifiable(<VocabularySet?>[
+                ..._alignedContents(folder),
+                VocabularySet(
+                  id: set.id,
+                  title: set.title,
+                  description: set.description,
+                  words: set.words,
+                  folderId: folder.id ?? set.folderId,
+                ),
+              ]),
+            ),
+      ]),
     );
   }
 
@@ -83,6 +165,7 @@ class VocabularyLibrary {
           VocabularyFolder(
             name: folder.name,
             id: folder.id ?? folderId,
+            pinned: folder.pinned,
             sets: List<String>.unmodifiable(<String>[...folder.sets, name]),
             contents: List<VocabularySet?>.unmodifiable(<VocabularySet?>[
               ..._alignedContents(folder),
@@ -119,6 +202,7 @@ class CloudFolderRecord {
     required this.name,
     required this.setIds,
     required this.editor,
+    this.pinned = true,
     this.createdAt,
   });
 
@@ -126,6 +210,7 @@ class CloudFolderRecord {
   final String name;
   final List<String> setIds;
   final bool editor;
+  final bool pinned;
   final DateTime? createdAt;
 }
 
@@ -191,6 +276,7 @@ VocabularyLibrary libraryFromCloud({
       VocabularyFolder(
         name: folder.name,
         id: folder.id,
+        pinned: folder.pinned,
         sets: List<String>.unmodifiable(names),
         contents: List<VocabularySet?>.unmodifiable(contents),
       ),
@@ -200,6 +286,20 @@ VocabularyLibrary libraryFromCloud({
     folders: List<VocabularyFolder>.unmodifiable(built),
     editorFolder: editorFolder,
   );
+}
+
+bool _folderHasSet(VocabularyFolder folder, VocabularySet set) {
+  for (var index = 0; index < folder.sets.length; index++) {
+    final content = folder.contentAt(index);
+    final id = set.id;
+    if (id != null && id.isNotEmpty && content?.id == id) {
+      return true;
+    }
+    if (folder.sets[index] == set.title) {
+      return true;
+    }
+  }
+  return false;
 }
 
 List<VocabularySet?> _alignedContents(VocabularyFolder folder) {

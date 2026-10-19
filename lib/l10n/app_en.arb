@@ -48,7 +48,7 @@
   "@cancelAction": {
     "description": "Button that closes a dialog without saving."
   },
-  "navHome": "Homepage",
+  "navHome": "Home",
   "@navHome": {
     "description": "Sidebar navigation label for the home screen."
   },
@@ -93,6 +93,10 @@
   "libraryEmpty": "Nothing here yet",
   "@libraryEmpty": {
     "description": "Shown when the selected library filter has no rows."
+  },
+  "libraryFolderEmpty": "Add a set and it will show up here.",
+  "@libraryFolderEmpty": {
+    "description": "Hint under the empty folder title."
   },
   "navNotification": "Notification",
   "@navNotification": {
@@ -178,13 +182,49 @@
   "@libraryAddSets": {
     "description": "Button on a folder page that adds flashcard sets."
   },
+  "folderAddTag": "Add tag",
+  "@folderAddTag": {
+    "description": "Folder menu action that adds a tag."
+  },
+  "folderEdit": "Edit",
+  "@folderEdit": {
+    "description": "Folder menu action that edits the folder."
+  },
+  "folderShare": "Share",
+  "@folderShare": {
+    "description": "Folder menu action that shares the folder."
+  },
+  "folderUnpin": "Unpin from sidebar",
+  "@folderUnpin": {
+    "description": "Folder menu action that unpins the folder from the sidebar."
+  },
+  "folderPin": "Pin to sidebar",
+  "@folderPin": {
+    "description": "Folder menu action that pins the folder to the sidebar."
+  },
+  "folderSave": "Save",
+  "@folderSave": {
+    "description": "Button that saves a renamed folder."
+  },
+  "folderDelete": "Delete",
+  "@folderDelete": {
+    "description": "Folder menu action that deletes the folder."
+  },
   "studyTodayPractice": "Today practice",
   "@studyTodayPractice": {
     "description": "Selected practice action on a flashcard set."
   },
-  "studyPracticeAlert": "You are in a practice session.",
+  "studyPracticeAlert": "You are in a practice session. Do you want to leave?",
   "@studyPracticeAlert": {
-    "description": "Alert shown when a sidebar item is clicked during practice."
+    "description": "Confirmation shown when a sidebar item is clicked during practice."
+  },
+  "studyPracticeStay": "Stay",
+  "@studyPracticeStay": {
+    "description": "Button that keeps the current practice session."
+  },
+  "studyPracticeLeave": "Leave",
+  "@studyPracticeLeave": {
+    "description": "Button that leaves the current practice session."
   },
   "studyPracticeOk": "OK",
   "@studyPracticeOk": {
@@ -424,6 +464,14 @@
   "editorAddWord": "Add new word",
   "@editorAddWord": {
     "description": "Button that collapses the current word and opens a new empty card."
+  },
+  "editorAddType": "Add type",
+  "@editorAddType": {
+    "description": "Title and confirm button for adding a custom word type."
+  },
+  "editorTypeNameHint": "Enter type",
+  "@editorTypeNameHint": {
+    "description": "Placeholder for the custom word type name."
   },
   "termRequired": "Enter a term",
   "@termRequired": {

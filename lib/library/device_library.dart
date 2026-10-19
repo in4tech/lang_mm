@@ -17,6 +17,7 @@ Future<VocabularyLibrary> libraryForDevice({
   required VocabularyLibrary local,
   required Future<VocabularyLibrary> Function() readCloud,
   required VocabularySetStore store,
+  Set<String> removedFolderIds = const <String>{},
 }) async {
   final VocabularyLibrary cloud;
   try {
@@ -25,7 +26,7 @@ Future<VocabularyLibrary> libraryForDevice({
     return local;
   }
   if (cloud.folders.isNotEmpty) {
-    return cloud;
+    return _withoutRemoved(_withLocalPins(cloud, local), removedFolderIds);
   }
   if (local.folders.isEmpty) {
     return local;
@@ -37,6 +38,57 @@ Future<VocabularyLibrary> libraryForDevice({
   }
 }
 
+VocabularyLibrary _withLocalPins(
+  VocabularyLibrary cloud,
+  VocabularyLibrary local,
+) {
+  bool? savedPin(VocabularyFolder folder) {
+    for (final saved in local.folders) {
+      final sameId =
+          folder.id != null && folder.id!.isNotEmpty && saved.id == folder.id;
+      if (sameId || saved.name == folder.name) {
+        return saved.pinned;
+      }
+    }
+    return null;
+  }
+
+  return VocabularyLibrary(
+    editorFolder: cloud.editorFolder,
+    folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
+      for (final folder in cloud.folders)
+        if (savedPin(folder) case final pinned?)
+          VocabularyFolder(
+            name: folder.name,
+            id: folder.id,
+            pinned: pinned,
+            sets: folder.sets,
+            contents: folder.contents,
+          )
+        else
+          folder,
+    ]),
+  );
+}
+
+VocabularyLibrary _withoutRemoved(
+  VocabularyLibrary library,
+  Set<String> removed,
+) {
+  if (removed.isEmpty) {
+    return library;
+  }
+  final folders = <VocabularyFolder>[
+    for (final folder in library.folders)
+      if (folder.id == null || !removed.contains(folder.id)) folder,
+  ];
+  final editor = library.editorFolder;
+  return VocabularyLibrary(
+    editorFolder: folders.any((folder) => folder.name == editor) ? editor : null,
+    folders: List<VocabularyFolder>.unmodifiable(folders),
+  );
+}
+
 Future<VocabularyLibrary> _upload(
   VocabularySetStore store,
   VocabularyLibrary local,
@@ -44,7 +96,11 @@ Future<VocabularyLibrary> _upload(
   final folders = <VocabularyFolder>[];
   for (final folder in local.folders) {
     final editor = folder.name == local.editorFolder;
-    final id = await store.createFolder(folder.name, editor: editor);
+    final id = await store.createFolder(
+      folder.name,
+      editor: editor,
+      pinned: folder.pinned,
+    );
     final names = <String>[];
     final contents = <VocabularySet?>[];
     for (var index = 0; index < folder.sets.length; index++) {
@@ -68,6 +124,7 @@ Future<VocabularyLibrary> _upload(
       VocabularyFolder(
         name: folder.name,
         id: id,
+        pinned: folder.pinned,
         sets: List<String>.unmodifiable(names),
         contents: List<VocabularySet?>.unmodifiable(contents),
       ),

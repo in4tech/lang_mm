@@ -330,15 +330,25 @@ Future<String?> showNewFolderDialog(BuildContext context) {
   );
 }
 
+Future<String?> showRenameFolderDialog(BuildContext context, String name) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => _NewFolderDialog(initialName: name, rename: true),
+  );
+}
+
 class _NewFolderDialog extends StatefulWidget {
-  const _NewFolderDialog();
+  const _NewFolderDialog({this.initialName = '', this.rename = false});
+
+  final String initialName;
+  final bool rename;
 
   @override
   State<_NewFolderDialog> createState() => _NewFolderDialogState();
 }
 
 class _NewFolderDialogState extends State<_NewFolderDialog> {
-  final _name = TextEditingController();
+  late final _name = TextEditingController(text: widget.initialName);
 
   @override
   void dispose() {
@@ -370,7 +380,10 @@ class _NewFolderDialogState extends State<_NewFolderDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(localizations.newFolder, style: text.heading),
+            Text(
+              widget.rename ? localizations.folderEdit : localizations.newFolder,
+              style: text.heading,
+            ),
             const SizedBox(height: 16),
             TextField(
               key: const Key('new-folder-name'),
@@ -406,7 +419,9 @@ class _NewFolderDialogState extends State<_NewFolderDialog> {
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  key: const Key('new-folder-create'),
+                  key: Key(
+                    widget.rename ? 'folder-rename-save' : 'new-folder-create',
+                  ),
                   onPressed: _create,
                   style: FilledButton.styleFrom(
                     backgroundColor: colors.newVocab,
@@ -416,7 +431,11 @@ class _NewFolderDialogState extends State<_NewFolderDialog> {
                     ),
                     textStyle: text.subtitle.copyWith(color: colors.onAccent),
                   ),
-                  child: Text(localizations.createFolder),
+                  child: Text(
+                    widget.rename
+                        ? localizations.folderSave
+                        : localizations.createFolder,
+                  ),
                 ),
               ],
             ),

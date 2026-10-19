@@ -127,7 +127,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('My vocab'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('folder-My vocab')));
+    await tester.tap(find.byKey(const Key('folder-toggle-My vocab')));
     await tester.pump();
     expect(find.text('German A1 vocabulary'), findsOneWidget);
     expect(find.text('0/0'), findsOneWidget);

@@ -11,6 +11,9 @@ class LibraryPage extends StatefulWidget {
     required this.onOpenSet,
     this.openFolder,
     this.onOpenFolder,
+    this.onRenameFolder,
+    this.onDeleteFolder,
+    this.onPinFolder,
     this.narrow = false,
   });
 
@@ -18,6 +21,9 @@ class LibraryPage extends StatefulWidget {
   final void Function(String folderName, int setIndex) onOpenSet;
   final String? openFolder;
   final ValueChanged<String?>? onOpenFolder;
+  final ValueChanged<String>? onRenameFolder;
+  final ValueChanged<String>? onDeleteFolder;
+  final void Function(String name, bool pinned)? onPinFolder;
   final bool narrow;
 
   @override
@@ -219,6 +225,27 @@ class _LibraryPageState extends State<LibraryPage> {
             Expanded(
               child: Text(folder.name, style: HomeText.of(context).title),
             ),
+            const SizedBox(width: 12),
+            IconButton(
+              key: const Key('library-folder-add-sets'),
+              onPressed: () {},
+              tooltip: localizations.libraryAddSets,
+              style: IconButton.styleFrom(
+                backgroundColor: colors.folderFill,
+                foregroundColor: colors.ink,
+                fixedSize: const Size(36, 36),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: const Icon(Icons.add),
+            ),
+            const SizedBox(width: 8),
+            _FolderMoreButton(
+              pinned: folder.pinned,
+              onEdit: () => widget.onRenameFolder?.call(folder.name),
+              onDelete: () => widget.onDeleteFolder?.call(folder.name),
+              onTogglePin: () =>
+                  widget.onPinFolder?.call(folder.name, !folder.pinned),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -264,7 +291,9 @@ class _LibraryPageState extends State<LibraryPage> {
         const SizedBox(height: 20),
         Divider(height: 1, color: colors.border),
         const SizedBox(height: 12),
-        if (sets.isEmpty)
+        if (folder.sets.isEmpty)
+          const _FolderEmpty()
+        else if (sets.isEmpty)
           Text(
             localizations.libraryEmpty,
             style: HomeText.of(context).body.copyWith(color: colors.muted),
@@ -283,54 +312,6 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
             const SizedBox(height: 12),
           ],
-        const SizedBox(height: 28),
-        Center(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: colors.border),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    key: const Key('library-folder-study'),
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      foregroundColor: colors.text,
-                      backgroundColor: colors.folderFill,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 12,
-                      ),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Text(localizations.libraryStudy),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    key: const Key('library-folder-add-sets'),
-                    onPressed: () {},
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.newVocab,
-                      foregroundColor: colors.onAccent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 12,
-                      ),
-                      shape: const StadiumBorder(),
-                    ),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(localizations.libraryAddSets),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -393,6 +374,126 @@ class _FilterChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FolderMoreButton extends StatelessWidget {
+  const _FolderMoreButton({
+    required this.pinned,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onTogglePin,
+  });
+
+  final bool pinned;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onTogglePin;
+
+  static const _delete = Color(0xFFFF5A6A);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final localizations = AppLocalizations.of(context);
+    final label = HomeText.of(context).subtitle.copyWith(color: colors.ink);
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      style: MenuStyle(
+        alignment: AlignmentDirectional.bottomEnd,
+        backgroundColor: WidgetStatePropertyAll(colors.surface),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(8),
+        shadowColor: const WidgetStatePropertyAll(Color(0x33101828)),
+        side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 8),
+        ),
+      ),
+      menuChildren: [
+        _item(
+          itemKey: const Key('library-folder-add-tag'),
+          icon: Icons.sell_outlined,
+          label: localizations.folderAddTag,
+          color: colors.ink,
+          style: label,
+        ),
+        _item(
+          itemKey: const Key('library-folder-edit'),
+          icon: Icons.edit_outlined,
+          label: localizations.folderEdit,
+          color: colors.ink,
+          style: label,
+          onPressed: onEdit,
+        ),
+        _item(
+          itemKey: const Key('library-folder-share'),
+          icon: Icons.ios_share,
+          label: localizations.folderShare,
+          color: colors.ink,
+          style: label,
+        ),
+        _item(
+          itemKey: const Key('library-folder-pin'),
+          icon: pinned ? Icons.push_pin : Icons.push_pin_outlined,
+          label: pinned ? localizations.folderUnpin : localizations.folderPin,
+          color: colors.ink,
+          style: label,
+          onPressed: onTogglePin,
+        ),
+        _item(
+          itemKey: const Key('library-folder-delete'),
+          icon: Icons.delete_outline,
+          label: localizations.folderDelete,
+          color: _delete,
+          style: label.copyWith(color: _delete),
+          onPressed: onDelete,
+        ),
+      ],
+      builder: (context, controller, child) {
+        return IconButton(
+          key: const Key('library-folder-more'),
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          style: IconButton.styleFrom(
+            backgroundColor: colors.folderFill,
+            foregroundColor: colors.ink,
+            fixedSize: const Size(36, 36),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          icon: const Icon(Icons.more_horiz),
+        );
+      },
+    );
+  }
+
+  Widget _item({
+    required Key itemKey,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required TextStyle style,
+    VoidCallback? onPressed,
+  }) {
+    return MenuItemButton(
+      key: itemKey,
+      onPressed: onPressed ?? () {},
+      style: const ButtonStyle(
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      leadingIcon: Icon(icon, size: 20, color: color),
+      child: Text(label, style: style),
     );
   }
 }
@@ -537,6 +638,51 @@ class _SearchField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colors.border, width: 2),
         ),
+      ),
+    );
+  }
+}
+
+class _FolderEmpty extends StatelessWidget {
+  const _FolderEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final text = HomeText.of(context);
+    final localizations = AppLocalizations.of(context);
+    return Padding(
+      key: const Key('library-folder-empty'),
+      padding: const EdgeInsets.only(top: 48),
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colors.folderFill,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.style_outlined,
+              size: 32,
+              color: colors.selected,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            localizations.libraryEmpty,
+            textAlign: TextAlign.center,
+            style: text.heading,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            localizations.libraryFolderEmpty,
+            textAlign: TextAlign.center,
+            style: text.body.copyWith(color: colors.muted),
+          ),
+        ],
       ),
     );
   }

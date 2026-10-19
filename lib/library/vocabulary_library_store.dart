@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class VocabularyLibraryStore {
   static const storageKey = 'vocabulary_library';
+  static const removedFoldersKey = 'vocabulary_library_removed_folders';
 
   Future<VocabularyLibrary> read();
 
@@ -35,6 +36,7 @@ class SharedPreferencesVocabularyLibraryStore
           <String, Object>{
             'name': folder.name,
             if (folder.id != null) 'id': folder.id!,
+            'pinned': folder.pinned,
             'sets': <Object>[
               for (var index = 0; index < folder.sets.length; index++)
                 _storedSet(folder, index),
@@ -49,6 +51,27 @@ class SharedPreferencesVocabularyLibraryStore
     return _preferences.setString(
       VocabularyLibraryStore.storageKey,
       jsonEncode(payload),
+    );
+  }
+
+  Set<String> removedFolderIds() {
+    return (_preferences.getStringList(
+              VocabularyLibraryStore.removedFoldersKey,
+            ) ??
+            const <String>[])
+        .toSet();
+  }
+
+  Future<void> rememberRemovedFolder(String id) async {
+    final current =
+        _preferences.getStringList(VocabularyLibraryStore.removedFoldersKey) ??
+        <String>[];
+    if (current.contains(id)) {
+      return;
+    }
+    await _preferences.setStringList(
+      VocabularyLibraryStore.removedFoldersKey,
+      <String>[...current, id],
     );
   }
 }
@@ -103,6 +126,7 @@ VocabularyLibrary? _decode(String raw) {
       VocabularyFolder(
         name: name,
         id: id is String ? id : null,
+        pinned: item['pinned'] != false,
         sets: List<String>.unmodifiable(sets),
         contents: List<VocabularySet?>.unmodifiable(contents),
       ),

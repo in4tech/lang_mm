@@ -175,7 +175,7 @@ abstract class AppLocalizations {
   /// Sidebar navigation label for the home screen.
   ///
   /// In en, this message translates to:
-  /// **'Homepage'**
+  /// **'Home'**
   String get navHome;
 
   /// Sidebar navigation label for the library.
@@ -225,6 +225,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nothing here yet'**
   String get libraryEmpty;
+
+  /// Hint under the empty folder title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a set and it will show up here.'**
+  String get libraryFolderEmpty;
 
   /// Sidebar navigation label for notifications.
   ///
@@ -352,17 +358,71 @@ abstract class AppLocalizations {
   /// **'Add sets'**
   String get libraryAddSets;
 
+  /// Folder menu action that adds a tag.
+  ///
+  /// In en, this message translates to:
+  /// **'Add tag'**
+  String get folderAddTag;
+
+  /// Folder menu action that edits the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get folderEdit;
+
+  /// Folder menu action that shares the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get folderShare;
+
+  /// Folder menu action that unpins the folder from the sidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin from sidebar'**
+  String get folderUnpin;
+
+  /// Folder menu action that pins the folder to the sidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to sidebar'**
+  String get folderPin;
+
+  /// Button that saves a renamed folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get folderSave;
+
+  /// Folder menu action that deletes the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get folderDelete;
+
   /// Selected practice action on a flashcard set.
   ///
   /// In en, this message translates to:
   /// **'Today practice'**
   String get studyTodayPractice;
 
-  /// Alert shown when a sidebar item is clicked during practice.
+  /// Confirmation shown when a sidebar item is clicked during practice.
   ///
   /// In en, this message translates to:
-  /// **'You are in a practice session.'**
+  /// **'You are in a practice session. Do you want to leave?'**
   String get studyPracticeAlert;
+
+  /// Button that keeps the current practice session.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay'**
+  String get studyPracticeStay;
+
+  /// Button that leaves the current practice session.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get studyPracticeLeave;
 
   /// Button that dismisses the practice-session alert.
   ///
@@ -699,6 +759,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add new word'**
   String get editorAddWord;
+
+  /// Title and confirm button for adding a custom word type.
+  ///
+  /// In en, this message translates to:
+  /// **'Add type'**
+  String get editorAddType;
+
+  /// Placeholder for the custom word type name.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter type'**
+  String get editorTypeNameHint;
 
   /// Shown when a new word is saved without a term.
   ///

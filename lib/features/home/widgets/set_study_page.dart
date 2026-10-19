@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lang/features/home/home_from_library.dart';
+import 'package:lang/features/word_editor/sentence_format.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/library/study_progress.dart';
@@ -21,6 +22,7 @@ class SetStudyPage extends StatefulWidget {
     super.key,
     required this.set,
     required this.onEdit,
+    this.onEditWord,
     this.narrow = false,
     this.progress,
     this.initialMarks = const <int, StudyMark>{},
@@ -30,10 +32,12 @@ class SetStudyPage extends StatefulWidget {
     this.statisticsLibrary,
     this.statisticsProgress = const <String, StudySetProgress>{},
     this.statisticsAll = true,
+    this.endPractice = 0,
   });
 
   final VocabularySet set;
   final VoidCallback onEdit;
+  final ValueChanged<int>? onEditWord;
   final bool narrow;
   final StudyProgressStore? progress;
   final Map<int, StudyMark> initialMarks;
@@ -43,6 +47,7 @@ class SetStudyPage extends StatefulWidget {
   final VocabularyLibrary? statisticsLibrary;
   final Map<String, StudySetProgress> statisticsProgress;
   final bool statisticsAll;
+  final int endPractice;
 
   @override
   State<SetStudyPage> createState() => _SetStudyPageState();
@@ -62,6 +67,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
   var _sessionEasy = 0;
   var _sessionStudied = 0;
   var _sessionSkipped = 0;
+  StudyAction? _exit;
   late List<VocabularyWord> _words = List<VocabularyWord>.of(widget.set.words);
   late List<StudyCue> _order = _sessionOf(widget);
   late int _sessionTotal = _order.length;
@@ -99,6 +105,11 @@ class _SetStudyPageState extends State<SetStudyPage> {
   @override
   void didUpdateWidget(SetStudyPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.endPractice != oldWidget.endPractice) {
+      _practicing = false;
+      _finished = false;
+      _exit = null;
+    }
     if (widget.set == oldWidget.set) {
       return;
     }
@@ -229,23 +240,36 @@ class _SetStudyPageState extends State<SetStudyPage> {
     );
   }
 
-  List<StudyCue> _queue() {
-    final refs = choosePracticeQueue(<StudySetInput>[
-      StudySetInput(
-        setId: widget.set.id ?? '_open',
-        wordCount: _words.length,
-        levels: _levels,
-      ),
-    ], DateTime.now());
+  List<StudyCue> _cuesWhere(bool Function(int index) include) {
     return <StudyCue>[
-      for (final ref in refs)
-        if (ref.index >= 0 && ref.index < _words.length)
+      for (var index = 0; index < _words.length; index++)
+        if (include(index))
           StudyCue(
-            word: _words[ref.index],
+            word: _words[index],
             setId: widget.set.id,
-            index: ref.index,
+            index: index,
           ),
     ];
+  }
+
+  void _openSession(List<StudyCue> order) {
+    if (order.isEmpty) {
+      return;
+    }
+    setState(() => _begin(order));
+    widget.onPracticing?.call(true);
+  }
+
+  List<StudyCue> _todayQueue() {
+    final now = DateTime.now();
+    return _cuesWhere((index) {
+      final state = _levels[index];
+      return state != null && !state.dueAt.isAfter(now);
+    });
+  }
+
+  List<StudyCue> _newQueue() {
+    return _cuesWhere((index) => _levels[index] == null);
   }
 
   VocabularySet get _shown {
@@ -288,6 +312,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
     _sessionEasy = 0;
     _sessionStudied = 0;
     _sessionSkipped = 0;
+    _exit = null;
     _faceToken += 1;
     _typing.clear();
   }
@@ -305,6 +330,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
     setState(() {
       _practicing = false;
       _finished = false;
+      _exit = null;
     });
     widget.onPracticing?.call(false);
   }
@@ -338,9 +364,26 @@ class _SetStudyPageState extends State<SetStudyPage> {
 
   void _selectMode(_PracticeMode mode) {
     setState(() {
+      if (_exit != null) {
+        _exit = null;
+        _advance();
+        _typing.clear();
+      }
       _mode = mode;
       _typing.clear();
       _faceToken += 1;
+    });
+  }
+
+  void _finishExit() {
+    if (!_practicing || _exit == null) {
+      return;
+    }
+    setState(() {
+      _exit = null;
+      _faceToken += 1;
+      _advance();
+      _typing.clear();
     });
   }
 
@@ -349,7 +392,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
       return;
     }
     final cue = _current;
-    if (cue == null) {
+    if (cue == null || _exit != null) {
       return;
     }
     final next = levelAfter(
@@ -360,6 +403,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
     if (next == null) {
       return;
     }
+    final playExit = _practicing && action != StudyAction.studied;
     setState(() {
       if (cue.setId == null || cue.setId == widget.set.id) {
         _levels[cue.index] = next;
@@ -368,9 +412,13 @@ class _SetStudyPageState extends State<SetStudyPage> {
         _rememberHomeLevel(cue.setId!, cue.index, next);
       }
       _countSession(action);
-      _faceToken += 1;
-      _advance();
-      _typing.clear();
+      if (playExit) {
+        _exit = action;
+      } else {
+        _faceToken += 1;
+        _advance();
+        _typing.clear();
+      }
     });
     final id = cue.setId;
     final store = widget.progress;
@@ -454,18 +502,15 @@ class _SetStudyPageState extends State<SetStudyPage> {
       place: _place,
       sessionTotal: _sessionTotal,
       onEdit: widget.onEdit,
-      onPractice: () {
-        final order = _queue();
-        if (order.isEmpty) {
-          return;
-        }
-        setState(() => _begin(order));
-        widget.onPracticing?.call(true);
-      },
+      onEditWord: widget.onEditWord,
+      onPractice: () => _openSession(_todayQueue()),
+      onLearnNew: () => _openSession(_newQueue()),
       onLeavePractice: _leavePractice,
       onMode: _selectMode,
       onStep: _step,
       onRate: _rate,
+      exit: _exit,
+      onExitComplete: _finishExit,
       onSkip: _skipNew,
       onFilter: (filter) => setState(() => _filter = filter),
       onShow: _show,
@@ -515,11 +560,15 @@ class _PracticeColumn extends StatelessWidget {
     required this.place,
     required this.sessionTotal,
     required this.onEdit,
+    required this.onEditWord,
     required this.onPractice,
+    required this.onLearnNew,
     required this.onLeavePractice,
     required this.onMode,
     required this.onStep,
     required this.onRate,
+    required this.exit,
+    required this.onExitComplete,
     required this.onSkip,
     required this.onFilter,
     required this.onShow,
@@ -540,11 +589,15 @@ class _PracticeColumn extends StatelessWidget {
   final int place;
   final int sessionTotal;
   final VoidCallback onEdit;
+  final ValueChanged<int>? onEditWord;
   final VoidCallback onPractice;
+  final VoidCallback onLearnNew;
   final VoidCallback onLeavePractice;
   final ValueChanged<_PracticeMode> onMode;
   final ValueChanged<int> onStep;
   final ValueChanged<StudyAction> onRate;
+  final StudyAction? exit;
+  final VoidCallback onExitComplete;
   final VoidCallback onSkip;
   final ValueChanged<_ListFilter> onFilter;
   final ValueChanged<int> onShow;
@@ -655,6 +708,8 @@ class _PracticeColumn extends StatelessWidget {
                 (cue == null || !levels.containsKey(cue.index)),
             onSkip: onSkip,
             onStudied: () => onRate(StudyAction.studied),
+            exit: exit,
+            onExitComplete: onExitComplete,
           ),
           const SizedBox(height: 24),
           if (mode == _PracticeMode.flashcard &&
@@ -725,45 +780,11 @@ class _PracticeColumn extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _ActionButton(
+                  buttonKey: const Key('set-study-learn-new'),
                   label: localizations.studyLearnNew,
                   filled: false,
-                  onPressed: onEdit,
+                  onPressed: onLearnNew,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _ModeChip(
-                chipKey: const Key('set-study-mode-random'),
-                icon: Icons.shuffle,
-                label: localizations.studyRandom,
-                selected: mode == _PracticeMode.random,
-                onTap: () => onMode(_PracticeMode.random),
-              ),
-              _ModeChip(
-                chipKey: const Key('set-study-mode-flashcard'),
-                icon: Icons.style_outlined,
-                label: localizations.studyFlashcard,
-                selected: mode == _PracticeMode.flashcard,
-                onTap: () => onMode(_PracticeMode.flashcard),
-              ),
-              _ModeChip(
-                chipKey: const Key('set-study-mode-quiz'),
-                icon: Icons.quiz_outlined,
-                label: localizations.studyQuiz,
-                selected: mode == _PracticeMode.quiz,
-                onTap: () => onMode(_PracticeMode.quiz),
-              ),
-              _ModeChip(
-                chipKey: const Key('set-study-mode-typing'),
-                icon: Icons.text_fields,
-                label: localizations.studyTyping,
-                selected: mode == _PracticeMode.typing,
-                onTap: () => onMode(_PracticeMode.typing),
               ),
             ],
           ),
@@ -773,7 +794,14 @@ class _PracticeColumn extends StatelessWidget {
             nextWord: peek,
             previousWord: previous,
             onStep: onStep,
-            onEdit: onEdit,
+            onEdit: () {
+              final index = cue?.index;
+              if (index != null && onEditWord != null) {
+                onEditWord!(index);
+                return;
+              }
+              onEdit();
+            },
             onToggleStar: cue == null ? null : () => onToggleStar(cue.index),
           ),
           if (cue != null) ...[
@@ -869,7 +897,14 @@ class _PracticeColumn extends StatelessWidget {
                 index: index,
                 word: set.words[index],
                 onTap: () => onShow(index),
-                onEdit: onEdit,
+                onEdit: () {
+                  final editWord = onEditWord;
+                  if (editWord != null) {
+                    editWord(index);
+                    return;
+                  }
+                  onEdit();
+                },
                 onToggleStar: () => onToggleStar(index),
               ),
               const SizedBox(height: 16),
@@ -1141,12 +1176,14 @@ class _WordPreviewState extends State<_WordPreview>
 
 class _PreviewTool extends StatelessWidget {
   const _PreviewTool({
+    this.buttonKey,
     required this.icon,
     this.onPressed,
     this.size = _SpeakButton.iconSize,
     this.color,
   });
 
+  final Key? buttonKey;
   final IconData icon;
   final VoidCallback? onPressed;
   final double size;
@@ -1155,6 +1192,7 @@ class _PreviewTool extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      key: buttonKey,
       onPressed: onPressed ?? () {},
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
@@ -1343,10 +1381,10 @@ class _PreviewFace extends StatelessWidget {
             style: text.subtitle.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
-        if (current.sentence.trim().isNotEmpty) ...[
+        if (sentencePlain(current.sentence).trim().isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text(
-            current.sentence.trim(),
+          FormattedSentence(
+            stored: current.sentence,
             textAlign: TextAlign.center,
             style: text.body.copyWith(color: _WordPreview._sentenceColor),
           ),
@@ -1394,6 +1432,7 @@ class _PreviewFace extends StatelessWidget {
           Row(
             children: [
               _PreviewTool(
+                buttonKey: keyed ? const Key('set-study-card-edit') : null,
                 icon: Icons.edit_outlined,
                 onPressed: onEdit,
                 size: 16,
@@ -1440,6 +1479,8 @@ class _FlashcardStage extends StatefulWidget {
     required this.newWord,
     required this.onSkip,
     required this.onStudied,
+    required this.exit,
+    required this.onExitComplete,
   });
 
   final VocabularyWord? word;
@@ -1451,6 +1492,8 @@ class _FlashcardStage extends StatefulWidget {
   final bool newWord;
   final VoidCallback onSkip;
   final VoidCallback onStudied;
+  final StudyAction? exit;
+  final VoidCallback onExitComplete;
 
   @override
   State<_FlashcardStage> createState() => _FlashcardStageState();
@@ -1458,8 +1501,12 @@ class _FlashcardStage extends StatefulWidget {
 
 class _FlashcardStageState extends State<_FlashcardStage>
     with TickerProviderStateMixin {
+  static const _exitTurn = 75 * math.pi / 180;
+
   late final AnimationController _flip;
   late final AnimationController _slide;
+  late final AnimationController _exitMotion;
+  final _cardKey = GlobalKey();
   var _slideSign = 1.0;
 
   @override
@@ -1473,15 +1520,26 @@ class _FlashcardStageState extends State<_FlashcardStage>
       vsync: this,
       duration: const Duration(milliseconds: 280),
     );
+    _exitMotion = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
   }
 
   @override
   void didUpdateWidget(_FlashcardStage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.word != widget.word ||
-        oldWidget.mode != widget.mode ||
-        oldWidget.faceToken != widget.faceToken) {
+    if (widget.exit == null &&
+        (oldWidget.word != widget.word ||
+            oldWidget.mode != widget.mode ||
+            oldWidget.faceToken != widget.faceToken)) {
       _flip.value = 0;
+    }
+    if (widget.exit != null && oldWidget.exit == null) {
+      _beginExit();
+    } else if (widget.exit == null && oldWidget.exit != null) {
+      _exitMotion.stop();
+      _exitMotion.value = 0;
     }
   }
 
@@ -1489,7 +1547,65 @@ class _FlashcardStageState extends State<_FlashcardStage>
   void dispose() {
     _flip.dispose();
     _slide.dispose();
+    _exitMotion.dispose();
     super.dispose();
+  }
+
+  void _beginExit() {
+    if (!mounted || widget.exit == null) {
+      return;
+    }
+    if (_reduced) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && widget.exit != null) {
+          widget.onExitComplete();
+        }
+      });
+      return;
+    }
+    _exitMotion.forward(from: 0).orCancel.then<void>(
+      (_) {
+        if (mounted && widget.exit != null) {
+          widget.onExitComplete();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        if (error is! TickerCanceled) {
+          Error.throwWithStackTrace(error, stack);
+        }
+      },
+    );
+  }
+
+  Size _cardSize() {
+    final box = _cardKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null &&
+        box.hasSize &&
+        box.size.width > 0 &&
+        box.size.height > 0) {
+      return box.size;
+    }
+    return const Size(320, 420);
+  }
+
+  Matrix4 _exitMatrix(StudyAction action, double travel) {
+    final size = _cardSize();
+    final turn = _exitTurn * travel;
+    final dx = switch (action) {
+      StudyAction.easy => travel * size.width,
+      StudyAction.hard => -travel * size.width,
+      StudyAction.familiar || StudyAction.studied => 0.0,
+    };
+    final dy = action == StudyAction.familiar ? -travel * size.height : 0.0;
+    final angle = switch (action) {
+      StudyAction.easy => turn,
+      StudyAction.hard => -turn,
+      StudyAction.familiar || StudyAction.studied => 0.0,
+    };
+    return Matrix4.identity()
+      ..setEntry(3, 2, 0.001)
+      ..translate(dx, dy)
+      ..rotateY(angle);
   }
 
   bool get _reduced => MediaQuery.disableAnimationsOf(context);
@@ -1515,7 +1631,9 @@ class _FlashcardStageState extends State<_FlashcardStage>
   }
 
   void _flipCard() {
-    if (widget.mode != _PracticeMode.flashcard || widget.word == null) {
+    if (widget.exit != null ||
+        widget.mode != _PracticeMode.flashcard ||
+        widget.word == null) {
       return;
     }
     if (_reduced) {
@@ -1566,7 +1684,11 @@ class _FlashcardStageState extends State<_FlashcardStage>
               }
             },
             child: AnimatedBuilder(
-              animation: Listenable.merge(<Listenable>[_flip, _slide]),
+              animation: Listenable.merge(<Listenable>[
+                _flip,
+                _slide,
+                _exitMotion,
+              ]),
               builder: (context, child) {
                 final angle = _flip.value * math.pi;
                 final showMeaning =
@@ -1574,23 +1696,51 @@ class _FlashcardStageState extends State<_FlashcardStage>
                     _flip.value >= 0.5;
                 final turn = showMeaning ? angle - math.pi : angle;
                 final slideX = _slide.value * _slideSign * 72;
-                return Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.001)
-                    ..rotateY(turn),
-                  child: Transform.translate(
-                    offset: Offset(slideX, 0),
-                    child: _CardStack(
-                      word: widget.word,
-                      peek: widget.mode == _PracticeMode.random
-                          ? widget.peek
-                          : null,
-                      mode: widget.mode,
-                      typing: widget.typing,
-                      meaning: showMeaning,
+                final face = KeyedSubtree(
+                  key: _cardKey,
+                  child: Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.001)
+                      ..rotateY(turn),
+                    child: Transform.translate(
+                      offset: Offset(slideX, 0),
+                      child: _CardStack(
+                        word: widget.word,
+                        peek: widget.mode == _PracticeMode.random
+                            ? widget.peek
+                            : null,
+                        mode: widget.mode,
+                        typing: widget.typing,
+                        meaning: showMeaning,
+                      ),
                     ),
                   ),
+                );
+                final exit = widget.exit;
+                if (exit == null) {
+                  return face;
+                }
+                final travel = Curves.easeIn.transform(_exitMotion.value);
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (widget.peek != null)
+                      _CardStack(
+                        word: widget.peek,
+                        peek: null,
+                        mode: widget.mode,
+                        typing: widget.typing,
+                        meaning: false,
+                        keyed: false,
+                      ),
+                    Transform(
+                      key: const Key('set-study-exit'),
+                      alignment: Alignment.center,
+                      transform: _exitMatrix(exit, travel),
+                      child: face,
+                    ),
+                  ],
                 );
               },
             ),
@@ -1666,7 +1816,11 @@ List<String> _cardLines({
   }
 
   if (mode == _PracticeMode.flashcard && meaning) {
-    return present(<String>[word.definition, word.sentence, word.note]);
+    return present(<String>[
+      word.definition,
+      sentencePlain(word.sentence),
+      word.note,
+    ]);
   }
   if (mode == _PracticeMode.flashcard) {
     return present(<String>[word.term, word.ipa]);
@@ -1676,7 +1830,7 @@ List<String> _cardLines({
       word.term,
       word.ipa,
       word.singularPlural,
-      word.sentence,
+      sentencePlain(word.sentence),
       word.definition,
       word.note,
     ]);
@@ -1684,7 +1838,7 @@ List<String> _cardLines({
   if (mode == _PracticeMode.quiz) {
     return present(<String>[word.definition]);
   }
-  return present(<String>[word.term, word.sentence]);
+  return present(<String>[word.term, sentencePlain(word.sentence)]);
 }
 
 class _CardStack extends StatelessWidget {
@@ -1694,6 +1848,7 @@ class _CardStack extends StatelessWidget {
     required this.mode,
     required this.typing,
     required this.meaning,
+    this.keyed = true,
   });
 
   final VocabularyWord? word;
@@ -1701,6 +1856,7 @@ class _CardStack extends StatelessWidget {
   final _PracticeMode mode;
   final TextEditingController typing;
   final bool meaning;
+  final bool keyed;
 
   @override
   Widget build(BuildContext context) {
@@ -1721,6 +1877,7 @@ class _CardStack extends StatelessWidget {
             mode: mode,
             typing: typing,
             meaning: meaning,
+            keyed: keyed,
           ),
         ),
       ],
@@ -1751,12 +1908,14 @@ class _Flashcard extends StatelessWidget {
     required this.mode,
     required this.typing,
     required this.meaning,
+    this.keyed = true,
   });
 
   final VocabularyWord? word;
   final _PracticeMode mode;
   final TextEditingController typing;
   final bool meaning;
+  final bool keyed;
 
   @override
   Widget build(BuildContext context) {
@@ -1778,7 +1937,9 @@ class _Flashcard extends StatelessWidget {
     final centered = mode == _PracticeMode.flashcard;
     final term = current?.term.trim() ?? '';
     return Container(
-      key: const Key('set-study-card'),
+      key: keyed
+          ? const Key('set-study-card')
+          : const Key('set-study-card-under'),
       alignment: null,
       constraints: BoxConstraints(minHeight: centered ? 420 : 180),
       padding: centered
@@ -1815,6 +1976,7 @@ class _Flashcard extends StatelessWidget {
                                 _CardPhoto(
                                   image: image,
                                   fill: colors.folderFill,
+                                  keyed: keyed,
                                 ),
                                 const SizedBox(height: 16),
                               ],
@@ -1826,12 +1988,12 @@ class _Flashcard extends StatelessWidget {
                           Positioned(
                             top: 4,
                             right: 4,
-                            child: _SpeakButton(term: term),
+                            child: _SpeakButton(term: term, keyed: keyed),
                           ),
                       ],
                     ),
                   ),
-                  if (!meaning) const _MeaningHint(),
+                  if (!meaning) _MeaningHint(keyed: keyed),
                 ],
               ),
             )
@@ -1886,7 +2048,9 @@ class _Flashcard extends StatelessWidget {
 }
 
 class _MeaningHint extends StatelessWidget {
-  const _MeaningHint();
+  const _MeaningHint({this.keyed = true});
+
+  final bool keyed;
 
   @override
   Widget build(BuildContext context) {
@@ -1895,7 +2059,7 @@ class _MeaningHint extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: DecoratedBox(
-        key: const Key('set-study-meaning-hint'),
+        key: keyed ? const Key('set-study-meaning-hint') : null,
         decoration: BoxDecoration(
           color: colors.folderFill,
           borderRadius: BorderRadius.circular(10),
@@ -1969,10 +2133,15 @@ class _CardLines extends StatelessWidget {
 }
 
 class _CardPhoto extends StatelessWidget {
-  const _CardPhoto({required this.image, required this.fill});
+  const _CardPhoto({
+    required this.image,
+    required this.fill,
+    this.keyed = true,
+  });
 
   final String image;
   final Color fill;
+  final bool keyed;
 
   @override
   Widget build(BuildContext context) {
@@ -1980,7 +2149,7 @@ class _CardPhoto extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Image.network(
         image,
-        key: const Key('set-study-photo'),
+        key: keyed ? const Key('set-study-photo') : null,
         width: 140,
         height: 96,
         fit: BoxFit.cover,
@@ -2084,6 +2253,7 @@ class _StudyWordCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   _WordToolIcon(
+                    buttonKey: Key('set-study-word-edit-$index'),
                     icon: Icons.edit_outlined,
                     onPressed: onEdit,
                   ),
@@ -2151,8 +2321,14 @@ class _StudyWordCard extends StatelessWidget {
 const _starColor = Color(0xFFF5B942);
 
 class _WordToolIcon extends StatelessWidget {
-  const _WordToolIcon({required this.icon, this.onPressed, this.color});
+  const _WordToolIcon({
+    this.buttonKey,
+    required this.icon,
+    this.onPressed,
+    this.color,
+  });
 
+  final Key? buttonKey;
   final IconData icon;
   final VoidCallback? onPressed;
   final Color? color;
@@ -2160,6 +2336,7 @@ class _WordToolIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      key: buttonKey,
       onPressed: onPressed ?? () {},
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
@@ -2677,13 +2854,13 @@ class _RatingButtonState extends State<_RatingButton>
       return;
     }
     _busy = true;
-    if (!MediaQuery.disableAnimationsOf(context)) {
-      await _press.forward(from: 0);
-    }
+    widget.onPressed();
     if (!mounted) {
       return;
     }
-    widget.onPressed();
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      await _press.forward(from: 0);
+    }
     if (mounted) {
       _busy = false;
     }

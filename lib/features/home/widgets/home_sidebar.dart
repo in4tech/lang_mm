@@ -10,6 +10,7 @@ class HomeSidebar extends StatefulWidget {
     required this.sample,
     required this.collapsed,
     this.onOpenSet,
+    this.onOpenFolder,
     this.onHome,
     this.onLibrary,
     this.onAddFolder,
@@ -23,6 +24,7 @@ class HomeSidebar extends StatefulWidget {
   final HomeSample sample;
   final bool collapsed;
   final void Function(String folderName, int setIndex)? onOpenSet;
+  final ValueChanged<String>? onOpenFolder;
   final VoidCallback? onHome;
   final VoidCallback? onLibrary;
   final VoidCallback? onAddFolder;
@@ -30,7 +32,7 @@ class HomeSidebar extends StatefulWidget {
   final String? focusedFolder;
   final int? focusedSetIndex;
   final bool practiceLocked;
-  final VoidCallback? onPracticeLocked;
+  final void Function(VoidCallback? action)? onPracticeLocked;
 
   static const width = 288.0;
   static const collapsedWidth = 72.0;
@@ -71,7 +73,7 @@ class _HomeSidebarState extends State<HomeSidebar> {
 
   void _tap(VoidCallback? action) {
     if (widget.practiceLocked) {
-      widget.onPracticeLocked?.call();
+      widget.onPracticeLocked?.call(action);
       return;
     }
     action?.call();
@@ -102,7 +104,10 @@ class _HomeSidebarState extends State<HomeSidebar> {
               key: const Key('nav-home'),
               icon: Icons.home_outlined,
               label: localizations.navHome,
-              selected: sample.homepageSelected && !widget.librarySelected,
+              selected:
+                  sample.homepageSelected &&
+                  !widget.librarySelected &&
+                  widget.focusedFolder == null,
               collapsed: collapsed,
               labelKey: const Key('nav-home-label'),
               onTap: () => _tap(widget.onHome),
@@ -145,7 +150,9 @@ class _HomeSidebarState extends State<HomeSidebar> {
                     const SizedBox(height: 8),
                     _SectionAction(
                       label: localizations.setOfWords,
-                      onAdd: () => _tap(widget.onAddFolder),
+                      onAdd: collapsed
+                          ? null
+                          : () => _tap(widget.onAddFolder),
                     ),
                   ],
                 ),
@@ -166,11 +173,9 @@ class _HomeSidebarState extends State<HomeSidebar> {
                 collapsed: collapsed,
                 expanded: _isExpanded(folder),
                 selected: folder.name == widget.focusedFolder,
-                onTap: () => _tap(() {
-                  setState(() {
-                    _expanded[folder.name] = !_isExpanded(folder);
-                  });
-                }),
+                onTap: () => _tap(
+                  () => widget.onOpenFolder?.call(folder.name),
+                ),
                 onToggle: () => _tap(() {
                   setState(() {
                     _expanded[folder.name] = !_isExpanded(folder);
@@ -191,6 +196,31 @@ class _HomeSidebarState extends State<HomeSidebar> {
                     ),
                   ),
                 ],
+            ],
+            if (collapsed) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  key: const Key('sidebar-add-folder'),
+                  onPressed: () => _tap(widget.onAddFolder),
+                  padding: EdgeInsets.zero,
+                  alignment: Alignment.center,
+                  style: IconButton.styleFrom(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    alignment: Alignment.center,
+                  ),
+                  constraints: const BoxConstraints.tightFor(
+                    width: HomeSidebar.collapsedSlot,
+                    height: HomeSidebar.collapsedSlot,
+                  ),
+                  icon: Icon(
+                    Icons.add_outlined,
+                    size: 20,
+                    color: HomePalette.of(context).text,
+                  ),
+                ),
+              ),
             ],
           ],
         ),
@@ -360,18 +390,19 @@ class _SectionAction extends StatelessWidget {
                   .copyWith(color: HomePalette.of(context).text),
             ),
           ),
-          IconButton(
-            key: const Key('sidebar-add-folder'),
-            onPressed: onAdd,
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-            icon: Icon(
-              Icons.add_outlined,
-              size: 20,
-              color: HomePalette.of(context).placeholder,
+          if (onAdd != null)
+            IconButton(
+              key: const Key('sidebar-add-folder'),
+              onPressed: onAdd,
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              icon: Icon(
+                Icons.add_outlined,
+                size: 22,
+                color: HomePalette.of(context).text,
+              ),
             ),
-          ),
         ],
       ),
     );

@@ -41,6 +41,7 @@ class FirestoreVocabularySetStore implements VocabularySetStore {
               if (id is String) id,
           ],
           editor: data['editor'] == true,
+          pinned: data['pinned'] != false,
           createdAt: createdAt is Timestamp ? createdAt.toDate() : null,
         ),
       );
@@ -57,17 +58,41 @@ class FirestoreVocabularySetStore implements VocabularySetStore {
   }
 
   @override
-  Future<String> createFolder(String name, {bool editor = false}) async {
+  Future<String> createFolder(
+    String name, {
+    bool editor = false,
+    bool pinned = true,
+  }) async {
     final reference = await _firestore.collection('folders').add(
       <String, Object>{
         'name': name,
         'setIds': <String>[],
         'ownerId': ownerId,
+        'pinned': pinned,
         'createdAt': FieldValue.serverTimestamp(),
         if (editor) 'editor': true,
       },
     );
     return reference.id;
+  }
+
+  @override
+  Future<void> renameFolder(String id, String name) async {
+    await _firestore.collection('folders').doc(id).update(<String, Object>{
+      'name': name,
+    });
+  }
+
+  @override
+  Future<void> deleteFolder(String id) async {
+    await _firestore.collection('folders').doc(id).delete();
+  }
+
+  @override
+  Future<void> setFolderPinned(String id, bool pinned) async {
+    await _firestore.collection('folders').doc(id).update(<String, Object>{
+      'pinned': pinned,
+    });
   }
 
   @override

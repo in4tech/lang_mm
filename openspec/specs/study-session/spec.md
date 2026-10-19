@@ -86,15 +86,32 @@ In Quiz and Typing, a tap SHALL NOT flip the card, and no card SHALL peek from b
 - **AND** the user taps the card
 - **THEN** the card still shows "child"
 
-### Requirement: Today practice opens the set queue
-Today practice on a set SHALL open Flashcard on the first word of that set's practice queue. When that queue is empty, Today practice SHALL leave the set page showing and SHALL NOT open a card.
+### Requirement: Today practice reviews words due today
+Today practice on a set SHALL open Flashcard on the first word whose study time is due now, in set order. A word with no level, and a word whose study time is still ahead, SHALL stay out of that session. When no word is due now, Today practice SHALL leave the set page showing and SHALL NOT open a card.
 
-#### Scenario: Today practice opens Kind
-- **WHEN** the set queue begins with "Kind" and the user activates Today practice
+#### Scenario: A new word stays out of Today practice
+- **WHEN** "Kind" has no level and the user activates Today practice
+- **THEN** the set page remains
+- **AND** no flashcard is shown
+
+#### Scenario: Today practice opens a due word
+- **WHEN** "Kind" is due now and the user activates Today practice
 - **THEN** Flashcard shows the term "Kind"
 
 #### Scenario: An empty queue stays on the set page
-- **WHEN** the set queue is empty and the user activates Today practice
+- **WHEN** no word is due now and the user activates Today practice
+- **THEN** the set page remains
+- **AND** no flashcard is shown
+
+### Requirement: Learn new vocab reviews new words
+Learn new vocab SHALL open the same Flashcard practice as Today practice, on words that have no level, in set order. A word that is due now SHALL stay out of that session. When the set has no new word, Learn new vocab SHALL leave the set page showing and SHALL NOT open a card.
+
+#### Scenario: Learn new vocab opens Kind
+- **WHEN** "Kind" has no level and the user activates Learn new vocab
+- **THEN** Flashcard shows the term "Kind"
+
+#### Scenario: A due word stays out of Learn new vocab
+- **WHEN** "Kind" is due now and the user activates Learn new vocab
 - **THEN** the set page remains
 - **AND** no flashcard is shown
 

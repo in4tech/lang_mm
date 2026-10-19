@@ -102,7 +102,17 @@ abstract class VocabularySetStore {
 
   Future<void> updateWords(VocabularySet set) async {}
 
-  Future<String> createFolder(String name, {bool editor = false});
+  Future<String> createFolder(
+    String name, {
+    bool editor = false,
+    bool pinned = true,
+  });
+
+  Future<void> renameFolder(String id, String name) async {}
+
+  Future<void> deleteFolder(String id) async {}
+
+  Future<void> setFolderPinned(String id, bool pinned) async {}
 }
 
 VocabularySet? buildVocabularySet({

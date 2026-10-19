@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lang/features/word_editor/sentence_format.dart';
 import 'package:lang/library/vocabulary_set.dart';
 import 'package:lang/l10n/app_localizations.dart';
 import 'package:lang/theme/home_palette.dart';
@@ -7,11 +8,22 @@ import 'package:lang/theme/home_text.dart';
 const _requiredColor = Color(0xFFD92D20);
 
 class WordEditor extends StatefulWidget {
-  const WordEditor({super.key, this.onClose, this.setStore, this.initialSet});
+  const WordEditor({
+    super.key,
+    this.onClose,
+    this.setStore,
+    this.initialSet,
+    this.existingSets = const <VocabularySet>[],
+    this.focusWordIndex,
+    this.onWordsUpdated,
+  });
 
   final VoidCallback? onClose;
   final VocabularySetStore? setStore;
   final VocabularySet? initialSet;
+  final List<VocabularySet> existingSets;
+  final int? focusWordIndex;
+  final ValueChanged<VocabularySet>? onWordsUpdated;
 
   @override
   State<WordEditor> createState() => _WordEditorState();
@@ -20,13 +32,13 @@ class WordEditor extends StatefulWidget {
 class _Draft {
   final term = TextEditingController();
   final definition = TextEditingController();
-  final sentence = TextEditingController();
+  final sentence = SentenceEditingController();
   final ipa = TextEditingController();
   final singularPlural = TextEditingController();
   final note = TextEditingController();
   final imageUrl = TextEditingController();
   String? type;
-  bool detailsOpen = true;
+  bool detailsOpen = false;
   bool imageLinkOpen = false;
   bool termInvalid = false;
   bool definitionInvalid = false;
@@ -42,10 +54,13 @@ class _Draft {
   }
 }
 
+const _builtinTypes = <String>{'chunking', 'noun', 'verb', 'adj'};
+
 class _WordEditorState extends State<WordEditor> {
   final _title = TextEditingController();
   final _description = TextEditingController();
   final _drafts = <_Draft>[_Draft()];
+  final _customTypes = <String>[];
   bool _titleInvalid = false;
 
   @override
@@ -65,13 +80,20 @@ class _WordEditorState extends State<WordEditor> {
       return;
     }
     _drafts.addAll(initial.words.map(_draftFromWord));
+    for (final word in initial.words) {
+      _rememberType(word.type);
+    }
+    final focus = widget.focusWordIndex;
+    if (focus != null && focus >= 0 && focus < _drafts.length) {
+      _drafts[focus].detailsOpen = true;
+    }
   }
 
   _Draft _draftFromWord(VocabularyWord word) {
     final draft = _Draft();
     draft.term.text = word.term;
     draft.definition.text = word.definition;
-    draft.sentence.text = word.sentence;
+    draft.sentence.load(word.sentence);
     draft.ipa.text = word.ipa;
     draft.singularPlural.text = word.singularPlural;
     draft.note.text = word.note;
@@ -82,12 +104,12 @@ class _WordEditorState extends State<WordEditor> {
 
   @override
   void dispose() {
+    super.dispose();
     _title.dispose();
     _description.dispose();
     for (final draft in _drafts) {
       draft.dispose();
     }
-    super.dispose();
   }
 
   void _addWord() {
@@ -122,6 +144,59 @@ class _WordEditorState extends State<WordEditor> {
     setState(() => draft.imageLinkOpen = !draft.imageLinkOpen);
   }
 
+  void _rememberType(String? type) {
+    if (type == null || type.isEmpty || _builtinTypes.contains(type)) {
+      return;
+    }
+    if (!_customTypes.contains(type)) {
+      _customTypes.add(type);
+    }
+  }
+
+  String? _builtinFor(String label) {
+    final value = label.trim().toLowerCase();
+    if (_builtinTypes.contains(value)) {
+      return value;
+    }
+    final localizations = AppLocalizations.of(context);
+    if (value == localizations.editorChunking.toLowerCase()) {
+      return 'chunking';
+    }
+    if (value == localizations.editorNoun.toLowerCase()) {
+      return 'noun';
+    }
+    if (value == localizations.editorVerb.toLowerCase()) {
+      return 'verb';
+    }
+    if (value == localizations.editorAdj.toLowerCase()) {
+      return 'adj';
+    }
+    return null;
+  }
+
+  Future<void> _promptType(_Draft draft) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => const _AddTypeDialog(),
+    );
+    if (!mounted) {
+      return;
+    }
+    final label = name?.trim() ?? '';
+    if (label.isEmpty) {
+      return;
+    }
+    final builtin = _builtinFor(label);
+    setState(() {
+      if (builtin != null) {
+        draft.type = builtin;
+        return;
+      }
+      _rememberType(label);
+      draft.type = label;
+    });
+  }
+
   void _close() {
     final onClose = widget.onClose;
     if (onClose != null) {
@@ -145,7 +220,7 @@ class _WordEditorState extends State<WordEditor> {
           VocabularyCardDraft(
             term: draft.term.text,
             definition: draft.definition.text,
-            sentence: draft.sentence.text,
+            sentence: draft.sentence.stored,
             ipa: draft.ipa.text,
             singularPlural: draft.singularPlural.text,
             note: draft.note.text,
@@ -155,6 +230,31 @@ class _WordEditorState extends State<WordEditor> {
       ],
     );
     if (set == null) {
+      _close();
+      return;
+    }
+    final focus = widget.focusWordIndex;
+    final initial = widget.initialSet;
+    if (focus != null && initial != null) {
+      final edited = VocabularySet(
+        id: initial.id,
+        folderId: initial.folderId,
+        title: initial.title,
+        description: initial.description,
+        words: set.words,
+      );
+      final store = widget.setStore;
+      if (store != null) {
+        try {
+          await store.updateWords(edited);
+        } catch (_) {
+          return;
+        }
+      }
+      if (!mounted) {
+        return;
+      }
+      widget.onWordsUpdated?.call(edited);
       _close();
       return;
     }
@@ -176,10 +276,14 @@ class _WordEditorState extends State<WordEditor> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final focus = widget.focusWordIndex;
+    final editingWord =
+        focus != null && focus >= 0 && focus < _drafts.length;
     final fields = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
+        if (!editingWord)
+          Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
@@ -193,6 +297,18 @@ class _WordEditorState extends State<WordEditor> {
                     ? localizations.titleRequired
                     : null,
                 onChanged: _titleInvalid ? (_) => setState(() {}) : null,
+                trailing: widget.initialSet == null
+                    ? _ExistingSetMenu(
+                        sets: widget.existingSets,
+                        onSelected: (set) {
+                          setState(() {
+                            _title.text = set.title;
+                            _description.text = set.description;
+                            _titleInvalid = false;
+                          });
+                        },
+                      )
+                    : null,
               ),
             ),
             const SizedBox(width: 16),
@@ -206,8 +322,9 @@ class _WordEditorState extends State<WordEditor> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Row(
+        if (!editingWord) const SizedBox(height: 16),
+        if (!editingWord)
+          Row(
           children: [
             OutlinedButton(
               key: const Key('word-editor-import'),
@@ -245,41 +362,74 @@ class _WordEditorState extends State<WordEditor> {
               buttonKey: const Key('word-editor-search'),
               icon: Icons.search,
             ),
-            const SizedBox(width: 8),
-            _RoundIconButton(
-              buttonKey: const Key('word-editor-add'),
-              icon: Icons.add,
-            ),
           ],
         ),
-        const SizedBox(height: 16),
+        if (!editingWord) const SizedBox(height: 16),
         for (var index = _drafts.length - 1; index >= 0; index--)
-          Padding(
+          if (!editingWord || index == focus)
+            Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: _WordCard(
               draft: _drafts[index],
               number: index + 1,
-              expanded:
-                  widget.initialSet == null && index == _drafts.length - 1,
+              expanded: editingWord
+                  ? index == focus
+                  : widget.initialSet == null && index == _drafts.length - 1,
               localizations: localizations,
-              onAddWord: _addWord,
+              customTypes: _customTypes,
               onSelectType: (type) => _selectType(_drafts[index], type),
+              onAddType: () => _promptType(_drafts[index]),
               onToggleDetails: () => _toggleDetails(_drafts[index]),
               onToggleImageLink: () => _toggleImageLink(_drafts[index]),
-              onImageEdited: () => setState(() {}),
+              onChanged: () => setState(() {}),
+            ),
+          ),
+        if (!editingWord) const SizedBox(height: 4),
+        if (!editingWord)
+          Align(
+            alignment: Alignment.center,
+            child: FilledButton.icon(
+              key: const Key('word-editor-add-word'),
+              onPressed: _addWord,
+              style: FilledButton.styleFrom(
+                backgroundColor: HomePalette.of(context).newVocab,
+                foregroundColor: HomePalette.of(context).onAccent,
+                minimumSize: const Size(0, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: const StadiumBorder(),
+              ),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(localizations.editorAddWord),
             ),
           ),
       ],
     );
     final header = _Header(
       localizations: localizations,
+      background: widget.onClose == null
+          ? HomePalette.of(context).folderFill
+          : HomePalette.of(context).page,
       onClose: _close,
       onDone: _save,
+    );
+    final form = SingleChildScrollView(
+      key: const Key('word-editor-scroll'),
+      padding: EdgeInsets.fromLTRB(
+        widget.onClose == null ? 24 : 0,
+        8,
+        widget.onClose == null ? 24 : 0,
+        32,
+      ),
+      child: fields,
     );
     if (widget.onClose != null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [header, fields],
+        children: [
+          header,
+          Expanded(child: form),
+        ],
       );
     }
     return Scaffold(
@@ -291,12 +441,7 @@ class _WordEditorState extends State<WordEditor> {
           child: Column(
             children: [
               header,
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-                  child: fields,
-                ),
-              ),
+              Expanded(child: form),
             ],
           ),
         ),
@@ -308,11 +453,13 @@ class _WordEditorState extends State<WordEditor> {
 class _Header extends StatelessWidget {
   const _Header({
     required this.localizations,
+    required this.background,
     required this.onClose,
     required this.onDone,
   });
 
   final AppLocalizations localizations;
+  final Color background;
   final VoidCallback onClose;
   final VoidCallback onDone;
 
@@ -320,7 +467,9 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = HomePalette.of(context);
     final text = HomeText.of(context);
-    return Padding(
+    return ColoredBox(
+      color: background,
+      child: Padding(
       padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -368,6 +517,7 @@ class _Header extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -378,22 +528,24 @@ class _WordCard extends StatelessWidget {
     required this.number,
     required this.expanded,
     required this.localizations,
-    required this.onAddWord,
+    required this.customTypes,
     required this.onSelectType,
+    required this.onAddType,
     required this.onToggleDetails,
     required this.onToggleImageLink,
-    required this.onImageEdited,
+    required this.onChanged,
   });
 
   final _Draft draft;
   final int number;
   final bool expanded;
   final AppLocalizations localizations;
-  final VoidCallback onAddWord;
+  final List<String> customTypes;
   final ValueChanged<String> onSelectType;
+  final VoidCallback onAddType;
   final VoidCallback onToggleDetails;
   final VoidCallback onToggleImageLink;
-  final VoidCallback onImageEdited;
+  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -492,9 +644,7 @@ class _WordCard extends StatelessWidget {
 
   Widget _collapsed(BuildContext context) {
     final image = draft.imageUrl.text.trim();
-    final extras = <String>[
-      draft.sentence.text.trim(),
-    ].where((value) => value.isNotEmpty);
+    final sentence = draft.sentence.text.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -537,9 +687,12 @@ class _WordCard extends StatelessWidget {
             ],
           ),
         ),
-        for (final extra in extras) ...[
+        if (sentence.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text(extra, style: HomeText.of(context).body),
+          FormattedSentence(
+            stored: draft.sentence.stored,
+            style: HomeText.of(context).body,
+          ),
         ],
       ],
     );
@@ -555,7 +708,7 @@ class _WordCard extends StatelessWidget {
           TextField(
             key: Key('word-image-link-$number'),
             controller: draft.imageUrl,
-            onChanged: (_) => onImageEdited(),
+            onChanged: (_) => onChanged(),
             style: HomeText.of(context).subtitle,
             decoration: InputDecoration(
               hintText: localizations.editorImageLinkHint,
@@ -595,7 +748,7 @@ class _WordCard extends StatelessWidget {
                 errorText: draft.termInvalid && draft.term.text.trim().isEmpty
                     ? localizations.termRequired
                     : null,
-                onChanged: draft.termInvalid ? (_) => onImageEdited() : null,
+                onChanged: draft.termInvalid ? (_) => onChanged() : null,
               ),
             ),
             const SizedBox(width: 16),
@@ -611,7 +764,7 @@ class _WordCard extends StatelessWidget {
                     ? localizations.definitionRequired
                     : null,
                 onChanged: draft.definitionInvalid
-                    ? (_) => onImageEdited()
+                    ? (_) => onChanged()
                     : null,
               ),
             ),
@@ -623,6 +776,10 @@ class _WordCard extends StatelessWidget {
           fieldKey: const Key('word-sentence'),
           controller: draft.sentence,
           hint: localizations.editorSentenceHint,
+          toolbar: SentenceFormatBar(
+            controller: draft.sentence,
+            onChanged: onChanged,
+          ),
         ),
         const SizedBox(height: 16),
         Row(
@@ -677,79 +834,66 @@ class _WordCard extends StatelessWidget {
               ),
             ],
           ),
-        ],
-        const SizedBox(height: 20),
-        Divider(
-          key: const Key('word-details-divider'),
-          height: 1,
-          thickness: 1,
-          color: HomePalette.of(context).border,
-        ),
-        const SizedBox(height: 16),
-        Text(localizations.editorType, style: HomeText.of(context).subtitle),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            _TypeChip(
-              chipKey: const Key('word-type-chunking'),
-              label: localizations.editorChunking,
-              tone: _typeTone(context, 'chunking'),
-              selected: draft.type == 'chunking',
-              onPressed: () => onSelectType('chunking'),
-            ),
-            _TypeChip(
-              chipKey: const Key('word-type-noun'),
-              label: localizations.editorNoun,
-              tone: _typeTone(context, 'noun'),
-              selected: draft.type == 'noun',
-              onPressed: () => onSelectType('noun'),
-            ),
-            _TypeChip(
-              chipKey: const Key('word-type-verb'),
-              label: localizations.editorVerb,
-              tone: _typeTone(context, 'verb'),
-              selected: draft.type == 'verb',
-              onPressed: () => onSelectType('verb'),
-            ),
-            _TypeChip(
-              chipKey: const Key('word-type-adj'),
-              label: localizations.editorAdj,
-              tone: _typeTone(context, 'adj'),
-              selected: draft.type == 'adj',
-              onPressed: () => onSelectType('adj'),
-            ),
-            _TypeChip(
-              chipKey: const Key('word-editor-type-add'),
-              label: '+',
-              selected: false,
-              onPressed: () {},
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilledButton(
-            onPressed: onAddWord,
-            style: FilledButton.styleFrom(
-              backgroundColor: HomePalette.of(context).newVocab,
-              foregroundColor: HomePalette.of(context).onAccent,
-              minimumSize: const Size(0, 44),
-              maximumSize: const Size(double.infinity, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 23),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: HomeText.of(context).subtitle
-                  .copyWith(color: HomePalette.of(context).onAccent),
-            ),
-            child: Text(localizations.editorAddWord),
+          const SizedBox(height: 20),
+          Divider(
+            key: const Key('word-details-divider'),
+            height: 1,
+            thickness: 1,
+            color: HomePalette.of(context).border,
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(localizations.editorType, style: HomeText.of(context).subtitle),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _TypeChip(
+                chipKey: const Key('word-type-chunking'),
+                label: localizations.editorChunking,
+                tone: _typeTone(context, 'chunking'),
+                selected: draft.type == 'chunking',
+                onPressed: () => onSelectType('chunking'),
+              ),
+              _TypeChip(
+                chipKey: const Key('word-type-noun'),
+                label: localizations.editorNoun,
+                tone: _typeTone(context, 'noun'),
+                selected: draft.type == 'noun',
+                onPressed: () => onSelectType('noun'),
+              ),
+              _TypeChip(
+                chipKey: const Key('word-type-verb'),
+                label: localizations.editorVerb,
+                tone: _typeTone(context, 'verb'),
+                selected: draft.type == 'verb',
+                onPressed: () => onSelectType('verb'),
+              ),
+              _TypeChip(
+                chipKey: const Key('word-type-adj'),
+                label: localizations.editorAdj,
+                tone: _typeTone(context, 'adj'),
+                selected: draft.type == 'adj',
+                onPressed: () => onSelectType('adj'),
+              ),
+              for (var index = 0; index < customTypes.length; index++)
+                _TypeChip(
+                  chipKey: Key('word-type-custom-$index'),
+                  label: customTypes[index],
+                  tone: _customTone(context),
+                  selected: draft.type == customTypes[index],
+                  onPressed: () => onSelectType(customTypes[index]),
+                ),
+              _TypeChip(
+                chipKey: const Key('word-editor-type-add'),
+                label: '+',
+                selected: false,
+                onPressed: onAddType,
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -780,6 +924,61 @@ class _RoundIconButton extends StatelessWidget {
   }
 }
 
+class _ExistingSetMenu extends StatelessWidget {
+  const _ExistingSetMenu({required this.sets, required this.onSelected});
+
+  final List<VocabularySet> sets;
+  final ValueChanged<VocabularySet> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(colors.surface),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(8),
+        shadowColor: const WidgetStatePropertyAll(Color(0x33101828)),
+        side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 8),
+        ),
+      ),
+      menuChildren: [
+        for (var index = 0; index < sets.length; index++)
+          MenuItemButton(
+            key: Key('word-editor-existing-set-$index'),
+            onPressed: () => onSelected(sets[index]),
+            child: Text(
+              sets[index].title,
+              style: HomeText.of(context).subtitle.copyWith(color: colors.ink),
+            ),
+          ),
+      ],
+      builder: (context, controller, child) {
+        return IconButton(
+          key: const Key('word-editor-title-sets'),
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          icon: Icon(Icons.expand_more, size: 20, color: colors.ink),
+        );
+      },
+    );
+  }
+}
+
 class _SetField extends StatelessWidget {
   const _SetField({
     required this.fillKey,
@@ -789,6 +988,7 @@ class _SetField extends StatelessWidget {
     this.label,
     this.errorText,
     this.onChanged,
+    this.trailing,
   });
 
   final Key fillKey;
@@ -798,6 +998,7 @@ class _SetField extends StatelessWidget {
   final String? label;
   final String? errorText;
   final ValueChanged<String>? onChanged;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -843,18 +1044,26 @@ class _SetField extends StatelessWidget {
                   constraints: BoxConstraints(minHeight: lineHeight * 2),
                   child: Align(alignment: Alignment.centerLeft, child: field),
                 )
-              : Column(
+              : Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      label!,
-                      style: text.body.copyWith(
-                        color: colors.selected,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            label!,
+                            style: text.body.copyWith(
+                              color: colors.selected,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          field,
+                        ],
                       ),
                     ),
-                    field,
+                    if (trailing != null) trailing!,
                   ],
                 ),
         ),
@@ -875,6 +1084,7 @@ class _LabeledField extends StatelessWidget {
     required this.hint,
     this.errorText,
     this.onChanged,
+    this.toolbar,
   });
 
   final String label;
@@ -883,6 +1093,7 @@ class _LabeledField extends StatelessWidget {
   final String hint;
   final String? errorText;
   final ValueChanged<String>? onChanged;
+  final Widget? toolbar;
 
   @override
   Widget build(BuildContext context) {
@@ -901,6 +1112,10 @@ class _LabeledField extends StatelessWidget {
         else
           const SizedBox(height: 20),
         const SizedBox(height: 6),
+        if (toolbar != null) ...[
+          toolbar!,
+          const SizedBox(height: 6),
+        ],
         TextField(
           key: fieldKey,
           controller: controller,
@@ -965,6 +1180,109 @@ _TypeTone? _typeTone(BuildContext context, String? type) {
           : const _TypeTone(fill: Color(0xFFFFE4E8), ink: Color(0xFFC01048)),
     _ => null,
   };
+}
+
+_TypeTone _customTone(BuildContext context) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  return dark
+      ? const _TypeTone(fill: Color(0xFF3F2E12), ink: Color(0xFFFEC84B))
+      : const _TypeTone(fill: Color(0xFFFEF0C7), ink: Color(0xFFB54708));
+}
+
+class _AddTypeDialog extends StatefulWidget {
+  const _AddTypeDialog();
+
+  @override
+  State<_AddTypeDialog> createState() => _AddTypeDialogState();
+}
+
+class _AddTypeDialogState extends State<_AddTypeDialog> {
+  final _name = TextEditingController();
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _create() {
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      return;
+    }
+    Navigator.of(context).pop(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    final text = HomeText.of(context);
+    final localizations = AppLocalizations.of(context);
+    return Dialog(
+      alignment: Alignment.center,
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 400),
+      backgroundColor: colors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(localizations.editorAddType, style: text.heading),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('word-editor-type-name'),
+              controller: _name,
+              autofocus: true,
+              style: text.subtitle,
+              onSubmitted: (_) => _create(),
+              decoration: InputDecoration(
+                hintText: localizations.editorTypeNameHint,
+                hintStyle: text.subtitle.copyWith(color: colors.placeholder),
+                filled: true,
+                fillColor: colors.folderFill,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(foregroundColor: colors.text),
+                  child: Text(localizations.cancelAction, style: text.subtitle),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  key: const Key('word-editor-type-create'),
+                  onPressed: _create,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.newVocab,
+                    foregroundColor: colors.onAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: text.subtitle.copyWith(color: colors.onAccent),
+                  ),
+                  child: Text(localizations.editorAddType),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _TypeChip extends StatelessWidget {

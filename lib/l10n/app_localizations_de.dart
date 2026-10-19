@@ -77,6 +77,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get libraryEmpty => 'Noch nichts hier';
 
   @override
+  String get libraryFolderEmpty =>
+      'Füge ein Set hinzu, dann erscheint es hier.';
+
+  @override
   String get navNotification => 'Benachrichtigung';
 
   @override
@@ -140,10 +144,38 @@ class AppLocalizationsDe extends AppLocalizations {
   String get libraryAddSets => 'Sets hinzufügen';
 
   @override
+  String get folderAddTag => 'Tag hinzufügen';
+
+  @override
+  String get folderEdit => 'Bearbeiten';
+
+  @override
+  String get folderShare => 'Teilen';
+
+  @override
+  String get folderUnpin => 'Von der Seitenleiste lösen';
+
+  @override
+  String get folderPin => 'An Seitenleiste anheften';
+
+  @override
+  String get folderSave => 'Speichern';
+
+  @override
+  String get folderDelete => 'Löschen';
+
+  @override
   String get studyTodayPractice => 'Heute üben';
 
   @override
-  String get studyPracticeAlert => 'Du bist in einer Übungssitzung.';
+  String get studyPracticeAlert =>
+      'Du bist in einer Übungssitzung. Möchtest du sie verlassen?';
+
+  @override
+  String get studyPracticeStay => 'Bleiben';
+
+  @override
+  String get studyPracticeLeave => 'Verlassen';
 
   @override
   String get studyPracticeOk => 'OK';
@@ -320,6 +352,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get editorAddWord => 'Neues Wort hinzufügen';
+
+  @override
+  String get editorAddType => 'Typ hinzufügen';
+
+  @override
+  String get editorTypeNameHint => 'Typ eingeben';
 
   @override
   String get termRequired => 'Begriff eingeben';

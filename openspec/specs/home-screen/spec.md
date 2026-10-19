@@ -30,17 +30,17 @@ In English, the vocabulary home header SHALL show a menu control, the lang mark,
 - **THEN** the header shows the lang mark, "Find your vocab...", "New vocab", and an avatar
 
 ### Requirement: Sidebar shows the pictured selection
-In English, the sidebar SHALL show Homepage selected, Library, Notification, the "Your vocabulary set" section, and "Set of words". It SHALL show each loaded folder name and the set names under that folder. An empty library SHALL show no folder name and no set name. On a viewport at least 1440 wide, that sidebar is beside the main area. On a narrower viewport, those items are shown only while the menu overlay is open.
+In English, the sidebar SHALL show Home selected, Library, Notification, the "Your vocabulary set" section, and "Set of words". It SHALL show each pinned folder name and the set names under that folder. An unpinned folder SHALL NOT appear in the sidebar. An empty library SHALL show no folder name and no set name. On a viewport at least 1440 wide, that sidebar is beside the main area. On a narrower viewport, those items are shown only while the menu overlay is open.
 
 #### Scenario: English sidebar
 - **WHEN** the vocabulary home is shown in English at a viewport at least 1440 wide and the loaded library has no folders
-- **THEN** Homepage is the selected navigation item
+- **THEN** Home is the selected navigation item
 - **AND** the sidebar shows Library, Notification, "Your vocabulary set", and "Set of words"
 - **AND** the sidebar shows no folder name and no set name
 
 #### Scenario: Narrow sidebar shows the same items when open
 - **WHEN** the vocabulary home is shown in English at a viewport narrower than 1440, the loaded library has no folders, and the menu overlay is open
-- **THEN** Homepage is the selected navigation item
+- **THEN** Home is the selected navigation item
 - **AND** the sidebar shows Library, Notification, "Your vocabulary set", and "Set of words"
 - **AND** the sidebar shows no folder name and no set name
 
@@ -71,12 +71,12 @@ When the loaded library has folders and the user has no stored word mark, Recent
 - **AND** Recent does not show "The process is 25% complete.", "The process is 50% complete.", or "The process is 93% complete."
 
 ### Requirement: Home actions stay on the home screen
-Activating search, Library, Notification, All, a hot-search chip, Save, or a suggestion row SHALL leave the user on the vocabulary home, SHALL keep Homepage selected, and SHALL NOT add or remove folders, sets, or words. When the practice queue is empty, activating Practice SHALL do the same. Activating New vocab SHALL open the word editor.
+Activating search, Notification, All, a hot-search chip, Save, or a suggestion row SHALL leave the user on the vocabulary home, SHALL keep Home selected, and SHALL NOT add or remove folders, sets, or words. When the practice queue is empty, activating Practice SHALL do the same. Activating New vocab SHALL open the word editor. Activating Library in the sidebar SHALL open the library page.
 
 #### Scenario: Practice does not leave home
 - **WHEN** the user activates Practice on the vocabulary home, the loaded library has a folder, the practice queue is empty, and the user has no stored level
 - **THEN** the vocabulary home remains
-- **AND** Homepage stays selected
+- **AND** Home stays selected
 - **AND** the statistics still show 0/0 and 0%
 - **AND** the sidebar still shows that folder
 
@@ -85,13 +85,13 @@ Activating search, Library, Notification, All, a hot-search chip, Save, or a sug
 - **THEN** the word editor is shown in the center
 - **AND** the header and the sidebar remain
 - **AND** "Add new word" and "Enter term" are shown
-- **AND** "Find your vocab..." and "Homepage" are shown
+- **AND** "Find your vocab..." and "Home" are shown
 - **AND** "Hot search" and "student" are not shown
 
 #### Scenario: New vocab does not create a set
 - **WHEN** the user activates New vocab on the vocabulary home, the loaded library has no folders, and the user activates Done
 - **THEN** the vocabulary home is shown
-- **AND** Homepage stays selected
+- **AND** Home stays selected
 - **AND** the sidebar still shows no folder name and no set name
 - **AND** "Hot search" and "student" are still shown
 - **AND** the library still has no folders
@@ -111,7 +111,7 @@ Activating the avatar SHALL open the language component on the vocabulary home.
 - **AND** the vocabulary home is still the current screen
 
 ### Requirement: Home shows the loaded library
-When the loaded library has folders, the sidebar SHALL show each folder name and the set names under it. When the user has no stored level, statistics SHALL show 0/0 and 0% with no set name and no bar labels. When no loaded word is due and no loaded word is new, Today's list SHALL have no rows. When the user has no stored level, Recent SHALL show no cards. The suggestion columns SHALL be absent. On a viewport narrower than 1440, the folder and set names are shown when the menu overlay is open.
+When the loaded library has pinned folders, the sidebar SHALL show each pinned folder name and the set names under it. An unpinned folder SHALL NOT appear in the sidebar. When the user has no stored level, statistics SHALL show 0/0 and 0% with no set name and no bar labels. When no loaded word is due and no loaded word is new, Today's list SHALL have no rows. When the user has no stored level, Recent SHALL show no cards. The suggestion columns SHALL be absent. On a viewport narrower than 1440, the folder and set names are shown when the menu overlay is open.
 
 #### Scenario: Saved folder and set
 - **WHEN** the loaded library contains folder "My vocab" with set "German A1 vocabulary" and the vocabulary home is shown in English at a viewport at least 1440 wide, and the user has no stored level and the loaded sets contain no words
@@ -133,6 +133,60 @@ When the loaded library has folders, the sidebar SHALL show each folder name and
 - **THEN** the sidebar shows no folder name
 - **AND** "Hot search" and "student" are shown
 - **AND** "0/0" is not shown
+
+### Requirement: Adding a folder opens that folder
+After a folder is created, the main area SHALL show that folder the same way as opening it from Library. The folder page SHALL show the new folder's name, the folder search field, and the empty folder state when the folder has no sets. That empty state SHALL be centered, with a folder-fill tile, "Nothing here yet", and "Add a set and it will show up here." A newly created folder SHALL NOT appear in the sidebar until it is pinned. The folder title row SHALL end with an add-sets plus button and, on its right, a round more button. Both buttons SHALL use the folder icon's fill and ink color. The folder page SHALL NOT show Study or Add sets. Activating that button SHALL show Add tag, Edit, Share, Pin to sidebar when the folder is not pinned, Unpin from sidebar when it is pinned, and Delete. Edit SHALL rename the folder. Delete SHALL remove the folder. Pin to sidebar SHALL show that folder in the sidebar, and Unpin from sidebar SHALL hide it. Activating a folder title in the sidebar SHALL open that same folder page. The folder's expand control SHALL still show and hide that folder's set names in the sidebar.
+
+#### Scenario: New folder opens its page
+- **WHEN** the user creates a folder named "Travel"
+- **THEN** the folder page shows "Travel"
+- **AND** "Search this folder" is shown
+- **AND** "Nothing here yet" is shown
+- **AND** "Add a set and it will show up here." is shown
+- **AND** "Your library" and "Hot search" are not shown
+- **AND** the sidebar does not show "Travel"
+
+#### Scenario: Pinning a folder shows it in the sidebar
+- **WHEN** the user pins the folder "Travel" from its folder menu
+- **THEN** the sidebar shows "Travel"
+- **AND** unpinning "Travel" removes it from the sidebar
+
+#### Scenario: Edit renames the folder
+- **WHEN** the user renames the folder "Travel" to "Trips"
+- **THEN** the folder page shows "Trips"
+- **AND** the sidebar shows "Trips" when that folder is pinned
+
+#### Scenario: Delete removes the folder
+- **WHEN** the user deletes the folder "Trips"
+- **THEN** the library page is shown
+- **AND** "Trips" is not shown
+
+#### Scenario: Folder more button opens its menu
+- **WHEN** a folder page is open and the user activates the more button on the folder title row
+- **THEN** "Add tag", "Edit", "Share", and "Delete" are shown
+- **AND** "Pin to sidebar" is shown when the folder is not pinned
+- **AND** "Unpin from sidebar" is shown when the folder is pinned
+
+#### Scenario: Sidebar folder title opens that folder
+- **WHEN** the user activates the folder title "My vocab" in the sidebar
+- **THEN** the folder page shows "My vocab" and its sets
+- **AND** "Search this folder" is shown
+- **AND** that folder is selected in the sidebar
+- **AND** Library is not selected
+- **AND** the folder expand control still shows and hides that folder's set names in the sidebar
+
+### Requirement: Sidebar Library opens the library page
+Activating Library in the sidebar SHALL show the library page. This SHALL happen from Home, from a folder page, and from a set. The library page SHALL show "Your library".
+
+#### Scenario: Library from a folder page
+- **WHEN** the folder page for "My vocab" is open and the user activates Library in the sidebar
+- **THEN** the library page shows "Your library"
+- **AND** the folder page is not shown
+
+#### Scenario: Library from a set
+- **WHEN** a set opened from a folder is shown and the user activates Library in the sidebar
+- **THEN** the library page shows "Your library"
+- **AND** the folder page is not shown
 
 ### Requirement: Empty home shows the suggestion columns
 When the loaded library has no folders, the main area SHALL show a left suggestion column and a right suggestion column. It SHALL NOT show "Your vocabulary statistics", "Today's vocabulary", Recent, "0/0", or "Practice". On a viewport at least 1440 wide, the columns sit side by side. On a narrower viewport, the left column's content is above the right column's content.
@@ -199,6 +253,9 @@ When the vocabulary home viewport is at least 1440 wide, the header SHALL fill t
 - **WHEN** the vocabulary home is shown at a viewport at least 1440 wide and the user collapses the sidebar
 - **THEN** the main content width is unchanged
 - **AND** the main content stays in the same horizontal position
+- **AND** the Set of words plus control stays visible
+- **AND** that plus control sits below the sidebar folders when folders are shown
+- **AND** that plus control is centered on the same column as the collapsed icons
 
 ### Requirement: Wide header keeps one row
 When the vocabulary home viewport is at least 1440 wide, the menu, the lang mark, the search field, New vocab, and the avatar SHALL sit on one header row.
@@ -294,12 +351,19 @@ When the practice queue has at least one word, Today's vocabulary SHALL show eac
 - **AND** "Today's vocabulary" does not show "Haus"
 
 ### Requirement: Practice opens the day list
-When the practice queue has at least one word, Practice SHALL open Flashcard on the first queued word's term face. Practice SHALL NOT add or remove folders, sets, or words.
+When the practice queue has at least one word, Practice SHALL open Flashcard on the first queued word's term face. Practice SHALL NOT add or remove folders, sets, or words. That practice SHALL NOT select a folder or a set in the sidebar. Opening a practice session SHALL collapse the wide sidebar and SHALL hide the narrow menu overlay. The close control on the practice opened from Practice SHALL return to Home and SHALL open the wide sidebar.
 
 #### Scenario: Practice opens Kind
 - **WHEN** the practice queue begins with "Kind" and the user activates Practice
 - **THEN** Flashcard shows the term "Kind"
 - **AND** the loaded folders and sets are unchanged
+- **AND** no sidebar folder is selected
+- **AND** the wide sidebar is collapsed
+
+#### Scenario: Close returns Home
+- **WHEN** the user activates the close control during the practice opened from Practice
+- **THEN** Home is shown
+- **AND** the wide sidebar is open
 
 ### Requirement: Recent shows studied sets
 When the user has a stored level, Recent SHALL show one card per set that has a stored level, newest stored level first. Each card SHALL show the set name, the nearest whole-number level 6 percent, and Continue. The bar uses the Forgot color below 50%, the Learning color from 50% until 90%, and the progress green from 90%.

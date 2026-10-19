@@ -136,6 +136,47 @@ void main() {
     expect(store.saved, isEmpty);
   });
 
+  test('a cloud library keeps a local unpin', () async {
+    const local = VocabularyLibrary(
+      folders: <VocabularyFolder>[
+        VocabularyFolder(name: 'Travel', id: 'folder-9', pinned: false),
+      ],
+    );
+    const cloud = VocabularyLibrary(
+      folders: <VocabularyFolder>[
+        VocabularyFolder(name: 'Travel', id: 'folder-9'),
+      ],
+    );
+
+    final library = await libraryForDevice(
+      local: local,
+      readCloud: () async => cloud,
+      store: _Store(),
+    );
+
+    expect(library.folders.single.pinned, isFalse);
+  });
+
+  test('a removed folder stays out of the cloud library', () async {
+    const cloud = VocabularyLibrary(
+      editorFolder: 'Travel',
+      folders: <VocabularyFolder>[
+        VocabularyFolder(name: 'Travel', id: 'folder-9'),
+        VocabularyFolder(name: 'Kitchen', id: 'folder-2'),
+      ],
+    );
+
+    final library = await libraryForDevice(
+      local: VocabularyLibrary.empty,
+      readCloud: () async => cloud,
+      store: _Store(),
+      removedFolderIds: const <String>{'folder-9'},
+    );
+
+    expect(library.folders.single.name, 'Kitchen');
+    expect(library.editorFolder, isNull);
+  });
+
   test('a failed cloud read keeps the local library', () async {
     const local = VocabularyLibrary(
       folders: <VocabularyFolder>[VocabularyFolder(name: 'Travel')],
@@ -189,7 +230,11 @@ class _Store implements VocabularySetStore {
   final saved = <VocabularySet>[];
 
   @override
-  Future<String> createFolder(String name, {bool editor = false}) async {
+  Future<String> createFolder(
+    String name, {
+    bool editor = false,
+    bool pinned = true,
+  }) async {
     created.add((name, editor));
     return 'folder-${created.length}';
   }
@@ -201,4 +246,13 @@ class _Store implements VocabularySetStore {
 
   @override
   Future<void> updateWords(VocabularySet set) async {}
+
+  @override
+  Future<void> renameFolder(String id, String name) async {}
+
+  @override
+  Future<void> deleteFolder(String id) async {}
+
+  @override
+  Future<void> setFolderPinned(String id, bool pinned) async {}
 }

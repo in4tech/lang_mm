@@ -77,6 +77,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get libraryEmpty => 'Chưa có gì ở đây';
 
   @override
+  String get libraryFolderEmpty => 'Thêm một bộ từ, nó sẽ hiện ở đây.';
+
+  @override
   String get navNotification => 'Thông báo';
 
   @override
@@ -140,10 +143,38 @@ class AppLocalizationsVi extends AppLocalizations {
   String get libraryAddSets => 'Thêm bộ từ';
 
   @override
+  String get folderAddTag => 'Thêm thẻ';
+
+  @override
+  String get folderEdit => 'Sửa';
+
+  @override
+  String get folderShare => 'Chia sẻ';
+
+  @override
+  String get folderUnpin => 'Bỏ ghim khỏi thanh bên';
+
+  @override
+  String get folderPin => 'Ghim vào thanh bên';
+
+  @override
+  String get folderSave => 'Lưu';
+
+  @override
+  String get folderDelete => 'Xóa';
+
+  @override
   String get studyTodayPractice => 'Luyện hôm nay';
 
   @override
-  String get studyPracticeAlert => 'Bạn đang trong buổi luyện tập.';
+  String get studyPracticeAlert =>
+      'Bạn đang trong buổi luyện tập. Bạn có muốn thoát không?';
+
+  @override
+  String get studyPracticeStay => 'Ở lại';
+
+  @override
+  String get studyPracticeLeave => 'Thoát';
 
   @override
   String get studyPracticeOk => 'Đóng';
@@ -318,6 +349,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get editorAddWord => 'Thêm từ mới';
+
+  @override
+  String get editorAddType => 'Thêm loại';
+
+  @override
+  String get editorTypeNameHint => 'Nhập loại';
 
   @override
   String get termRequired => 'Hãy nhập từ';

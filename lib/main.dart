@@ -63,14 +63,16 @@ Future<_OpenedLibrary> _openDeviceLibrary(VocabularyLibrary local) async {
       ownerId: ownerId,
       readOwnerId: libraryOwner,
     );
+    final preferences = await SharedPreferences.getInstance();
+    final libraryStore = SharedPreferencesVocabularyLibraryStore(preferences);
     final library = await libraryForDevice(
       local: local,
       readCloud: cloudStore.loadLibrary,
       store: cloudStore,
+      removedFolderIds: libraryStore.removedFolderIds(),
     );
     if (!identical(library, local)) {
-      final preferences = await SharedPreferences.getInstance();
-      await SharedPreferencesVocabularyLibraryStore(preferences).write(library);
+      await libraryStore.write(library);
     }
     return _OpenedLibrary(
       library: library,

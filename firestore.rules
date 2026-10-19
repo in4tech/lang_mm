@@ -11,12 +11,26 @@ service cloud.firestore {
         && request.resource.data.setIds is list
         && request.resource.data.setIds.size() == 0;
       allow update: if request.auth != null
-        && resource.data.ownerId == request.auth.uid
-        && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['setIds'])
-        && request.resource.data.setIds is list
-        && request.resource.data.setIds.hasAll(resource.data.setIds);
-      allow delete: if false;
+        && request.resource.data.ownerId == resource.data.ownerId
+        && (
+          (
+            resource.data.ownerId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['setIds'])
+            && request.resource.data.setIds is list
+            && request.resource.data.setIds.hasAll(resource.data.setIds)
+          )
+          || (
+            (
+              resource.data.ownerId == request.auth.uid
+              || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72'
+            )
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pinned'])
+            && request.resource.data.pinned is bool
+          )
+        );
+      allow delete: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid
+          || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72');
     }
 
     match /sets/{setId} {

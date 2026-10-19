@@ -46,7 +46,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelAction => 'Cancel';
 
   @override
-  String get navHome => 'Homepage';
+  String get navHome => 'Home';
 
   @override
   String get navLibrary => 'Library';
@@ -75,6 +75,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryEmpty => 'Nothing here yet';
+
+  @override
+  String get libraryFolderEmpty => 'Add a set and it will show up here.';
 
   @override
   String get navNotification => 'Notification';
@@ -140,10 +143,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryAddSets => 'Add sets';
 
   @override
+  String get folderAddTag => 'Add tag';
+
+  @override
+  String get folderEdit => 'Edit';
+
+  @override
+  String get folderShare => 'Share';
+
+  @override
+  String get folderUnpin => 'Unpin from sidebar';
+
+  @override
+  String get folderPin => 'Pin to sidebar';
+
+  @override
+  String get folderSave => 'Save';
+
+  @override
+  String get folderDelete => 'Delete';
+
+  @override
   String get studyTodayPractice => 'Today practice';
 
   @override
-  String get studyPracticeAlert => 'You are in a practice session.';
+  String get studyPracticeAlert =>
+      'You are in a practice session. Do you want to leave?';
+
+  @override
+  String get studyPracticeStay => 'Stay';
+
+  @override
+  String get studyPracticeLeave => 'Leave';
 
   @override
   String get studyPracticeOk => 'OK';
@@ -318,6 +349,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editorAddWord => 'Add new word';
+
+  @override
+  String get editorAddType => 'Add type';
+
+  @override
+  String get editorTypeNameHint => 'Enter type';
 
   @override
   String get termRequired => 'Enter a term';

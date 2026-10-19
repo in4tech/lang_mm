@@ -132,7 +132,8 @@ HomeSample homeSampleFromLibrary(
     homepageSelected: true,
     folders: <VocabFolder>[
       for (final folder in library.folders)
-        VocabFolder(name: folder.name, expanded: false, sets: folder.sets),
+        if (folder.pinned)
+          VocabFolder(name: folder.name, expanded: false, sets: folder.sets),
     ],
   );
 }
