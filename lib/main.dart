@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lang/app/lang_app.dart';
 import 'package:lang/firebase_options.dart';
@@ -55,14 +54,7 @@ Future<_OpenedLibrary> _openDeviceLibrary(VocabularyLibrary local) async {
     if (ownerId == null) {
       return _OpenedLibrary(library: local, store: null);
     }
-    final libraryOwner = ownerIdForLibraryRead(
-      debugMode: kDebugMode,
-      signedInOwnerId: ownerId,
-    );
-    final cloudStore = FirestoreVocabularySetStore(
-      ownerId: ownerId,
-      readOwnerId: libraryOwner,
-    );
+    final cloudStore = FirestoreVocabularySetStore(ownerId: ownerId);
     final preferences = await SharedPreferences.getInstance();
     final libraryStore = SharedPreferencesVocabularyLibraryStore(preferences);
     final library = await libraryForDevice(
@@ -77,7 +69,7 @@ Future<_OpenedLibrary> _openDeviceLibrary(VocabularyLibrary local) async {
     return _OpenedLibrary(
       library: library,
       store: cloudStore,
-      studyProgress: FirestoreStudyProgressStore(ownerId: libraryOwner),
+      studyProgress: FirestoreStudyProgressStore(ownerId: ownerId),
     );
   } catch (_) {
     return _OpenedLibrary(library: local, store: null);

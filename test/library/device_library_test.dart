@@ -13,17 +13,6 @@ void main() {
     note: '',
   );
 
-  test('debug reads the fixed owner and release reads the signed-in owner', () {
-    expect(
-      ownerIdForLibraryRead(debugMode: true, signedInOwnerId: 'other'),
-      debugLibraryOwnerId,
-    );
-    expect(
-      ownerIdForLibraryRead(debugMode: false, signedInOwnerId: 'signed-in'),
-      'signed-in',
-    );
-  });
-
   test('cloud documents rebuild the library for this device', () {
     final library = libraryFromCloud(
       folders: <CloudFolderRecord>[

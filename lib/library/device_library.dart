@@ -1,18 +1,6 @@
 import 'package:lang/library/vocabulary_library.dart';
 import 'package:lang/library/vocabulary_set.dart';
 
-const debugLibraryOwnerId = 'OTNroxcSOzPelmdSb8qgISjcjf72';
-
-String ownerIdForLibraryRead({
-  required bool debugMode,
-  required String signedInOwnerId,
-}) {
-  if (debugMode) {
-    return debugLibraryOwnerId;
-  }
-  return signedInOwnerId;
-}
-
 Future<VocabularyLibrary> libraryForDevice({
   required VocabularyLibrary local,
   required Future<VocabularyLibrary> Function() readCloud,

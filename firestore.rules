@@ -3,8 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /folders/{folderId} {
       allow read: if request.auth != null
-        && (resource.data.ownerId == request.auth.uid
-          || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72');
+        && resource.data.ownerId == request.auth.uid;
       allow create: if request.auth != null
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.name is string
@@ -12,31 +11,25 @@ service cloud.firestore {
         && request.resource.data.setIds.size() == 0;
       allow update: if request.auth != null
         && request.resource.data.ownerId == resource.data.ownerId
+        && resource.data.ownerId == request.auth.uid
         && (
           (
-            resource.data.ownerId == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['setIds'])
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['setIds'])
             && request.resource.data.setIds is list
             && request.resource.data.setIds.hasAll(resource.data.setIds)
           )
           || (
-            (
-              resource.data.ownerId == request.auth.uid
-              || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72'
-            )
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pinned'])
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pinned'])
             && request.resource.data.pinned is bool
           )
         );
       allow delete: if request.auth != null
-        && (resource.data.ownerId == request.auth.uid
-          || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72');
+        && resource.data.ownerId == request.auth.uid;
     }
 
     match /sets/{setId} {
       allow read: if request.auth != null
-        && (resource.data.ownerId == request.auth.uid
-          || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72');
+        && resource.data.ownerId == request.auth.uid;
       allow create: if request.auth != null
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.folderId is string
@@ -44,15 +37,13 @@ service cloud.firestore {
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['words'])
         && request.resource.data.words is list
-        && (resource.data.ownerId == request.auth.uid
-          || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72');
+        && resource.data.ownerId == request.auth.uid;
       allow delete: if false;
     }
 
     match /progress/{progressId} {
       allow read: if request.auth != null
-        && (resource.data.ownerId == request.auth.uid
-          || resource.data.ownerId == 'OTNroxcSOzPelmdSb8qgISjcjf72');
+        && resource.data.ownerId == request.auth.uid;
       allow create: if request.auth != null
         && request.resource.data.ownerId == request.auth.uid
         && progressId == request.auth.uid + '_' + request.resource.data.setId

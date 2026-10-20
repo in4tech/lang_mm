@@ -571,6 +571,46 @@ void main() {
     );
   });
 
+  testWidgets('delete keeps the folder when there is no store', (tester) async {
+    await pumpApp(
+      tester,
+      library: const VocabularyLibrary(
+        folders: <VocabularyFolder>[
+          VocabularyFolder(name: 'Travel', id: 'folder-1'),
+        ],
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('nav-library')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-chip-folders')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('library-folder-Travel')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-delete')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('folder-delete-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('folder-delete-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('folder-delete-error')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('Travel'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      (await SharedPreferences.getInstance()).getStringList(
+        VocabularyLibraryStore.removedFoldersKey,
+      ),
+      isNull,
+    );
+  });
+
   testWidgets('create shows a busy state until the store finishes', (
     tester,
   ) async {

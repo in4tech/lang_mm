@@ -216,20 +216,19 @@ class _HomeFrameState extends State<_HomeFrame> {
     final current = _folderNamed(name);
     final id = current?.id;
     final store = widget.setStore;
-    if (store != null && id != null && id.isNotEmpty) {
-      await store.deleteFolder(id);
-      if (!mounted) {
-        return;
-      }
+    if (store == null || id == null || id.isEmpty) {
+      throw StateError('folder delete requires firestore');
     }
-    if (id != null && id.isNotEmpty) {
-      final preferences = await SharedPreferences.getInstance();
-      await SharedPreferencesVocabularyLibraryStore(
-        preferences,
-      ).rememberRemovedFolder(id);
-      if (!mounted) {
-        return;
-      }
+    await store.deleteFolder(id);
+    if (!mounted) {
+      return;
+    }
+    final preferences = await SharedPreferences.getInstance();
+    await SharedPreferencesVocabularyLibraryStore(
+      preferences,
+    ).rememberRemovedFolder(id);
+    if (!mounted) {
+      return;
     }
     final next = _library.removeFolder(name);
     await _storeLibrary(next);
