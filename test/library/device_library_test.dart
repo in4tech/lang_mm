@@ -84,6 +84,41 @@ void main() {
     expect(library.folders[1].sets, <String>['Airport']);
   });
 
+  test('one set id can appear in multiple folders', () {
+    final library = libraryFromCloud(
+      folders: <CloudFolderRecord>[
+        CloudFolderRecord(
+          id: 'folder-a',
+          name: 'Study',
+          setIds: const <String>['set-1'],
+          editor: false,
+        ),
+        CloudFolderRecord(
+          id: 'folder-b',
+          name: 'Travel',
+          setIds: const <String>['set-1'],
+          editor: false,
+        ),
+      ],
+      sets: <CloudSetRecord>[
+        CloudSetRecord(
+          id: 'set-1',
+          set: const VocabularySet(
+            title: 'Airport',
+            description: '',
+            folderId: 'folder-a',
+            words: <VocabularyWord>[word],
+          ),
+        ),
+      ],
+    );
+
+    expect(library.folders[0].sets, <String>['Airport']);
+    expect(library.folders[1].sets, <String>['Airport']);
+    expect(library.folders[0].contentAt(0)?.id, 'set-1');
+    expect(library.folders[1].contentAt(0)?.id, 'set-1');
+  });
+
   test('an empty device keeps the empty local library', () async {
     const local = VocabularyLibrary.empty;
 

@@ -33,6 +33,7 @@
   "wordsLearned": "Từ đã học",
   "wordsNotLearned": "Từ chưa học",
   "wordSearch": "Tìm kiếm từ vựng",
+  "loadMore": "Xem thêm",
   "levelMastered": "Lv.6 - Thành thạo",
   "levelGood": "Lv.5 - Tốt",
   "levelFamiliar": "Lv.4 - Quen",
@@ -152,5 +153,8 @@
   "quizPraiseGreat": "Giỏi lắm!",
   "quizPraiseAwesome": "Xuất sắc!",
   "quizPraiseGotIt": "Đúng rồi!",
-  "quizPraiseBrilliant": "Quá đỉnh!"
+  "quizPraiseBrilliant": "Quá đỉnh!",
+  "typingYourAnswer": "Câu trả lời của bạn",
+  "typingHint": "Gõ từ",
+  "typingCheck": "Tiếp theo"
 }

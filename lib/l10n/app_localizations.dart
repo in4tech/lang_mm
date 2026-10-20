@@ -304,6 +304,12 @@ abstract class AppLocalizations {
   /// **'Search vocabulary'**
   String get wordSearch;
 
+  /// Button that shows the next page of words in a word list dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
+
   /// Legend label for level 6.
   ///
   /// In en, this message translates to:
@@ -579,6 +585,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Typing'**
   String get studyTyping;
+
+  /// Label above the Typing answer field.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get typingYourAnswer;
+
+  /// Placeholder in the Typing answer field.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the term'**
+  String get typingHint;
+
+  /// Submits the typed Typing answer and advances.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get typingCheck;
 
   /// Rating that marks a word as hard.
   ///

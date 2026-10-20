@@ -27,7 +27,10 @@ class _LearnedWordsDialog extends StatefulWidget {
 }
 
 class _LearnedWordsDialogState extends State<_LearnedWordsDialog> {
+  static const int _pageSize = 20;
+
   final _search = TextEditingController();
+  int _limit = _pageSize;
 
   @override
   void dispose() {
@@ -35,7 +38,7 @@ class _LearnedWordsDialogState extends State<_LearnedWordsDialog> {
     super.dispose();
   }
 
-  List<VocabularyWord> get _visible {
+  List<VocabularyWord> get _filtered {
     final query = _search.text.trim().toLowerCase();
     if (query.isEmpty) {
       return widget.words;
@@ -59,7 +62,11 @@ class _LearnedWordsDialogState extends State<_LearnedWordsDialog> {
     final size = MediaQuery.sizeOf(context);
     final dialogWidth = size.width < 720 ? size.width - 32 : 640.0;
     final dialogHeight = size.height < 720 ? size.height - 48 : 640.0;
-    final words = _visible;
+    final filtered = _filtered;
+    final words = filtered.length <= _limit
+        ? filtered
+        : filtered.sublist(0, _limit);
+    final hasMore = filtered.length > _limit;
     return Dialog(
       backgroundColor: colors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -97,7 +104,7 @@ class _LearnedWordsDialogState extends State<_LearnedWordsDialog> {
               TextField(
                 key: const Key('learned-words-search'),
                 controller: _search,
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) => setState(() => _limit = _pageSize),
                 style: text.subtitle,
                 decoration: InputDecoration(
                   hintText: localizations.wordSearch,
@@ -117,7 +124,7 @@ class _LearnedWordsDialogState extends State<_LearnedWordsDialog> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: words.isEmpty
+                child: filtered.isEmpty
                     ? Text(
                         localizations.libraryEmpty,
                         style: text.body.copyWith(color: colors.muted),
@@ -130,6 +137,20 @@ class _LearnedWordsDialogState extends State<_LearnedWordsDialog> {
                             _WordCard(word: words[index]),
                       ),
               ),
+              if (hasMore) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  key: const Key('learned-words-load-more'),
+                  onPressed: () => setState(() => _limit += _pageSize),
+                  style: TextButton.styleFrom(
+                    foregroundColor: colors.selected,
+                    textStyle: text.subtitle.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: Text(localizations.loadMore),
+                ),
+              ],
             ],
           ),
         ),

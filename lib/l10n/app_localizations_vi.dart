@@ -116,6 +116,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get wordSearch => 'Tìm kiếm từ vựng';
 
   @override
+  String get loadMore => 'Xem thêm';
+
+  @override
   String get levelMastered => 'Lv.6 - Thành thạo';
 
   @override
@@ -254,6 +257,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get studyTyping => 'Gõ từ';
+
+  @override
+  String get typingYourAnswer => 'Câu trả lời của bạn';
+
+  @override
+  String get typingHint => 'Gõ từ';
+
+  @override
+  String get typingCheck => 'Tiếp theo';
 
   @override
   String get studyHard => 'Khó';

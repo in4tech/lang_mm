@@ -67,21 +67,26 @@ class _AddSetsDialogState extends State<_AddSetsDialog> {
   };
 
   List<_PickerSet> get _sets {
-    final items = <_PickerSet>[
-      for (final folder in widget.folders)
-        for (var index = 0; index < folder.sets.length; index++)
-          _PickerSet(
-            folderName: folder.name,
-            index: index,
-            set:
-                folder.contentAt(index) ??
-                VocabularySet(
-                  title: folder.sets[index],
-                  description: '',
-                  words: const <VocabularyWord>[],
-                ),
-          ),
-    ];
+    final seen = <String>{};
+    final items = <_PickerSet>[];
+    for (final folder in widget.folders) {
+      for (var index = 0; index < folder.sets.length; index++) {
+        final set =
+            folder.contentAt(index) ??
+            VocabularySet(
+              title: folder.sets[index],
+              description: '',
+              words: const <VocabularyWord>[],
+            );
+        final mark = _mark(set);
+        if (!seen.add(mark)) {
+          continue;
+        }
+        items.add(
+          _PickerSet(folderName: folder.name, index: index, set: set),
+        );
+      }
+    }
     if (_recents) {
       return items.reversed.toList();
     }

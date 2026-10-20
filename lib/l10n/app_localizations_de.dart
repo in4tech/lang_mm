@@ -117,6 +117,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wordSearch => 'Vokabeln suchen';
 
   @override
+  String get loadMore => 'Mehr laden';
+
+  @override
   String get levelMastered => 'Lv.6 - Gemeistert';
 
   @override
@@ -255,6 +258,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get studyTyping => 'Tippen';
+
+  @override
+  String get typingYourAnswer => 'Deine Antwort';
+
+  @override
+  String get typingHint => 'Begriff eingeben';
+
+  @override
+  String get typingCheck => 'Weiter';
 
   @override
   String get studyHard => 'Schwer';

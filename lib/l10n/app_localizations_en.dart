@@ -116,6 +116,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wordSearch => 'Search vocabulary';
 
   @override
+  String get loadMore => 'Load more';
+
+  @override
   String get levelMastered => 'Lv.6 - Mastered';
 
   @override
@@ -254,6 +257,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studyTyping => 'Typing';
+
+  @override
+  String get typingYourAnswer => 'Your answer';
+
+  @override
+  String get typingHint => 'Type the term';
+
+  @override
+  String get typingCheck => 'Next';
 
   @override
   String get studyHard => 'Hard';

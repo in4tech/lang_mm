@@ -146,6 +146,10 @@
   "@wordSearch": {
     "description": "Search field in the learned and not-yet-learned word list."
   },
+  "loadMore": "Load more",
+  "@loadMore": {
+    "description": "Button that shows the next page of words in a word list dialog."
+  },
   "levelMastered": "Lv.6 - Mastered",
   "@levelMastered": {
     "description": "Legend label for level 6."
@@ -329,6 +333,18 @@
   "studyTyping": "Typing",
   "@studyTyping": {
     "description": "Practice mode that asks the learner to type the definition."
+  },
+  "typingYourAnswer": "Your answer",
+  "@typingYourAnswer": {
+    "description": "Label above the Typing answer field."
+  },
+  "typingHint": "Type the term",
+  "@typingHint": {
+    "description": "Placeholder in the Typing answer field."
+  },
+  "typingCheck": "Next",
+  "@typingCheck": {
+    "description": "Submits the typed Typing answer and advances."
   },
   "studyHard": "Hard",
   "@studyHard": {

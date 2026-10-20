@@ -33,6 +33,7 @@
   "wordsLearned": "Gelernte Wörter",
   "wordsNotLearned": "Noch nicht gelernte Wörter",
   "wordSearch": "Vokabeln suchen",
+  "loadMore": "Mehr laden",
   "levelMastered": "Lv.6 - Gemeistert",
   "levelGood": "Lv.5 - Gut",
   "levelFamiliar": "Lv.4 - Vertraut",
@@ -152,5 +153,8 @@
   "quizPraiseGreat": "Gut gemacht!",
   "quizPraiseAwesome": "Stark!",
   "quizPraiseGotIt": "Richtig!",
-  "quizPraiseBrilliant": "Brillant!"
+  "quizPraiseBrilliant": "Brillant!",
+  "typingYourAnswer": "Deine Antwort",
+  "typingHint": "Begriff eingeben",
+  "typingCheck": "Weiter"
 }

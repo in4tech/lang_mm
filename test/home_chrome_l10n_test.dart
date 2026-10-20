@@ -110,6 +110,9 @@ void main() {
     expect(english.quizPraiseAwesome, 'Awesome!');
     expect(english.quizPraiseGotIt, 'You got it!');
     expect(english.quizPraiseBrilliant, 'Brilliant!');
+    expect(english.typingYourAnswer, 'Your answer');
+    expect(english.typingHint, 'Type the term');
+    expect(english.typingCheck, 'Next');
     expect(english.studyHard, 'Hard');
     expect(english.studyStillLearning, 'Still learning');
     expect(english.studyKnow, 'Know');
@@ -141,6 +144,7 @@ void main() {
     expect(english.menuPrivacy, 'Privacy policy');
     expect(english.menuHelp, 'Help and feedback');
     expect(english.wordSearch, 'Search vocabulary');
+    expect(english.loadMore, 'Load more');
     expect(english.menuUpgrade, 'Upgrade');
 
     final vietnamese = await load(tester, const Locale('vi'));
@@ -231,6 +235,9 @@ void main() {
     expect(vietnamese.quizPraiseAwesome, 'Xuất sắc!');
     expect(vietnamese.quizPraiseGotIt, 'Đúng rồi!');
     expect(vietnamese.quizPraiseBrilliant, 'Quá đỉnh!');
+    expect(vietnamese.typingYourAnswer, 'Câu trả lời của bạn');
+    expect(vietnamese.typingHint, 'Gõ từ');
+    expect(vietnamese.typingCheck, 'Tiếp theo');
     expect(vietnamese.studyHard, 'Khó');
     expect(vietnamese.studyStillLearning, 'Đang học');
     expect(vietnamese.studyKnow, 'Đã biết');
@@ -252,6 +259,7 @@ void main() {
     expect(vietnamese.menuPrivacy, 'Chính sách quyền riêng tư');
     expect(vietnamese.menuHelp, 'Trợ giúp và phản hồi');
     expect(vietnamese.wordSearch, 'Tìm kiếm từ vựng');
+    expect(vietnamese.loadMore, 'Xem thêm');
     expect(vietnamese.menuUpgrade, 'Nâng cấp');
 
     final german = await load(tester, const Locale('de'));
@@ -342,6 +350,9 @@ void main() {
     expect(german.quizPraiseAwesome, 'Stark!');
     expect(german.quizPraiseGotIt, 'Richtig!');
     expect(german.quizPraiseBrilliant, 'Brillant!');
+    expect(german.typingYourAnswer, 'Deine Antwort');
+    expect(german.typingHint, 'Begriff eingeben');
+    expect(german.typingCheck, 'Weiter');
     expect(german.studyHard, 'Schwer');
     expect(german.studyStillLearning, 'Noch am Lernen');
     expect(german.studyKnow, 'Gewusst');
@@ -366,6 +377,7 @@ void main() {
     expect(german.menuPrivacy, 'Datenschutz');
     expect(german.menuHelp, 'Hilfe und Feedback');
     expect(german.wordSearch, 'Vokabeln suchen');
+    expect(german.loadMore, 'Mehr laden');
     expect(german.menuUpgrade, 'Upgrade');
     expect(german.homeTitle, 'Flutter-Demo-Startseite');
     expect(german.missingTranslationProbe, 'Missing translation probe');

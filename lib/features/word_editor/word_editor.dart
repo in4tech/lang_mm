@@ -287,29 +287,58 @@ class _WordEditorState extends State<WordEditor> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _SetField(
-                fillKey: const Key('word-editor-title-fill'),
-                fieldKey: const Key('word-editor-title'),
-                label: localizations.editorTitle,
-                controller: _title,
-                hint: localizations.editorTitleHint,
-                errorText: _titleInvalid && _title.text.trim().isEmpty
-                    ? localizations.titleRequired
-                    : null,
-                onChanged: _titleInvalid ? (_) => setState(() {}) : null,
-                trailing: widget.initialSet == null
-                    ? _ExistingSetMenu(
-                        sets: widget.existingSets,
-                        onSelected: (set) {
-                          setState(() {
-                            _title.text = set.title;
-                            _description.text = set.description;
-                            _titleInvalid = false;
-                          });
-                        },
-                      )
-                    : null,
-              ),
+              child: widget.initialSet == null
+                  ? _ExistingSetMenu(
+                      sets: widget.existingSets,
+                      onSelected: (set) {
+                        setState(() {
+                          _title.text = set.title;
+                          _description.text = set.description;
+                          _titleInvalid = false;
+                        });
+                      },
+                      field: (onOpen) => _SetField(
+                        fillKey: const Key('word-editor-title-fill'),
+                        fieldKey: const Key('word-editor-title'),
+                        label: localizations.editorTitle,
+                        controller: _title,
+                        hint: localizations.editorTitleHint,
+                        errorText: _titleInvalid &&
+                                _title.text.trim().isEmpty
+                            ? localizations.titleRequired
+                            : null,
+                        onChanged: _titleInvalid
+                            ? (_) => setState(() {})
+                            : null,
+                        trailing: IconButton(
+                          key: const Key('word-editor-title-sets'),
+                          onPressed: onOpen,
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints(
+                            minWidth: 24,
+                            minHeight: 24,
+                          ),
+                          icon: Icon(
+                            Icons.expand_more,
+                            size: 20,
+                            color: HomePalette.of(context).ink,
+                          ),
+                        ),
+                      ),
+                    )
+                  : _SetField(
+                      fillKey: const Key('word-editor-title-fill'),
+                      fieldKey: const Key('word-editor-title'),
+                      label: localizations.editorTitle,
+                      controller: _title,
+                      hint: localizations.editorTitleHint,
+                      errorText: _titleInvalid && _title.text.trim().isEmpty
+                          ? localizations.titleRequired
+                          : null,
+                      onChanged:
+                          _titleInvalid ? (_) => setState(() {}) : null,
+                    ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -925,15 +954,23 @@ class _RoundIconButton extends StatelessWidget {
 }
 
 class _ExistingSetMenu extends StatelessWidget {
-  const _ExistingSetMenu({required this.sets, required this.onSelected});
+  const _ExistingSetMenu({
+    required this.sets,
+    required this.onSelected,
+    required this.field,
+  });
 
   final List<VocabularySet> sets;
   final ValueChanged<VocabularySet> onSelected;
+  final Widget Function(VoidCallback onOpen) field;
 
   @override
   Widget build(BuildContext context) {
     final colors = HomePalette.of(context);
+    final text = HomeText.of(context);
+    final localizations = AppLocalizations.of(context);
     return MenuAnchor(
+      crossAxisUnconstrained: false,
       alignmentOffset: const Offset(0, 8),
       style: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(colors.surface),
@@ -944,37 +981,87 @@ class _ExistingSetMenu extends StatelessWidget {
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 8),
-        ),
+        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
+        minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 0)),
       ),
       menuChildren: [
-        for (var index = 0; index < sets.length; index++)
+        for (var index = 0; index < sets.length; index++) ...[
+          if (index > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Divider(height: 1, thickness: 1, color: colors.border),
+            ),
           MenuItemButton(
             key: Key('word-editor-existing-set-$index'),
             onPressed: () => onSelected(sets[index]),
-            child: Text(
-              sets[index].title,
-              style: HomeText.of(context).subtitle.copyWith(color: colors.ink),
+            style: MenuItemButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              minimumSize: const Size(double.infinity, 0),
+              alignment: Alignment.centerLeft,
+            ),
+            child: _ExistingSetMenuItem(
+              set: sets[index],
+              titleStyle: text.subtitle.copyWith(
+                color: colors.ink,
+                fontWeight: FontWeight.w600,
+              ),
+              metaStyle: text.caption.copyWith(color: colors.muted),
+              termCount: localizations.libraryTermCount(sets[index].words.length),
             ),
           ),
+        ],
       ],
       builder: (context, controller, child) {
-        return IconButton(
-          key: const Key('word-editor-title-sets'),
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          padding: EdgeInsets.zero,
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-          icon: Icon(Icons.expand_more, size: 20, color: colors.ink),
-        );
+        return field(() {
+          if (controller.isOpen) {
+            controller.close();
+          } else {
+            controller.open();
+          }
+        });
       },
+    );
+  }
+}
+
+class _ExistingSetMenuItem extends StatelessWidget {
+  const _ExistingSetMenuItem({
+    required this.set,
+    required this.titleStyle,
+    required this.metaStyle,
+    required this.termCount,
+  });
+
+  final VocabularySet set;
+  final TextStyle titleStyle;
+  final TextStyle metaStyle;
+  final String termCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = set.description.trim();
+    final meta = description.isEmpty ? termCount : '$description · $termCount';
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            set.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: titleStyle,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            meta,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: metaStyle,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1045,7 +1132,7 @@ class _SetField extends StatelessWidget {
                   child: Align(alignment: Alignment.centerLeft, child: field),
                 )
               : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Column(

@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:lang/features/home/home_from_library.dart';
 import 'package:lang/features/home/quiz_tone.dart';
+import 'package:lang/features/home/typing_answer.dart';
 import 'package:lang/features/home/widgets/quiz_card.dart';
+import 'package:lang/features/home/widgets/typing_card.dart';
 import 'package:lang/features/word_editor/sentence_format.dart';
 import 'package:lang/features/home/sample/home_sample.dart';
 import 'package:lang/l10n/app_localizations.dart';
@@ -429,7 +431,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   void _chooseQuiz(int index) {
-    if (_quizResult != null) {
+    if (_quizResult != null || _mode != _PracticeMode.quiz) {
       return;
     }
     final cue = _current;
@@ -452,8 +454,29 @@ class _SetStudyPageState extends State<SetStudyPage> {
     unawaited(_tones.play(correct ? QuizTonePitch.high : QuizTonePitch.low));
   }
 
+  void _checkTyping() {
+    if (_quizResult != null || _mode != _PracticeMode.typing) {
+      return;
+    }
+    final cue = _current;
+    if (cue == null || _typing.text.trim().isEmpty) {
+      return;
+    }
+    final correct = typingAnswerMatches(_typing.text, cue.word.term);
+    final animate = !MediaQuery.disableAnimationsOf(context);
+    setState(() {
+      _quizChosen = null;
+      _quizResult = correct ? QuizMark.correct : QuizMark.wrong;
+      _quizSettled = !animate;
+    });
+    unawaited(_tones.play(correct ? QuizTonePitch.high : QuizTonePitch.low));
+  }
+
   void _dontKnowQuiz() {
     if (_quizResult != null) {
+      return;
+    }
+    if (_mode != _PracticeMode.quiz && _mode != _PracticeMode.typing) {
       return;
     }
     final animate = !MediaQuery.disableAnimationsOf(context);
@@ -513,11 +536,12 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   void _rate(StudyAction action) {
-    final quiz = _mode == _PracticeMode.quiz;
-    if (_mode != _PracticeMode.flashcard && !quiz) {
+    final graded =
+        _mode == _PracticeMode.quiz || _mode == _PracticeMode.typing;
+    if (_mode != _PracticeMode.flashcard && !graded) {
       return;
     }
-    if (quiz && (_quizResult == null || !_quizSettled)) {
+    if (graded && (_quizResult == null || !_quizSettled)) {
       return;
     }
     final cue = _current;
@@ -532,7 +556,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
     if (next == null) {
       return;
     }
-    final playExit = _practicing && !quiz && action != StudyAction.studied;
+    final playExit = _practicing && !graded && action != StudyAction.studied;
     setState(() {
       if (cue.setId == null || cue.setId == widget.set.id) {
         _levels[cue.index] = next;
@@ -547,7 +571,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
           _sessionKnow += 1;
         }
       }
-      if (quiz) {
+      if (graded) {
         _clearQuiz();
       }
       if (playExit) {
@@ -566,11 +590,12 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   void _skipNew() {
-    final quiz = _mode == _PracticeMode.quiz;
-    if (_mode != _PracticeMode.flashcard && !quiz) {
+    final graded =
+        _mode == _PracticeMode.quiz || _mode == _PracticeMode.typing;
+    if (_mode != _PracticeMode.flashcard && !graded) {
       return;
     }
-    if (quiz && (_quizResult == null || !_quizSettled)) {
+    if (graded && (_quizResult == null || !_quizSettled)) {
       return;
     }
     final cue = _current;
@@ -578,7 +603,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
       return;
     }
     setState(() {
-      if (quiz) {
+      if (graded) {
         _clearQuiz();
       }
       _sessionSkipped += 1;
@@ -682,6 +707,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
       onQuizChoose: _chooseQuiz,
       onQuizDontKnow: _dontKnowQuiz,
       onQuizSettled: _finishQuizReveal,
+      onTypingCheck: _checkTyping,
     );
     final stats = _StudyStats(
       words: _words,
@@ -771,6 +797,7 @@ class _PracticeColumn extends StatelessWidget {
     required this.onQuizChoose,
     required this.onQuizDontKnow,
     required this.onQuizSettled,
+    required this.onTypingCheck,
   });
 
   final VocabularySet set;
@@ -806,6 +833,7 @@ class _PracticeColumn extends StatelessWidget {
   final ValueChanged<int> onQuizChoose;
   final VoidCallback onQuizDontKnow;
   final VoidCallback onQuizSettled;
+  final VoidCallback onTypingCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -924,12 +952,26 @@ class _PracticeColumn extends StatelessWidget {
               onDontKnow: onQuizDontKnow,
               onSettled: onQuizSettled,
             )
+          else if (mode == _PracticeMode.typing && cue != null)
+            TypingCard(
+              word: cue.word,
+              controller: typing,
+              yourAnswerLabel: localizations.typingYourAnswer,
+              hint: localizations.typingHint,
+              checkLabel: localizations.typingCheck,
+              dontKnowLabel: localizations.quizDontKnow,
+              wrongSentence: localizations.quizWrongResult,
+              skipSentence: localizations.quizTryLater,
+              mark: quizMark,
+              onCheck: onTypingCheck,
+              onDontKnow: onQuizDontKnow,
+              onSettled: onQuizSettled,
+            )
           else
             _FlashcardStage(
               word: word,
               peek: peek,
               mode: mode,
-              typing: typing,
               onStep: onStep,
               faceToken: faceToken,
               newWord:
@@ -941,7 +983,9 @@ class _PracticeColumn extends StatelessWidget {
               onExitComplete: onExitComplete,
             ),
           const SizedBox(height: 24),
-          if (mode == _PracticeMode.quiz && quizSettled && cue != null)
+          if ((mode == _PracticeMode.quiz || mode == _PracticeMode.typing) &&
+              quizSettled &&
+              cue != null)
             if (levels.containsKey(cue.index))
               _QuizRatings(onRate: onRate, localizations: localizations)
             else
@@ -1885,7 +1929,6 @@ class _FlashcardStage extends StatefulWidget {
     required this.word,
     required this.peek,
     required this.mode,
-    required this.typing,
     required this.onStep,
     required this.faceToken,
     required this.newWord,
@@ -1898,7 +1941,6 @@ class _FlashcardStage extends StatefulWidget {
   final VocabularyWord? word;
   final VocabularyWord? peek;
   final _PracticeMode mode;
-  final TextEditingController typing;
   final ValueChanged<int> onStep;
   final int faceToken;
   final bool newWord;
@@ -2126,7 +2168,6 @@ class _FlashcardStageState extends State<_FlashcardStage>
                                     ? widget.peek
                                     : null,
                                 mode: widget.mode,
-                                typing: widget.typing,
                                 meaning: showMeaning,
                               ),
                             ),
@@ -2147,7 +2188,6 @@ class _FlashcardStageState extends State<_FlashcardStage>
                                 word: widget.peek,
                                 peek: null,
                                 mode: widget.mode,
-                                typing: widget.typing,
                                 meaning: false,
                                 keyed: false,
                               ),
@@ -2263,7 +2303,6 @@ class _CardStack extends StatelessWidget {
     required this.word,
     required this.peek,
     required this.mode,
-    required this.typing,
     required this.meaning,
     this.keyed = true,
   });
@@ -2271,7 +2310,6 @@ class _CardStack extends StatelessWidget {
   final VocabularyWord? word;
   final VocabularyWord? peek;
   final _PracticeMode mode;
-  final TextEditingController typing;
   final bool meaning;
   final bool keyed;
 
@@ -2292,7 +2330,6 @@ class _CardStack extends StatelessWidget {
           child: _Flashcard(
             word: word,
             mode: mode,
-            typing: typing,
             meaning: meaning,
             keyed: keyed,
           ),
@@ -2323,21 +2360,18 @@ class _Flashcard extends StatelessWidget {
   const _Flashcard({
     required this.word,
     required this.mode,
-    required this.typing,
     required this.meaning,
     this.keyed = true,
   });
 
   final VocabularyWord? word;
   final _PracticeMode mode;
-  final TextEditingController typing;
   final bool meaning;
   final bool keyed;
 
   @override
   Widget build(BuildContext context) {
     final colors = HomePalette.of(context);
-    final text = HomeText.of(context);
     final localizations = AppLocalizations.of(context);
     final current = word;
     final image = current?.imageUrl?.trim() ?? '';
@@ -2432,31 +2466,6 @@ class _Flashcard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  if (mode == _PracticeMode.typing && current != null) ...[
-                    const SizedBox(height: 16),
-                    TextField(
-                      key: const Key('set-study-typing'),
-                      controller: typing,
-                      style: text.subtitle,
-                      decoration: InputDecoration(
-                        hintText: localizations.editorDefinitionHint,
-                        hintStyle: text.subtitle.copyWith(
-                          color: colors.placeholder,
-                        ),
-                        filled: true,
-                        fillColor: colors.folderFill,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -2955,118 +2964,45 @@ class _StudyStatsState extends State<_StudyStats>
                   ),
                 ],
                 const SizedBox(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 140,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            for (var index = 0;
-                                index < to.counts.length;
-                                index++)
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  child: Builder(
-                                    builder: (context) {
-                                      final height =
-                                          from.counts[index] +
-                                          (to.counts[index] -
-                                                  from.counts[index]) *
-                                              t;
-                                      return Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          if (height > 0.05)
-                                            Text(
-                                              '${height.round()}',
-                                              style: HomeText.of(
-                                                context,
-                                              ).caption,
-                                            ),
-                                          const SizedBox(height: 4),
-                                          Container(
-                                            height: 8 + (88 * height / peak),
-                                            decoration: BoxDecoration(
-                                              color: colorsForLevel[index],
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                          ],
+                SizedBox(
+                  height: 140,
+                  width: double.infinity,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var index = 0; index < to.counts.length; index++)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Builder(
+                              builder: (context) {
+                                final height =
+                                    from.counts[index] +
+                                    (to.counts[index] - from.counts[index]) * t;
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    if (height > 0.05)
+                                      Text(
+                                        '${height.round()}',
+                                        style: HomeText.of(context).caption,
+                                      ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      height: 8 + (88 * height / peak),
+                                      decoration: BoxDecoration(
+                                        color: colorsForLevel[index],
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Builder(
-                      builder: (context) {
-                        final labels = <String>[
-                          localizations.levelMastered,
-                          localizations.levelGood,
-                          localizations.levelFamiliar,
-                          localizations.levelLearning,
-                          localizations.levelHard,
-                          localizations.levelForgot,
-                        ];
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (var index = 0; index < labels.length; index++)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 3,
-                                ),
-                                child: Builder(
-                                  builder: (context) {
-                                    final countIndex = 5 - index;
-                                    final count =
-                                        (from.counts[countIndex] +
-                                                (to.counts[countIndex] -
-                                                        from.counts[countIndex]) *
-                                                    t)
-                                            .round();
-                                    return Row(
-                                      children: [
-                                        Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            color: colorsForLevel[countIndex],
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          labels[index],
-                                          style: HomeText.of(context).body,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          '${studyPercent(count, to.total)}%',
-                                          style: HomeText.of(context).body,
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             );

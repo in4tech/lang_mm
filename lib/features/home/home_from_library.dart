@@ -298,27 +298,12 @@ List<VocabularyWord> statisticsWords({
   DateTime? now,
 }) {
   final clock = now ?? DateTime.now();
-  final sets = <VocabularySet>[];
-  if (!allSets) {
-    if (setId == null) {
-      return const <VocabularyWord>[];
-    }
-    final set = setWithId(library, setId);
-    if (set != null) {
-      sets.add(set);
-    }
-  } else {
-    for (final folder in library.folders) {
-      for (var index = 0; index < folder.sets.length; index++) {
-        final set = folder.contentAt(index);
-        if (set != null) {
-          sets.add(set);
-        }
-      }
-    }
-  }
   final words = <VocabularyWord>[];
-  for (final set in sets) {
+  for (final set in _statisticsSets(
+    library: library,
+    allSets: allSets,
+    setId: setId,
+  )) {
     final levels = studyStates(progress[set.id], clock);
     for (var index = 0; index < set.words.length; index++) {
       final mastered = levels[index]?.level == 6;
@@ -328,6 +313,59 @@ List<VocabularyWord> statisticsWords({
     }
   }
   return words;
+}
+
+/// Words whose stored level equals [level] (1–6) in the statistics scope.
+List<VocabularyWord> statisticsWordsAtLevel({
+  required VocabularyLibrary library,
+  required Map<String, StudySetProgress> progress,
+  required int level,
+  bool allSets = true,
+  String? setId,
+  DateTime? now,
+}) {
+  if (level < 1 || level > 6) {
+    return const <VocabularyWord>[];
+  }
+  final clock = now ?? DateTime.now();
+  final words = <VocabularyWord>[];
+  for (final set in _statisticsSets(
+    library: library,
+    allSets: allSets,
+    setId: setId,
+  )) {
+    final levels = studyStates(progress[set.id], clock);
+    for (var index = 0; index < set.words.length; index++) {
+      if (levels[index]?.level == level) {
+        words.add(set.words[index]);
+      }
+    }
+  }
+  return words;
+}
+
+List<VocabularySet> _statisticsSets({
+  required VocabularyLibrary library,
+  required bool allSets,
+  String? setId,
+}) {
+  if (!allSets) {
+    if (setId == null) {
+      return const <VocabularySet>[];
+    }
+    final set = setWithId(library, setId);
+    return set == null ? const <VocabularySet>[] : <VocabularySet>[set];
+  }
+  final sets = <VocabularySet>[];
+  for (final folder in library.folders) {
+    for (var index = 0; index < folder.sets.length; index++) {
+      final set = folder.contentAt(index);
+      if (set != null) {
+        sets.add(set);
+      }
+    }
+  }
+  return sets;
 }
 
 VocabularySet? setWithId(VocabularyLibrary library, String id) {

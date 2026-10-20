@@ -634,7 +634,13 @@ class _HomeFrameState extends State<_HomeFrame> {
     String folderName,
     int setIndex,
   ) async {
-    final next = _library.removeSetFromFolder(folderName, setIndex);
+    final preserveIn =
+        _library.editorFolder ?? AppLocalizations.of(context).vocabularySet;
+    final next = _library.removeSetFromFolder(
+      folderName,
+      setIndex,
+      preserveIn: preserveIn,
+    );
     await _storeLibrary(next);
     if (!mounted) {
       return;
@@ -748,6 +754,8 @@ class _HomeFrameState extends State<_HomeFrame> {
     if (dashboard == null) {
       return SuggestionColumns(narrow: narrow);
     }
+    final scopeAll = dashboard.statisticsAll;
+    final scopeId = dashboard.statisticsSetId;
     return _Dashboard(
       sample: dashboard,
       narrow: narrow,
@@ -755,16 +763,26 @@ class _HomeFrameState extends State<_HomeFrame> {
         library: _library,
         progress: _study.progress,
         learned: true,
-        allSets: dashboard.statisticsAll,
-        setId: dashboard.statisticsSetId,
+        allSets: scopeAll,
+        setId: scopeId,
       ),
       notLearnedWords: statisticsWords(
         library: _library,
         progress: _study.progress,
         learned: false,
-        allSets: dashboard.statisticsAll,
-        setId: dashboard.statisticsSetId,
+        allSets: scopeAll,
+        setId: scopeId,
       ),
+      wordsByLevel: <int, List<VocabularyWord>>{
+        for (var level = 1; level <= 6; level++)
+          level: statisticsWordsAtLevel(
+            library: _library,
+            progress: _study.progress,
+            level: level,
+            allSets: scopeAll,
+            setId: scopeId,
+          ),
+      },
       onAllChanged: (allSets) => setState(() => _allSets = allSets),
       onPractice: _openPractice,
       onContinue: _continueRecent,
@@ -1009,6 +1027,7 @@ class _Dashboard extends StatelessWidget {
     this.narrow = false,
     this.learnedWords = const <VocabularyWord>[],
     this.notLearnedWords = const <VocabularyWord>[],
+    this.wordsByLevel = const <int, List<VocabularyWord>>{},
     this.onAllChanged,
     this.onPractice,
     this.onContinue,
@@ -1019,6 +1038,7 @@ class _Dashboard extends StatelessWidget {
   final bool narrow;
   final List<VocabularyWord> learnedWords;
   final List<VocabularyWord> notLearnedWords;
+  final Map<int, List<VocabularyWord>> wordsByLevel;
   final ValueChanged<bool>? onAllChanged;
   final VoidCallback? onPractice;
   final ValueChanged<RecentSet>? onContinue;
@@ -1045,6 +1065,7 @@ class _Dashboard extends StatelessWidget {
               onOpenSet: onOpenStatisticsSet,
               learnedWords: learnedWords,
               notLearnedWords: notLearnedWords,
+              wordsByLevel: wordsByLevel,
             ),
           ),
           const SizedBox(height: 16),
@@ -1079,6 +1100,7 @@ class _Dashboard extends StatelessWidget {
                   onOpenSet: onOpenStatisticsSet,
                   learnedWords: learnedWords,
                   notLearnedWords: notLearnedWords,
+                  wordsByLevel: wordsByLevel,
                 ),
               ),
             ),

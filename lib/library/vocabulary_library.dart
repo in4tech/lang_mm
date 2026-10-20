@@ -136,12 +136,13 @@ class VocabularyLibrary {
               ]),
               contents: List<VocabularySet?>.unmodifiable(<VocabularySet?>[
                 ..._alignedContents(folder),
+                // Keep the set's own folderId so one set can belong to many folders.
                 VocabularySet(
                   id: set.id,
                   title: set.title,
                   description: set.description,
                   words: set.words,
-                  folderId: folder.id ?? set.folderId,
+                  folderId: set.folderId ?? folder.id,
                 ),
               ]),
             ),
@@ -149,14 +150,38 @@ class VocabularyLibrary {
     );
   }
 
-  VocabularyLibrary removeSetFromFolder(String folderName, int index) {
-    return VocabularyLibrary(
+  /// Removes the set from [folderName] only. The same set may remain in other
+  /// folders. If this was its last folder, flashcard data is kept under
+  /// [preserveIn] so the set is not deleted.
+  VocabularyLibrary removeSetFromFolder(
+    String folderName,
+    int index, {
+    required String preserveIn,
+  }) {
+    VocabularyFolder? source;
+    for (final folder in folders) {
+      if (folder.name == folderName) {
+        source = folder;
+        break;
+      }
+    }
+    if (source == null || index < 0 || index >= source.sets.length) {
+      return this;
+    }
+    final taken = source.contentAt(index);
+    final takenTitle = source.sets[index];
+    final set = VocabularySet(
+      id: taken?.id,
+      title: taken?.title ?? takenTitle,
+      description: taken?.description ?? '',
+      words: taken?.words ?? const <VocabularyWord>[],
+      folderId: taken?.folderId,
+    );
+    final without = VocabularyLibrary(
       editorFolder: editorFolder,
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         for (final folder in folders)
           if (folder.name != folderName)
-            folder
-          else if (index < 0 || index >= folder.sets.length)
             folder
           else
             VocabularyFolder(
@@ -173,6 +198,18 @@ class VocabularyLibrary {
               ]),
             ),
       ]),
+    );
+    if (_libraryHasSet(without, set)) {
+      return without;
+    }
+    if (without.folders.any((folder) => folder.name == preserveIn)) {
+      return without.addSetToFolder(preserveIn, set);
+    }
+    return without.addSavedSet(
+      name: set.title,
+      folderLabel: preserveIn,
+      content: set,
+      folderId: set.folderId,
     );
   }
 
@@ -285,7 +322,7 @@ VocabularyLibrary libraryFromCloud({
     final used = <String>{};
     for (final setId in folder.setIds) {
       final set = setsById[setId];
-      if (set == null || set.folderId != folder.id) {
+      if (set == null) {
         continue;
       }
       used.add(setId);
@@ -323,6 +360,15 @@ bool _folderHasSet(VocabularyFolder folder, VocabularySet set) {
       return true;
     }
     if (folder.sets[index] == set.title) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool _libraryHasSet(VocabularyLibrary library, VocabularySet set) {
+  for (final folder in library.folders) {
+    if (_folderHasSet(folder, set)) {
       return true;
     }
   }

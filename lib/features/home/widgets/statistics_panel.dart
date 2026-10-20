@@ -14,6 +14,7 @@ class StatisticsPanel extends StatelessWidget {
     this.onOpenSet,
     this.learnedWords = const <VocabularyWord>[],
     this.notLearnedWords = const <VocabularyWord>[],
+    this.wordsByLevel = const <int, List<VocabularyWord>>{},
   });
 
   final HomeSample sample;
@@ -21,6 +22,7 @@ class StatisticsPanel extends StatelessWidget {
   final VoidCallback? onOpenSet;
   final List<VocabularyWord> learnedWords;
   final List<VocabularyWord> notLearnedWords;
+  final Map<int, List<VocabularyWord>> wordsByLevel;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,14 @@ class StatisticsPanel extends StatelessWidget {
       localizations.levelLearning,
       localizations.levelHard,
       localizations.levelForgot,
+    ];
+    final barTitles = <String>[
+      localizations.levelForgot,
+      localizations.levelHard,
+      localizations.levelLearning,
+      localizations.levelFamiliar,
+      localizations.levelGood,
+      localizations.levelMastered,
     ];
     return _Card(
       child: Stack(
@@ -51,7 +61,18 @@ class StatisticsPanel extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Expanded(child: _BarChart(bars: sample.bars)),
+                        Expanded(
+                          child: _BarChart(
+                            bars: sample.bars,
+                            titles: barTitles,
+                            onBarTap: (level) => showLearnedWordsDialog(
+                              context: context,
+                              title: barTitles[level - 1],
+                              words: wordsByLevel[level] ??
+                                  const <VocabularyWord>[],
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 24),
                         _Legend(labels: levels, levels: sample.levels),
                       ],
@@ -314,9 +335,15 @@ double _barHeight(double height, double tallest, double plotHeight) {
 }
 
 class _BarChart extends StatelessWidget {
-  const _BarChart({required this.bars});
+  const _BarChart({
+    required this.bars,
+    required this.titles,
+    this.onBarTap,
+  });
 
   final List<HomeBar> bars;
+  final List<String> titles;
+  final ValueChanged<int>? onBarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -330,36 +357,89 @@ class _BarChart extends StatelessWidget {
       }
     }
     const plotHeight = 128.0;
+    final colors = HomePalette.of(context);
     return SizedBox(
       height: 161,
       width: double.infinity,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          for (final bar in bars)
+          for (var index = 0; index < bars.length; index++)
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (bar.label != null)
-                    Text(
-                      bar.label!,
-                      textAlign: TextAlign.center,
-                      style: HomeText.of(context).caption,
+              child: Tooltip(
+                waitDuration: const Duration(milliseconds: 200),
+                preferBelow: false,
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colors.border),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33101828),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
                     ),
-                  const SizedBox(height: 3),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Container(
-                      height: _barHeight(bar.height, tallest, plotHeight),
-                      decoration: BoxDecoration(
-                        color: bar.color,
-                        borderRadius: BorderRadius.circular(6),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                richMessage: TextSpan(
+                  children: <InlineSpan>[
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: bars[index].color,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
+                    TextSpan(
+                      text: ' ${titles[index]}',
+                      style: HomeText.of(context).caption.copyWith(
+                        color: colors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    key: Key('statistics-bar-${index + 1}'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onBarTap == null
+                        ? null
+                        : () => onBarTap!(index + 1),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (bars[index].label != null)
+                          Text(
+                            bars[index].label!,
+                            textAlign: TextAlign.center,
+                            style: HomeText.of(context).caption,
+                          ),
+                        const SizedBox(height: 3),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Container(
+                            height: _barHeight(
+                              bars[index].height,
+                              tallest,
+                              plotHeight,
+                            ),
+                            decoration: BoxDecoration(
+                              color: bars[index].color,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
         ],

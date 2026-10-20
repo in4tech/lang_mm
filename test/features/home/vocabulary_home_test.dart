@@ -933,20 +933,35 @@ void main() {
   testWidgets('a folder set menu can remove the set from that folder', (
     tester,
   ) async {
+    const airport = VocabularySet(
+      id: 'set-airport',
+      title: 'Airport',
+      description: 'trips',
+      words: <VocabularyWord>[
+        VocabularyWord(
+          term: 'Gate',
+          definition: 'Tor',
+          sentence: '',
+          ipa: '',
+          singularPlural: '',
+          note: '',
+        ),
+      ],
+    );
     await pumpApp(
       tester,
       library: const VocabularyLibrary(
+        editorFolder: 'Your vocabulary set',
         folders: <VocabularyFolder>[
+          VocabularyFolder(
+            name: 'Study',
+            sets: <String>['Airport'],
+            contents: <VocabularySet?>[airport],
+          ),
           VocabularyFolder(
             name: 'Travel',
             sets: <String>['Airport'],
-            contents: <VocabularySet?>[
-              VocabularySet(
-                title: 'Airport',
-                description: 'trips',
-                words: <VocabularyWord>[],
-              ),
-            ],
+            contents: <VocabularySet?>[airport],
           ),
         ],
       ),
@@ -966,6 +981,15 @@ void main() {
 
     expect(find.byKey(const Key('library-set-Travel-0')), findsNothing);
     expect(find.text('Nothing here yet'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('library-folder-all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-Study')));
+    await tester.pumpAndSettle();
+    expect(find.text('Airport'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('library-set-Study-0')));
+    await tester.pumpAndSettle();
+    expect(find.text('Gate'), findsWidgets);
   });
 
   testWidgets('a folder click hides and shows its sets', (tester) async {
@@ -2206,6 +2230,69 @@ void main() {
     expect(find.text('Words not yet learned (1)'), findsOneWidget);
     expect(_dialogText('Haus'), findsNothing);
     expect(_dialogText('Nothing here yet'), findsOneWidget);
+  });
+
+  testWidgets('a chart bar opens that level word list', (tester) async {
+    const kind = VocabularyWord(
+      term: 'Kind',
+      definition: 'child',
+      sentence: 'Das Kind spielt.',
+      ipa: 'kɪnt',
+      singularPlural: 'das, -er',
+      note: '',
+      type: 'noun',
+    );
+    final progress = _MemoryProgress(
+      home: StudyHomeData(
+        progress: <String, StudySetProgress>{
+          'setA': StudySetProgress(
+            marks: const <int, StudyMark>{},
+            levels: <int, StudyWordState>{
+              0: StudyWordState(level: 1, dueAt: DateTime(2020)),
+              1: StudyWordState(level: 6, dueAt: DateTime(2020)),
+            },
+          ),
+        },
+      ),
+    );
+    await pumpApp(
+      tester,
+      studyProgress: progress,
+      library: _libraryOf(<_NamedSet>[
+        _NamedSet('German A1', <VocabularyWord>[kind, _haus], id: 'setA'),
+      ]),
+    );
+
+    await tester.ensureVisible(find.byKey(const Key('statistics-bar-1')));
+    await tester.tap(find.byKey(const Key('statistics-bar-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Lv.1 - Forgot (1)'), findsOneWidget);
+    expect(_dialogText('Kind'), findsOneWidget);
+    expect(_dialogText('Haus'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('learned-words-close')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('statistics-bar-6')));
+    await tester.pumpAndSettle();
+    expect(find.text('Lv.6 - Mastered (1)'), findsOneWidget);
+    expect(_dialogText('Haus'), findsOneWidget);
+    expect(_dialogText('Kind'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('learned-words-close')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('statistics-bar-3')));
+    await tester.pumpAndSettle();
+    expect(find.text('Lv.3 - Learning (0)'), findsOneWidget);
+    expect(_dialogText('Nothing here yet'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('learned-words-close')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Lv.6 - Mastered'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('learned-words-dialog')), findsNothing);
   });
 
   testWidgets('an empty day list keeps Practice on the home', (tester) async {
