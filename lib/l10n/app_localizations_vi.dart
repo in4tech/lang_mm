@@ -43,6 +43,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get createFolder => 'Tạo';
 
   @override
+  String get folderCreateFailed => 'Không tạo được thư mục này. Thử lại.';
+
+  @override
   String get cancelAction => 'Hủy';
 
   @override
@@ -199,6 +202,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get folderDeleteConfirm => 'Xóa thư mục';
+
+  @override
+  String get folderDeleteFailed => 'Không xóa được thư mục này. Thử lại.';
 
   @override
   String get studyTodayPractice => 'Luyện hôm nay';

@@ -546,14 +546,24 @@ class _DeleteFolderDialog extends StatefulWidget {
 class _DeleteFolderDialogState extends State<_DeleteFolderDialog> {
   static const _danger = Color(0xFFFF5A6A);
   var _deleting = false;
+  var _failed = false;
 
   Future<void> _confirm() async {
-    setState(() => _deleting = true);
+    setState(() {
+      _deleting = true;
+      _failed = false;
+    });
     try {
       await widget.onDelete();
-    } finally {
       if (mounted) {
         Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _deleting = false;
+          _failed = true;
+        });
       }
     }
   }
@@ -583,6 +593,14 @@ class _DeleteFolderDialogState extends State<_DeleteFolderDialog> {
                   localizations.folderDeleteBody,
                   style: text.body.copyWith(color: colors.muted),
                 ),
+                if (_failed) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    key: const Key('folder-delete-error'),
+                    localizations.folderDeleteFailed,
+                    style: text.body.copyWith(color: _danger),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

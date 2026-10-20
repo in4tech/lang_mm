@@ -135,7 +135,7 @@ When the loaded library has pinned folders, the sidebar SHALL show each pinned f
 - **AND** "0/0" is not shown
 
 ### Requirement: Adding a folder opens that folder
-After a folder is created, the main area SHALL show that folder the same way as opening it from Library. The folder page SHALL show the new folder's name, the folder search field, and the empty folder state when the folder has no sets. That empty state SHALL be centered, with a folder-fill tile, "Nothing here yet", and "Add a set and it will show up here." A newly created folder SHALL NOT appear in the sidebar until it is pinned. The folder title row SHALL end with an add-sets plus button and, on its right, a round more button. Activating that plus, or "Add flashcard sets" on an empty folder, SHALL open "Add study materials". That dialog SHALL list the library's flashcard sets, and adding one SHALL place it in the open folder. Both buttons SHALL use the folder icon's fill and ink color. The folder page SHALL NOT show Study or Add sets. Activating that button SHALL show Add tag, Edit, Share, Pin to sidebar when the folder is not pinned, Unpin from sidebar when it is pinned, and Delete. Edit SHALL rename the folder. Delete SHALL ask "Delete this folder?" before removing it. Cancel SHALL leave the folder in place. Confirming SHALL show a busy state on the delete button until the folder is removed. Pin to sidebar SHALL show that folder in the sidebar, and Unpin from sidebar SHALL hide it. Activating a folder title in the sidebar SHALL open that same folder page. The folder's expand control SHALL still show and hide that folder's set names in the sidebar.
+After a folder is created, the main area SHALL show that folder the same way as opening it from Library. Creating a folder SHALL show a busy state on the create button until creation finishes, and SHALL open the folder page only after that succeeds. When creation fails, the dialog SHALL stay open with an error and SHALL NOT open the folder page. The folder page SHALL show the new folder's name, the folder search field, and the empty folder state when the folder has no sets. That empty state SHALL be centered, with a folder-fill tile, "Nothing here yet", and "Add a set and it will show up here." A newly created folder SHALL NOT appear in the sidebar until it is pinned. The folder title row SHALL end with an add-sets plus button and, on its right, a round more button. Activating that plus, or "Add flashcard sets" on an empty folder, SHALL open "Add study materials". That dialog SHALL list the library's flashcard sets, and adding one SHALL place it in the open folder. Both buttons SHALL use the folder icon's fill and ink color. The folder page SHALL NOT show Study or Add sets. Activating that button SHALL show Add tag, Edit, Share, Pin to sidebar when the folder is not pinned, Unpin from sidebar when it is pinned, and Delete. Edit SHALL rename the folder. Delete SHALL ask "Delete this folder?" before removing it. Cancel SHALL leave the folder in place. Confirming SHALL show a busy state on the delete button until the folder is removed. When deletion fails, the dialog SHALL stay open with an error and SHALL leave the folder in place. Pin to sidebar SHALL show that folder in the sidebar, and Unpin from sidebar SHALL hide it. Activating a folder title in the sidebar SHALL open that same folder page. The folder's expand control SHALL still show and hide that folder's set names in the sidebar.
 
 #### Scenario: New folder opens its page
 - **WHEN** the user creates a folder named "Travel"
@@ -145,6 +145,17 @@ After a folder is created, the main area SHALL show that folder the same way as 
 - **AND** "Add a set and it will show up here." is shown
 - **AND** "Your library" and "Hot search" are not shown
 - **AND** the sidebar does not show "Travel"
+
+#### Scenario: New folder stays busy until creation finishes
+- **WHEN** the user confirms creating a folder and creation has not finished
+- **THEN** the create button shows a busy state
+- **AND** the folder page is not shown yet
+
+#### Scenario: Failed folder creation keeps the dialog open
+- **WHEN** the user confirms creating a folder and creation fails
+- **THEN** the dialog stays open
+- **AND** an error is shown
+- **AND** the folder page is not shown
 
 #### Scenario: Pinning a folder shows it in the sidebar
 - **WHEN** the user pins the folder "Travel" from its folder menu
@@ -160,6 +171,12 @@ After a folder is created, the main area SHALL show that folder the same way as 
 - **WHEN** the user deletes the folder "Trips"
 - **THEN** the library page is shown
 - **AND** "Trips" is not shown
+
+#### Scenario: Failed folder deletion keeps the folder
+- **WHEN** the user confirms deleting a folder and deletion fails
+- **THEN** the dialog stays open
+- **AND** an error is shown
+- **AND** the folder remains open
 
 #### Scenario: Folder more button opens its menu
 - **WHEN** a folder page is open and the user activates the more button on the folder title row

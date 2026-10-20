@@ -166,6 +166,12 @@ abstract class AppLocalizations {
   /// **'Create'**
   String get createFolder;
 
+  /// Error shown when creating a folder fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create this folder. Try again.'**
+  String get folderCreateFailed;
+
   /// Button that closes a dialog without saving.
   ///
   /// In en, this message translates to:
@@ -471,6 +477,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete folder'**
   String get folderDeleteConfirm;
+
+  /// Error shown when deleting a folder fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete this folder. Try again.'**
+  String get folderDeleteFailed;
 
   /// Selected practice action on a flashcard set.
   ///

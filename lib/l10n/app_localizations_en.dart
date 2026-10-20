@@ -43,6 +43,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createFolder => 'Create';
 
   @override
+  String get folderCreateFailed => 'Couldn\'t create this folder. Try again.';
+
+  @override
   String get cancelAction => 'Cancel';
 
   @override
@@ -199,6 +202,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get folderDeleteConfirm => 'Delete folder';
+
+  @override
+  String get folderDeleteFailed => 'Couldn\'t delete this folder. Try again.';
 
   @override
   String get studyTodayPractice => 'Today practice';

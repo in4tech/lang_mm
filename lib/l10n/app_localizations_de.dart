@@ -43,6 +43,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createFolder => 'Erstellen';
 
   @override
+  String get folderCreateFailed =>
+      'Dieser Ordner konnte nicht erstellt werden. Bitte erneut versuchen.';
+
+  @override
   String get cancelAction => 'Abbrechen';
 
   @override
@@ -200,6 +204,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get folderDeleteConfirm => 'Ordner löschen';
+
+  @override
+  String get folderDeleteFailed =>
+      'Dieser Ordner konnte nicht gelöscht werden. Bitte erneut versuchen.';
 
   @override
   String get studyTodayPractice => 'Heute üben';

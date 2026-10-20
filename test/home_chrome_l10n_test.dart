@@ -68,6 +68,10 @@ void main() {
     expect(english.newFolder, 'New folder');
     expect(english.newFolderHint, 'Enter folder name');
     expect(english.createFolder, 'Create');
+    expect(
+      english.folderCreateFailed,
+      "Couldn't create this folder. Try again.",
+    );
     expect(english.cancelAction, 'Cancel');
     expect(english.libraryTitle, 'Your library');
     expect(english.librarySets, 'Flashcard sets');
@@ -98,6 +102,10 @@ void main() {
     expect(english.folderDelete, 'Delete');
     expect(english.folderDeleteTitle, 'Delete this folder?');
     expect(english.folderDeleteConfirm, 'Delete folder');
+    expect(
+      english.folderDeleteFailed,
+      "Couldn't delete this folder. Try again.",
+    );
     expect(english.studyTodayPractice, 'Today practice');
     expect(english.studyLearnNew, 'Learn new vocab');
     expect(english.studyFlashcard, 'Flashcard');
@@ -190,6 +198,10 @@ void main() {
     expect(vietnamese.newFolder, 'Thư mục mới');
     expect(vietnamese.newFolderHint, 'Nhập tên thư mục');
     expect(vietnamese.createFolder, 'Tạo');
+    expect(
+      vietnamese.folderCreateFailed,
+      'Không tạo được thư mục này. Thử lại.',
+    );
     expect(vietnamese.cancelAction, 'Hủy');
     expect(vietnamese.libraryTitle, 'Thư viện của bạn');
     expect(vietnamese.librarySets, 'Bộ từ');
@@ -223,6 +235,10 @@ void main() {
     expect(vietnamese.folderDelete, 'Xóa');
     expect(vietnamese.folderDeleteTitle, 'Xóa thư mục này?');
     expect(vietnamese.folderDeleteConfirm, 'Xóa thư mục');
+    expect(
+      vietnamese.folderDeleteFailed,
+      'Không xóa được thư mục này. Thử lại.',
+    );
     expect(vietnamese.studyTodayPractice, 'Luyện hôm nay');
     expect(vietnamese.studyLearnNew, 'Học từ mới');
     expect(vietnamese.studyFlashcard, 'Thẻ học');
@@ -305,6 +321,10 @@ void main() {
     expect(german.newFolder, 'Neuer Ordner');
     expect(german.newFolderHint, 'Ordnernamen eingeben');
     expect(german.createFolder, 'Erstellen');
+    expect(
+      german.folderCreateFailed,
+      'Dieser Ordner konnte nicht erstellt werden. Bitte erneut versuchen.',
+    );
     expect(german.cancelAction, 'Abbrechen');
     expect(german.libraryTitle, 'Deine Bibliothek');
     expect(german.librarySets, 'Sets');
@@ -338,6 +358,10 @@ void main() {
     expect(german.folderDelete, 'Löschen');
     expect(german.folderDeleteTitle, 'Diesen Ordner löschen?');
     expect(german.folderDeleteConfirm, 'Ordner löschen');
+    expect(
+      german.folderDeleteFailed,
+      'Dieser Ordner konnte nicht gelöscht werden. Bitte erneut versuchen.',
+    );
     expect(german.studyTodayPractice, 'Heute üben');
     expect(german.studyLearnNew, 'Neue Vokabeln lernen');
     expect(german.studyFlashcard, 'Karteikarte');

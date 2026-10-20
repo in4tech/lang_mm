@@ -44,6 +44,10 @@
   "@createFolder": {
     "description": "Button that creates a folder from the dialog."
   },
+  "folderCreateFailed": "Couldn't create this folder. Try again.",
+  "@folderCreateFailed": {
+    "description": "Error shown when creating a folder fails."
+  },
   "cancelAction": "Cancel",
   "@cancelAction": {
     "description": "Button that closes a dialog without saving."
@@ -257,6 +261,10 @@
   "folderDeleteConfirm": "Delete folder",
   "@folderDeleteConfirm": {
     "description": "Button that confirms deleting a folder."
+  },
+  "folderDeleteFailed": "Couldn't delete this folder. Try again.",
+  "@folderDeleteFailed": {
+    "description": "Error shown when deleting a folder fails."
   },
   "studyTodayPractice": "Today practice",
   "@studyTodayPractice": {

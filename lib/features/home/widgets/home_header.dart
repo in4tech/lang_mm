@@ -323,10 +323,13 @@ class _NewVocabButton extends StatelessWidget {
   }
 }
 
-Future<String?> showNewFolderDialog(BuildContext context) {
-  return showDialog<String>(
+Future<void> showNewFolderDialog(
+  BuildContext context, {
+  required Future<void> Function(String name) onCreate,
+}) {
+  return showDialog<void>(
     context: context,
-    builder: (context) => const _NewFolderDialog(),
+    builder: (context) => _NewFolderDialog(onCreate: onCreate),
   );
 }
 
@@ -338,17 +341,26 @@ Future<String?> showRenameFolderDialog(BuildContext context, String name) {
 }
 
 class _NewFolderDialog extends StatefulWidget {
-  const _NewFolderDialog({this.initialName = '', this.rename = false});
+  const _NewFolderDialog({
+    this.initialName = '',
+    this.rename = false,
+    this.onCreate,
+  });
 
   final String initialName;
   final bool rename;
+  final Future<void> Function(String name)? onCreate;
 
   @override
   State<_NewFolderDialog> createState() => _NewFolderDialogState();
 }
 
 class _NewFolderDialogState extends State<_NewFolderDialog> {
+  static const _danger = Color(0xFFFF5A6A);
+
   late final _name = TextEditingController(text: widget.initialName);
+  var _busy = false;
+  var _failed = false;
 
   @override
   void dispose() {
@@ -356,12 +368,33 @@ class _NewFolderDialogState extends State<_NewFolderDialog> {
     super.dispose();
   }
 
-  void _create() {
+  Future<void> _submit() async {
     final name = _name.text.trim();
-    if (name.isEmpty) {
+    if (name.isEmpty || _busy) {
       return;
     }
-    Navigator.of(context).pop(name);
+    final onCreate = widget.onCreate;
+    if (onCreate == null) {
+      Navigator.of(context).pop(name);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
+    try {
+      await onCreate(name);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _failed = true;
+        });
+      }
+    }
   }
 
   @override
@@ -369,77 +402,106 @@ class _NewFolderDialogState extends State<_NewFolderDialog> {
     final colors = HomePalette.of(context);
     final text = HomeText.of(context);
     final localizations = AppLocalizations.of(context);
-    return Dialog(
-      alignment: Alignment.center,
-      constraints: const BoxConstraints(minWidth: 280, maxWidth: 400),
-      backgroundColor: colors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              widget.rename ? localizations.folderEdit : localizations.newFolder,
-              style: text.heading,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              key: const Key('new-folder-name'),
-              controller: _name,
-              autofocus: true,
-              style: text.subtitle,
-              onSubmitted: (_) => _create(),
-              decoration: InputDecoration(
-                hintText: localizations.newFolderHint,
-                hintStyle: text.subtitle.copyWith(color: colors.placeholder),
-                filled: true,
-                fillColor: colors.folderFill,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+    return PopScope(
+      canPop: !_busy,
+      child: Dialog(
+        alignment: Alignment.center,
+        constraints: const BoxConstraints(minWidth: 280, maxWidth: 400),
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                widget.rename
+                    ? localizations.folderEdit
+                    : localizations.newFolder,
+                style: text.heading,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const Key('new-folder-name'),
+                controller: _name,
+                autofocus: true,
+                enabled: !_busy,
+                style: text.subtitle,
+                onSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  hintText: localizations.newFolderHint,
+                  hintStyle: text.subtitle.copyWith(color: colors.placeholder),
+                  filled: true,
+                  fillColor: colors.folderFill,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  key: const Key('new-folder-cancel'),
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: TextButton.styleFrom(foregroundColor: colors.text),
-                  child: Text(localizations.cancelAction, style: text.subtitle),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  key: Key(
-                    widget.rename ? 'folder-rename-save' : 'new-folder-create',
-                  ),
-                  onPressed: _create,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colors.newVocab,
-                    foregroundColor: colors.onAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: text.subtitle.copyWith(color: colors.onAccent),
-                  ),
-                  child: Text(
-                    widget.rename
-                        ? localizations.folderSave
-                        : localizations.createFolder,
-                  ),
+              if (_failed) ...[
+                const SizedBox(height: 12),
+                Text(
+                  key: const Key('new-folder-error'),
+                  localizations.folderCreateFailed,
+                  style: text.body.copyWith(color: _danger),
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    key: const Key('new-folder-cancel'),
+                    onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                    style: TextButton.styleFrom(foregroundColor: colors.text),
+                    child: Text(
+                      localizations.cancelAction,
+                      style: text.subtitle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    key: Key(
+                      widget.rename ? 'folder-rename-save' : 'new-folder-create',
+                    ),
+                    onPressed: _busy ? null : _submit,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colors.newVocab,
+                      disabledBackgroundColor: colors.newVocab,
+                      foregroundColor: colors.onAccent,
+                      disabledForegroundColor: colors.onAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: text.subtitle.copyWith(color: colors.onAccent),
+                    ),
+                    child: _busy
+                        ? const SizedBox(
+                            key: Key('new-folder-progress'),
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            widget.rename
+                                ? localizations.folderSave
+                                : localizations.createFolder,
+                          ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

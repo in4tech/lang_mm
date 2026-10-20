@@ -524,7 +524,7 @@ void main() {
     expect(find.text('Trips'), findsNothing);
   });
 
-  testWidgets('delete removes the folder when the store rejects it', (
+  testWidgets('delete keeps the folder when the store rejects it', (
     tester,
   ) async {
     final store = _RecordingStore()
@@ -549,15 +549,77 @@ void main() {
     store.releaseDelete();
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('library-page')), findsOneWidget);
-    expect(find.text('Travel'), findsNothing);
+    expect(find.byKey(const Key('folder-delete-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('folder-delete-error')), findsOneWidget);
+    expect(
+      find.text("Couldn't delete this folder. Try again."),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('Travel'),
+      ),
+      findsOneWidget,
+    );
     expect(store.deletedFolders, <String>['folder-1']);
     expect(
       (await SharedPreferences.getInstance()).getStringList(
         VocabularyLibraryStore.removedFoldersKey,
       ),
-      <String>['folder-1'],
+      isNull,
     );
+  });
+
+  testWidgets('create shows a busy state until the store finishes', (
+    tester,
+  ) async {
+    final store = _RecordingStore()..createGate = Completer<void>();
+    await pumpApp(tester, setStore: store);
+
+    await tester.tap(find.byKey(const Key('sidebar-add-folder')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('new-folder-name')), 'Travel');
+    await tester.tap(find.byKey(const Key('new-folder-create')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('new-folder-progress')), findsOneWidget);
+    expect(find.byKey(const Key('library-folder-page')), findsNothing);
+
+    store.releaseCreate();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('new-folder-progress')), findsNothing);
+    expect(find.byKey(const Key('library-folder-page')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('Travel'),
+      ),
+      findsOneWidget,
+    );
+    expect(store.createdFolders, <String>['Travel']);
+  });
+
+  testWidgets('create keeps the dialog open when the store rejects it', (
+    tester,
+  ) async {
+    final store = _RecordingStore()..error = StateError('denied');
+    await pumpApp(tester, setStore: store);
+
+    await tester.tap(find.byKey(const Key('sidebar-add-folder')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('new-folder-name')), 'Travel');
+    await tester.tap(find.byKey(const Key('new-folder-create')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('new-folder-error')), findsOneWidget);
+    expect(
+      find.text("Couldn't create this folder. Try again."),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('library-folder-page')), findsNothing);
+    expect(store.createdFolders, isEmpty);
   });
 
   testWidgets('done stores the set name in the editor folder', (tester) async {
@@ -2473,6 +2535,7 @@ class _MemoryProgress implements StudyProgressStore {
 class _RecordingStore implements VocabularySetStore {
   Object? error;
   Object? deleteError;
+  Completer<void>? createGate;
   Completer<void>? deleteGate;
   final saved = <VocabularySet>[];
   final createdFolders = <String>[];
@@ -2486,6 +2549,10 @@ class _RecordingStore implements VocabularySetStore {
     bool editor = false,
     bool pinned = true,
   }) async {
+    final gate = createGate;
+    if (gate != null) {
+      await gate.future;
+    }
     final error = this.error;
     if (error != null) {
       throw error;
@@ -2510,11 +2577,15 @@ class _RecordingStore implements VocabularySetStore {
   @override
   Future<void> renameFolder(String id, String name) async {}
 
-  @override
+  void releaseCreate() {
+    createGate?.complete();
+  }
+
   void releaseDelete() {
     deleteGate?.complete();
   }
 
+  @override
   Future<void> deleteFolder(String id) async {
     final deleteError = this.deleteError;
     deletedFolders.add(id);

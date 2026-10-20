@@ -129,44 +129,44 @@ class _HomeFrameState extends State<_HomeFrame> {
   }
 
   Future<void> _promptNewFolder() async {
-    final name = await showNewFolderDialog(context);
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty || !mounted) {
-      return;
-    }
-    if (_library.folders.any((folder) => folder.name == trimmed)) {
-      return;
-    }
-    final store = widget.setStore;
-    String? id;
-    if (store != null) {
-      try {
-        id = await store.createFolder(trimmed, pinned: false);
-      } catch (_) {
-        return;
-      }
-      if (!mounted) {
-        return;
-      }
-    }
-    final next = _library.addFolder(trimmed, id: id);
-    await _storeLibrary(next);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _library = next;
-      _libraryOpen = true;
-      _libraryFolder = trimmed;
-      _editing = false;
-      _studying = false;
-      _studyReturn = false;
-      _cues = null;
-      _homePractice = false;
-      _focusFolder = null;
-      _focusIndex = null;
-      _practicingSession = false;
-    });
+    await showNewFolderDialog(
+      context,
+      onCreate: (name) async {
+        final trimmed = name.trim();
+        if (trimmed.isEmpty) {
+          throw StateError('empty');
+        }
+        if (_library.folders.any((folder) => folder.name == trimmed)) {
+          throw StateError('duplicate');
+        }
+        final store = widget.setStore;
+        String? id;
+        if (store != null) {
+          id = await store.createFolder(trimmed, pinned: false);
+        }
+        if (!mounted) {
+          return;
+        }
+        final next = _library.addFolder(trimmed, id: id);
+        await _storeLibrary(next);
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _library = next;
+          _libraryOpen = true;
+          _libraryFolder = trimmed;
+          _editing = false;
+          _studying = false;
+          _studyReturn = false;
+          _cues = null;
+          _homePractice = false;
+          _focusFolder = null;
+          _focusIndex = null;
+          _practicingSession = false;
+        });
+      },
+    );
   }
 
   Future<void> _storeLibrary(VocabularyLibrary next) async {
@@ -217,9 +217,7 @@ class _HomeFrameState extends State<_HomeFrame> {
     final id = current?.id;
     final store = widget.setStore;
     if (store != null && id != null && id.isNotEmpty) {
-      try {
-        await store.deleteFolder(id);
-      } catch (_) {}
+      await store.deleteFolder(id);
       if (!mounted) {
         return;
       }
