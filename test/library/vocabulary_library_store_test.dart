@@ -12,9 +12,9 @@ void main() {
     'A2 vocabulary',
     'German B1 vocabulary',
     'das Auto fahren',
-    'student',
-    'Love vocabulary',
-    'Practice "love"',
+    'diagnosis',
+    'Healthcare',
+    'Practice "diagnosis"',
   ];
 
   Future<SharedPreferencesVocabularyLibraryStore> open(

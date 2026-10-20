@@ -54,17 +54,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  void expectHomeCopy({required String heading, required String save}) {
+  void expectHomeCopy({required String heading}) {
     expect(find.text(heading), findsOneWidget);
-    expect(find.text(save), findsOneWidget);
-    expect(find.text('student'), findsWidgets);
+    expect(find.byKey(const Key('suggestion-speak')), findsOneWidget);
+    expect(find.text('Save'), findsNothing);
+    expect(find.text('diagnosis'), findsWidgets);
     expect(find.text('5/20'), findsNothing);
   }
 
   testWidgets('a Vietnamese device still starts in English', (tester) async {
     await pumpApp(tester, deviceLocale: const Locale('vi'));
 
-    expectHomeCopy(heading: 'Hot search', save: 'Save');
+    expectHomeCopy(heading: 'Hot search');
     expect(
       MaterialLocalizations.of(tester.element(find.byType(VocabularyHome)))
           .backButtonTooltip,
@@ -75,7 +76,7 @@ void main() {
   testWidgets('a German device still starts in English', (tester) async {
     await pumpApp(tester, deviceLocale: const Locale('de'));
 
-    expectHomeCopy(heading: 'Hot search', save: 'Save');
+    expectHomeCopy(heading: 'Hot search');
   });
 
   testWidgets('the language menu switches copy in place and keeps the sample', (
@@ -83,7 +84,7 @@ void main() {
   ) async {
     await pumpApp(tester, deviceLocale: const Locale('vi'));
 
-    expectHomeCopy(heading: 'Hot search', save: 'Save');
+    expectHomeCopy(heading: 'Hot search');
 
     await openMenu(tester);
     expect(find.byType(PopupMenuItem<Object>), findsNWidgets(11));
@@ -107,7 +108,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(VocabularyHome), findsOneWidget);
-    expectHomeCopy(heading: 'Tìm kiếm nổi bật', save: 'Lưu từ');
+    expectHomeCopy(heading: 'Tìm kiếm nổi bật');
     expect(
       MaterialLocalizations.of(tester.element(find.byType(VocabularyHome)))
           .backButtonTooltip,
@@ -119,7 +120,7 @@ void main() {
     await tester.tap(find.text('Deutsch'));
     await tester.pumpAndSettle();
 
-    expectHomeCopy(heading: 'Beliebte Suche', save: 'Speichern');
+    expectHomeCopy(heading: 'Beliebte Suche');
     expect(
       MaterialLocalizations.of(tester.element(find.byType(VocabularyHome)))
           .backButtonTooltip,
@@ -128,11 +129,11 @@ void main() {
 
     await choose(tester, 'English');
 
-    expectHomeCopy(heading: 'Hot search', save: 'Save');
+    expectHomeCopy(heading: 'Hot search');
     await openMenu(tester);
     expectOnlyChecked('English');
     await tester.tap(find.text('Upgrade'));
     await tester.pumpAndSettle();
-    expectHomeCopy(heading: 'Hot search', save: 'Save');
+    expectHomeCopy(heading: 'Hot search');
   });
 }

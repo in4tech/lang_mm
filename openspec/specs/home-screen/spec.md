@@ -71,7 +71,7 @@ When the loaded library has folders and the user has no stored word mark, Recent
 - **AND** Recent does not show "The process is 25% complete.", "The process is 50% complete.", or "The process is 93% complete."
 
 ### Requirement: Home actions stay on the home screen
-Activating search, Notification, All, a hot-search chip, Save, or a suggestion row SHALL leave the user on the vocabulary home, SHALL keep Home selected, and SHALL NOT add or remove folders, sets, or words. When the practice queue is empty, activating Practice SHALL do the same. Activating New vocab SHALL open the word editor. Activating Library in the sidebar SHALL open the library page.
+Activating search, Notification, All, a hot-search chip, a Suggested sets row, a Suggested practice row, or the featured-word speak control SHALL leave the user on the vocabulary home, SHALL keep Home selected, and SHALL NOT add or remove folders, sets, or words. A chip or suggestion row MAY change only the empty-home preview. When the practice queue is empty, activating Practice SHALL leave the user on the vocabulary home without writing the library. Activating New vocab SHALL open the word editor. Activating Library in the sidebar SHALL open the library page.
 
 #### Scenario: Practice does not leave home
 - **WHEN** the user activates Practice on the vocabulary home, the loaded library has a folder, the practice queue is empty, and the user has no stored level
@@ -86,21 +86,15 @@ Activating search, Notification, All, a hot-search chip, Save, or a suggestion r
 - **AND** the header and the sidebar remain
 - **AND** "Add new word" and "Enter term" are shown
 - **AND** "Find your vocab..." and "Home" are shown
-- **AND** "Hot search" and "student" are not shown
+- **AND** "Hot search" and "diagnosis" are not shown
 
 #### Scenario: New vocab does not create a set
 - **WHEN** the user activates New vocab on the vocabulary home, the loaded library has no folders, and the user activates Done
 - **THEN** the vocabulary home is shown
 - **AND** Home stays selected
 - **AND** the sidebar still shows no folder name and no set name
-- **AND** "Hot search" and "student" are still shown
+- **AND** "Hot search" and "diagnosis" are still shown
 - **AND** the library still has no folders
-
-#### Scenario: Save does not store the suggested word
-- **WHEN** the user activates Save on the empty vocabulary home
-- **THEN** the vocabulary home remains
-- **AND** the library still has no folders
-- **AND** "student" is still shown
 
 ### Requirement: Avatar opens the language component
 Activating the avatar SHALL open the language component on the vocabulary home.
@@ -131,7 +125,7 @@ When the loaded library has pinned folders, the sidebar SHALL show each pinned f
 #### Scenario: Unreadable library shows the empty home
 - **WHEN** the saved vocabulary library cannot be read and the vocabulary home is shown in English
 - **THEN** the sidebar shows no folder name
-- **AND** "Hot search" and "student" are shown
+- **AND** "Hot search" and "diagnosis" are shown
 - **AND** "0/0" is not shown
 
 ### Requirement: Adding a folder opens that folder
@@ -206,11 +200,13 @@ Activating Library in the sidebar SHALL show the library page. This SHALL happen
 - **AND** the folder page is not shown
 
 ### Requirement: Empty home shows the suggestion columns
-When the loaded library has no folders, the main area SHALL show a left suggestion column and a right suggestion column. It SHALL NOT show "Your vocabulary statistics", "Today's vocabulary", Recent, "0/0", or "Practice". On a viewport at least 1440 wide, the columns sit side by side. On a narrower viewport, the left column's content is above the right column's content.
+When the loaded library has no folders, the main area SHALL show a left suggestion column and a right suggestion column. It SHALL NOT show "Your vocabulary statistics", "Today's vocabulary", Recent, "0/0", or "Practice". On a viewport at least 1440 wide, the columns sit side by side. On a narrower viewport, the left column's content is above the right column's content. The empty home SHALL open with Healthcare selected and "diagnosis" as the featured word.
 
 #### Scenario: English empty home hides the dashboard
 - **WHEN** the vocabulary home is shown in English and the loaded library has no folders
-- **THEN** "Hot search", "Suggested sets", "student", "Save", and "Suggested practice" are shown
+- **THEN** "Hot search", "Suggested sets", "Healthcare", "diagnosis", and "Suggested practice" are shown
+- **AND** the featured-word speak control is shown
+- **AND** Save is not shown
 - **AND** "Your vocabulary statistics", "Today's vocabulary", "Recent", "0/0", and "Practice" are not shown
 
 #### Scenario: Wide empty home places the columns side by side
@@ -223,32 +219,70 @@ When the loaded library has no folders, the main area SHALL show a left suggesti
 - **AND** "Suggested sets" is above "Suggested practice"
 
 ### Requirement: Hot search lists the fixed chips
-The empty home SHALL show these chips in order: love, study, work, student, counterrevolutionaries, synchronization, internationalization.
+The empty home SHALL show these chips in order: diagnosis, deploy, invoice, check-in, conversion, curriculum, liability, shipment, wireframe, ticket.
 
 #### Scenario: English hot-search chips
 - **WHEN** the empty vocabulary home is shown in English
 - **THEN** those chips are shown in that order
 
 ### Requirement: Suggested sets list the fixed rows
-Under "Suggested sets", the empty home SHALL show these rows in order: Love vocabulary, Study vocabulary, Work vocabulary, Student vocabulary, Daily vocabulary.
+Under "Suggested sets", the empty home SHALL show these rows in order: Healthcare, Software Engineering, Finance & Banking, Hospitality & Tourism, Marketing & Sales, Education & Teaching, Law & Legal, Logistics & Supply Chain, Design & Creative, Customer Support. Each row SHALL show that pack's word count.
 
 #### Scenario: English suggested sets
 - **WHEN** the empty vocabulary home is shown in English
-- **THEN** those five rows are shown in that order
+- **THEN** those ten rows are shown in that order
+- **AND** each row shows a word count
 
 ### Requirement: Suggested word shows student
-The empty home SHALL show student, "UK /ˈstjuːdnt/", "US /ˈstuːdnt/", "a person who is studying at a university or college", 80, and Save.
+The empty home SHALL show the featured word's term, a speak control for that term, UK IPA line, US IPA line, and gloss. It SHALL NOT show Save or a saves count. The default featured word SHALL be diagnosis with UK IPA, US IPA, and gloss "the identification of an illness or problem".
 
 #### Scenario: English suggested word
 - **WHEN** the empty vocabulary home is shown in English
-- **THEN** student, "/ˈstjuːdnt/", "/ˈstuːdnt/", that gloss, 80, and Save are shown
+- **THEN** diagnosis, its UK IPA, its US IPA, that gloss, and the speak control are shown
+- **AND** Save is not shown
 
 ### Requirement: Suggested practice lists the fixed rows
-Under "Suggested practice", the empty home SHALL show these rows in order: Practice "love", Practice "study", Practice "work", Practice "student", Practice "synchronization".
+Under "Suggested practice", the empty home SHALL show these rows in order: Practice "diagnosis", Practice "deploy", Practice "invoice", Practice "check-in", Practice "conversion", Practice "curriculum", Practice "liability", Practice "shipment", Practice "wireframe", Practice "ticket".
 
 #### Scenario: English suggested practice
 - **WHEN** the empty vocabulary home is shown in English
-- **THEN** those five rows are shown in that order
+- **THEN** those ten rows are shown in that order
+
+### Requirement: A career set opens a preview
+On the empty home, activating a Suggested sets row SHALL select that career pack and show its preview on the right: the pack name, every term in pack order, and the featured word card for the first term of that pack. The library SHALL stay empty. The user SHALL stay on the vocabulary home with Home selected.
+
+#### Scenario: Healthcare preview
+- **WHEN** the empty vocabulary home is shown and the user activates "Healthcare"
+- **THEN** the right column shows "Healthcare"
+- **AND** it shows the Healthcare terms including "diagnosis" and "prescription"
+- **AND** the featured word shows "diagnosis"
+- **AND** the library still has no folders
+
+### Requirement: A hot-search chip previews its pack
+On the empty home, activating a hot-search chip SHALL select the career pack that owns that chip's term, show that pack's preview, and set the featured word to that term. The library SHALL stay empty.
+
+#### Scenario: deploy chip opens Software Engineering
+- **WHEN** the empty vocabulary home is shown and the user activates the "deploy" chip
+- **THEN** the right column shows "Software Engineering"
+- **AND** the featured word shows "deploy"
+- **AND** the library still has no folders
+
+### Requirement: Suggested practice previews its pack
+On the empty home, activating a Suggested practice row SHALL select the career pack that owns that practice term, show that pack's preview, and set the featured word to that term. The library SHALL stay empty.
+
+#### Scenario: Practice diagnosis opens Healthcare
+- **WHEN** the empty vocabulary home is shown and the user activates Practice "diagnosis"
+- **THEN** the right column shows "Healthcare"
+- **AND** the featured word shows "diagnosis"
+- **AND** the library still has no folders
+
+### Requirement: A preview term becomes the featured word
+While a career pack preview is showing, activating a listed term SHALL set the featured word card to that term's IPA lines, gloss, and saves count, and SHALL NOT change the library.
+
+#### Scenario: Select prescription in Healthcare
+- **WHEN** the empty home is previewing Healthcare and the user activates "prescription"
+- **THEN** the featured word shows "prescription"
+- **AND** the library still has no folders
 
 ### Requirement: Wide home stays at the design width
 When the vocabulary home viewport is at least 1440 wide, the header SHALL fill that width and the sidebar SHALL sit on the left. The main content SHALL keep the width it has in the 1440 design, centered on the viewport. Collapsing or opening the sidebar SHALL NOT change that width or that position, and the sidebar SHALL keep its open width. That content SHALL NOT scale to the viewport. Width beyond the content SHALL be empty on its left and right, with no advertisement.

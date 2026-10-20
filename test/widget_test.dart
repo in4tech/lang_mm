@@ -11,7 +11,7 @@ void main() {
 
     expect(find.text('Hot search'), findsOneWidget);
     expect(find.text('Find your vocab...'), findsOneWidget);
-    expect(find.text('student'), findsWidgets);
+    expect(find.text('diagnosis'), findsWidgets);
     expect(find.text('5/20'), findsNothing);
     expect(
       find.text('You have pushed the button this many times:'),

@@ -50,9 +50,9 @@ void main() {
 
   void expectSuggestions({required String heading}) {
     expect(find.text(heading), findsOneWidget);
-    expect(find.text('student'), findsWidgets);
-    expect(find.text('love'), findsOneWidget);
-    expect(find.text('Love vocabulary'), findsOneWidget);
+    expect(find.text('diagnosis'), findsWidgets);
+    expect(find.text('deploy'), findsWidgets);
+    expect(find.text('Healthcare'), findsWidgets);
     expect(find.text('0/0'), findsNothing);
     expect(find.text('German A1 vocabulary'), findsNothing);
     expect(find.text('das Auto fahren'), findsNothing);

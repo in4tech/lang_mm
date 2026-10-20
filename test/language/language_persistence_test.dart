@@ -24,21 +24,24 @@ void main() {
     await launch(tester, <String, Object>{AppLanguage.storageKey: 'de'});
 
     expect(find.text('Beliebte Suche'), findsOneWidget);
-    expect(find.text('Speichern'), findsOneWidget);
+    expect(find.byKey(const Key('suggestion-speak')), findsOneWidget);
+    expect(find.text('Speichern'), findsNothing);
   });
 
   testWidgets('saved vi opens in Vietnamese', (tester) async {
     await launch(tester, <String, Object>{AppLanguage.storageKey: 'vi'});
 
     expect(find.text('Tìm kiếm nổi bật'), findsOneWidget);
-    expect(find.text('Lưu từ'), findsOneWidget);
+    expect(find.byKey(const Key('suggestion-speak')), findsOneWidget);
+    expect(find.text('Lưu từ'), findsNothing);
   });
 
   testWidgets('an unsupported saved code opens in English', (tester) async {
     await launch(tester, <String, Object>{AppLanguage.storageKey: 'fr'});
 
     expect(find.text('Hot search'), findsOneWidget);
-    expect(find.text('Save'), findsOneWidget);
+    expect(find.byKey(const Key('suggestion-speak')), findsOneWidget);
+    expect(find.text('Save'), findsNothing);
   });
 
   testWidgets('selecting German is restored on the next start', (tester) async {
@@ -57,6 +60,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Beliebte Suche'), findsOneWidget);
-    expect(find.text('Speichern'), findsOneWidget);
+    expect(find.byKey(const Key('suggestion-speak')), findsOneWidget);
+    expect(find.text('Speichern'), findsNothing);
   });
 }

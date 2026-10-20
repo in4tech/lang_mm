@@ -135,7 +135,7 @@ Changing language SHALL NOT reset the vocabulary home already on screen. Folder 
 #### Scenario: Sample home survives a language change
 - **WHEN** the vocabulary home shows an empty library and the user selects German
 - **THEN** the sidebar still has no folder name
-- **AND** "student", "love", and "Love vocabulary" are still shown
+- **AND** "diagnosis", "deploy", and "Healthcare" are still shown
 - **AND** "German A1 vocabulary" and "das Auto fahren" are not shown
 - **AND** "0/0" is not shown
 - **AND** the home shows "Beliebte Suche"
@@ -149,22 +149,25 @@ Changing language SHALL NOT reset the vocabulary home already on screen. Folder 
 - **AND** the vocabulary home chrome is Vietnamese
 
 ### Requirement: Suggestion chrome exists in every language
-"Hot search", "Suggested sets", "Suggested practice", "Save", and the saves count SHALL have copy in Vietnamese, English, and German. The suggestion template words SHALL stay English in every language.
+"Hot search", "Suggested sets", and "Suggested practice" SHALL have copy in Vietnamese, English, and German. The suggestion template words SHALL stay English in every language. The empty-home suggestion preview SHALL NOT require Save or saves-count chrome.
 
 #### Scenario: English suggestion chrome
 - **WHEN** the empty vocabulary home is shown in English
-- **THEN** it shows "Hot search", "Suggested sets", "Suggested practice", "Save", and "80 saves"
-- **AND** it shows "student" and "Love vocabulary"
+- **THEN** it shows "Hot search", "Suggested sets", and "Suggested practice"
+- **AND** it shows "diagnosis" and "Healthcare"
+- **AND** Save is not shown
 
 #### Scenario: German suggestion chrome
 - **WHEN** the empty vocabulary home is shown in German
-- **THEN** it shows "Beliebte Suche", "Vorgeschlagene Sets", "Vorgeschlagenes Üben", "Speichern", and "80 Mal gespeichert"
-- **AND** it shows "student" and "Love vocabulary"
+- **THEN** it shows "Beliebte Suche", "Vorgeschlagene Sets", and "Vorgeschlagenes Üben"
+- **AND** it shows "diagnosis" and "Healthcare"
+- **AND** "Speichern" is not shown on the suggestion preview
 
 #### Scenario: Vietnamese suggestion chrome
 - **WHEN** the empty vocabulary home is shown in Vietnamese
-- **THEN** it shows "Tìm kiếm nổi bật", "Bộ từ gợi ý", "Luyện tập gợi ý", "Lưu từ", and "80 Lượt lưu"
-- **AND** it shows "student" and "Love vocabulary"
+- **THEN** it shows "Tìm kiếm nổi bật", "Bộ từ gợi ý", and "Luyện tập gợi ý"
+- **AND** it shows "diagnosis" and "Healthcare"
+- **AND** "Lưu từ" is not shown on the suggestion preview
 
 ### Requirement: Word editor chrome exists in every language
 The word editor chrome SHALL have copy in Vietnamese, English, and German. Chrome is the back label, Done, the set title and description, Import, the word fields, Details, Type, Chunking, Noun, Verb, Adj, and Add new word. The custom-type dialog SHALL say "Add type" and "Enter type" in English, "Thêm loại" and "Nhập loại" in Vietnamese, and "Typ hinzufügen" and "Typ eingeben" in German. Chunking and IPA stay those words in every language.

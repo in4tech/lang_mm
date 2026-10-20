@@ -214,18 +214,37 @@ void main() {
   testWidgets('a fresh launch shows suggestion templates', (tester) async {
     await pumpApp(tester);
 
+    expect(SuggestionTemplates.packs, hasLength(10));
+    expect(SuggestionTemplates.packs.first.title, 'Healthcare');
+    expect(SuggestionTemplates.packs.first.lead.term, 'diagnosis');
+    expect(
+      SuggestionTemplates.chips,
+      <String>[
+        'diagnosis',
+        'deploy',
+        'invoice',
+        'check-in',
+        'conversion',
+        'curriculum',
+        'liability',
+        'shipment',
+        'wireframe',
+        'ticket',
+      ],
+    );
+
     expect(find.text('Hot search'), findsOneWidget);
     expect(find.text('Suggested sets'), findsOneWidget);
     expect(find.text('Suggested practice'), findsOneWidget);
-    expect(find.text('Save'), findsOneWidget);
-    expect(find.text('80 saves'), findsOneWidget);
-    expect(find.text('UK /ˈstjuːdnt/'), findsOneWidget);
-    expect(find.text('US /ˈstuːdnt/'), findsOneWidget);
-    expect(
-      find.text('a person who is studying at a university or college'),
-      findsOneWidget,
-    );
-    expect(find.text('student'), findsNWidgets(2));
+    expect(find.text('Save'), findsNothing);
+    expect(find.byKey(const Key('suggestion-speak')), findsOneWidget);
+    expect(find.byKey(const Key('suggestion-save')), findsNothing);
+    expect(find.text('Healthcare'), findsWidgets);
+    expect(find.text('12 words'), findsWidgets);
+    expect(find.text(SuggestionTemplates.uk), findsOneWidget);
+    expect(find.text(SuggestionTemplates.us), findsOneWidget);
+    expect(find.text(SuggestionTemplates.gloss), findsOneWidget);
+    expect(find.text('diagnosis'), findsWidgets);
     expect(find.text('Your vocabulary statistics'), findsNothing);
     expect(find.text("Today's vocabulary"), findsNothing);
     expect(find.text('Recent'), findsNothing);
@@ -236,7 +255,8 @@ void main() {
     expect(find.text('German A1 vocabulary'), findsNothing);
     expect(find.byIcon(Icons.expand_less), findsNothing);
 
-    var previous = tester.getTopLeft(find.byKey(const Key('hot-chip-love')));
+    var previous =
+        tester.getTopLeft(find.byKey(const Key('hot-chip-diagnosis')));
     for (final chip in SuggestionTemplates.chips.skip(1)) {
       final offset = tester.getTopLeft(find.byKey(Key('hot-chip-$chip')));
       final below = offset.dy > previous.dy + 1;
@@ -246,7 +266,7 @@ void main() {
       previous = offset;
     }
     for (var index = 0; index < SuggestionTemplates.sets.length; index++) {
-      expect(find.text(SuggestionTemplates.sets[index]), findsOneWidget);
+      expect(find.text(SuggestionTemplates.sets[index]), findsWidgets);
       if (index > 0) {
         expect(
           tester.getTopLeft(find.byKey(Key('suggestion-set-$index'))).dy,
@@ -282,28 +302,21 @@ void main() {
     expect(find.byType(HomeHeader), findsOneWidget);
     expect(find.byType(HomeSidebar), findsOneWidget);
     expect(find.text('Hot search'), findsNothing);
-    expect(find.text('student'), findsNothing);
+    expect(find.text('diagnosis'), findsNothing);
 
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Required'), findsNWidgets(2));
     expect(find.text('Add new word'), findsOneWidget);
+    expect(find.text('Hot search'), findsNothing);
 
     await tester.tap(find.byKey(const Key('word-editor-back')));
     await tester.pumpAndSettle();
 
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Hot search'), findsOneWidget);
-    expect(find.text('student'), findsNWidgets(2));
+    expect(find.text('diagnosis'), findsWidgets);
     var preferences = await SharedPreferences.getInstance();
-    expect(preferences.getString(VocabularyLibraryStore.storageKey), isNull);
-
-    await tester.tap(find.byKey(const Key('suggestion-save')));
-    await tester.pump();
-
-    expect(find.text('student'), findsNWidgets(2));
-    preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(VocabularyLibraryStore.storageKey), isNull);
 
     await openEditor(tester);
@@ -311,9 +324,41 @@ void main() {
     await tester.tap(find.byKey(const Key('word-editor-back')));
     await tester.pumpAndSettle();
 
-    expect(find.text('student'), findsNWidgets(2));
+    expect(find.text('diagnosis'), findsWidgets);
     expect(find.text('Hot search'), findsOneWidget);
     preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString(VocabularyLibraryStore.storageKey), isNull);
+  });
+
+  testWidgets('suggestion preview updates without writing the library', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byKey(const Key('suggestion-set-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Software Engineering'), findsWidgets);
+    expect(find.text('deploy'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('hot-chip-deploy')));
+    await tester.pumpAndSettle();
+    expect(find.text(SuggestionTemplates.packs[1].lead.gloss), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('suggestion-practice-0')));
+    await tester.pumpAndSettle();
+    expect(find.text(SuggestionTemplates.gloss), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('suggestion-term-1')));
+    await tester.tap(find.byKey(const Key('suggestion-term-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('prescription'), findsWidgets);
+    expect(
+      find.text('a written order for medicine from a doctor'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('suggestion-speak')), findsOneWidget);
+
+    final preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(VocabularyLibraryStore.storageKey), isNull);
   });
 
@@ -688,7 +733,7 @@ void main() {
     expect(find.text('German A1'), findsOneWidget);
     expect(find.text('0/0'), findsOneWidget);
     expect(find.text('Hot search'), findsNothing);
-    expect(find.text('student'), findsNothing);
+    expect(find.text('diagnosis'), findsNothing);
     final raw = (await SharedPreferences.getInstance()).getString(
       VocabularyLibraryStore.storageKey,
     );
@@ -1687,45 +1732,30 @@ void main() {
     expect(find.text('das Auto fahren'), findsWidgets);
   });
 
-  testWidgets('random slides between words and one word stays', (tester) async {
+  testWidgets('random mixes quiz then typing without browse arrows', (
+    tester,
+  ) async {
+    // Full Random mix coverage lives in random_practice_test.dart; this
+    // replaces the old browse/slide Random assertion on the home study path.
     await pumpApp(
       tester,
       library: _libraryOf(<_NamedSet>[
-        _NamedSet('German A1', <VocabularyWord>[_kind, _haus]),
+        _NamedSet('German A1', <VocabularyWord>[_kind, _haus], id: 'setA'),
       ]),
+      studyProgress: _MemoryProgress()
+        ..levels['setA'] = <int, StudyWordState>{
+          0: StudyWordState(level: 1, dueAt: DateTime(2020)),
+          1: StudyWordState(level: 1, dueAt: DateTime(2020)),
+        },
+      disableAnimations: true,
     );
     await _openSet(tester);
-    await _startNew(tester);
-
+    await _startPractice(tester);
     await tester.tap(find.byKey(const Key('set-study-mode-random')));
     await tester.pumpAndSettle();
-    expect(_cardText('Kind'), findsOneWidget);
-    expect(_cardText('child'), findsOneWidget);
-    expect(find.byKey(const Key('set-study-peek')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('set-study-card-tap')));
-    await tester.pumpAndSettle();
-    expect(_cardText('Kind'), findsOneWidget);
-    expect(_cardText('child'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('set-study-next')));
-    await tester.pumpAndSettle();
-    expect(_cardText('Haus'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('set-study-prev')));
-    await tester.pumpAndSettle();
-    expect(_cardText('Kind'), findsOneWidget);
-
-    await pumpApp(tester, library: _libraryOf(<_NamedSet>[
-      _NamedSet('German A1', <VocabularyWord>[_kind]),
-    ]));
-    await _openSet(tester);
-    await _startNew(tester);
-    await tester.tap(find.byKey(const Key('set-study-mode-random')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('set-study-next')));
-    await tester.pumpAndSettle();
-    expect(_cardText('Kind'), findsOneWidget);
+    expect(find.byKey(const Key('set-study-next')), findsNothing);
+    expect(find.byKey(const Key('set-study-prev')), findsNothing);
+    expect(find.byKey(const Key('set-study-peek')), findsNothing);
   });
 
   testWidgets('ratings are stored and flashcard advances', (tester) async {

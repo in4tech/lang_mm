@@ -20,6 +20,9 @@ import 'package:lang/theme/home_text.dart';
 
 enum _PracticeMode { random, flashcard, quiz, typing }
 
+/// Exercise drawn under Random practice (injectable for tests).
+enum PracticeExercise { flashcard, quiz, typing }
+
 enum _ListFilter { all, learning, mastered }
 
 class SetStudyPage extends StatefulWidget {
@@ -39,6 +42,7 @@ class SetStudyPage extends StatefulWidget {
     this.statisticsAll = true,
     this.endPractice = 0,
     this.quizTone,
+    this.drawExercise,
   });
 
   final VocabularySet set;
@@ -55,6 +59,7 @@ class SetStudyPage extends StatefulWidget {
   final bool statisticsAll;
   final int endPractice;
   final QuizTone? quizTone;
+  final PracticeExercise Function()? drawExercise;
 
   @override
   State<SetStudyPage> createState() => _SetStudyPageState();
@@ -63,6 +68,7 @@ class SetStudyPage extends StatefulWidget {
 class _SetStudyPageState extends State<SetStudyPage> {
   final _typing = TextEditingController();
   var _mode = _PracticeMode.flashcard;
+  PracticeExercise? _exercise;
   var _practicing = false;
   var _filter = _ListFilter.all;
   var _cursor = 0;
@@ -316,6 +322,34 @@ class _SetStudyPageState extends State<SetStudyPage> {
     widget.onWordsChanged?.call(_shown);
   }
 
+  _PracticeMode get _exerciseMode {
+    if (_mode != _PracticeMode.random) {
+      return _mode;
+    }
+    return switch (_exercise ?? PracticeExercise.flashcard) {
+      PracticeExercise.flashcard => _PracticeMode.flashcard,
+      PracticeExercise.quiz => _PracticeMode.quiz,
+      PracticeExercise.typing => _PracticeMode.typing,
+    };
+  }
+
+  PracticeExercise _pickExercise() {
+    final draw = widget.drawExercise;
+    if (draw != null) {
+      return draw();
+    }
+    const options = PracticeExercise.values;
+    return options[math.Random().nextInt(options.length)];
+  }
+
+  void _applyRandomDraw() {
+    if (_mode != _PracticeMode.random || _finished) {
+      return;
+    }
+    _exercise = _pickExercise();
+    _clearQuiz();
+  }
+
   void _begin(List<StudyCue> order) {
     if (_browseOrder == null) {
       _browseOrder = List<StudyCue>.from(_order);
@@ -323,6 +357,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
     }
     _practicing = true;
     _mode = _PracticeMode.flashcard;
+    _exercise = null;
     _order = order;
     _cursor = 0;
     _place = 1;
@@ -349,6 +384,11 @@ class _SetStudyPageState extends State<SetStudyPage> {
       _finished = false;
       _begin(List<StudyCue>.from(cues));
       _mode = mode;
+      if (mode == _PracticeMode.random) {
+        _exercise = _pickExercise();
+      } else {
+        _exercise = null;
+      }
     });
     widget.onPracticing?.call(true);
   }
@@ -399,7 +439,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   void _syncQuiz() {
-    if (_mode != _PracticeMode.quiz) {
+    if (_exerciseMode != _PracticeMode.quiz) {
       return;
     }
     final cue = _current;
@@ -431,7 +471,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   void _chooseQuiz(int index) {
-    if (_quizResult != null || _mode != _PracticeMode.quiz) {
+    if (_quizResult != null || _exerciseMode != _PracticeMode.quiz) {
       return;
     }
     final cue = _current;
@@ -455,7 +495,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   void _checkTyping() {
-    if (_quizResult != null || _mode != _PracticeMode.typing) {
+    if (_quizResult != null || _exerciseMode != _PracticeMode.typing) {
       return;
     }
     final cue = _current;
@@ -476,7 +516,8 @@ class _SetStudyPageState extends State<SetStudyPage> {
     if (_quizResult != null) {
       return;
     }
-    if (_mode != _PracticeMode.quiz && _mode != _PracticeMode.typing) {
+    if (_exerciseMode != _PracticeMode.quiz &&
+        _exerciseMode != _PracticeMode.typing) {
       return;
     }
     final animate = !MediaQuery.disableAnimationsOf(context);
@@ -518,6 +559,11 @@ class _SetStudyPageState extends State<SetStudyPage> {
       }
       _clearQuiz();
       _mode = mode;
+      if (mode == _PracticeMode.random) {
+        _exercise = _pickExercise();
+      } else {
+        _exercise = null;
+      }
       _typing.clear();
       _faceToken += 1;
     });
@@ -532,13 +578,15 @@ class _SetStudyPageState extends State<SetStudyPage> {
       _faceToken += 1;
       _advance();
       _typing.clear();
+      _applyRandomDraw();
     });
   }
 
   void _rate(StudyAction action) {
+    final exercise = _exerciseMode;
     final graded =
-        _mode == _PracticeMode.quiz || _mode == _PracticeMode.typing;
-    if (_mode != _PracticeMode.flashcard && !graded) {
+        exercise == _PracticeMode.quiz || exercise == _PracticeMode.typing;
+    if (exercise != _PracticeMode.flashcard && !graded) {
       return;
     }
     if (graded && (_quizResult == null || !_quizSettled)) {
@@ -580,6 +628,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
         _faceToken += 1;
         _advance();
         _typing.clear();
+        _applyRandomDraw();
       }
     });
     final id = cue.setId;
@@ -590,9 +639,10 @@ class _SetStudyPageState extends State<SetStudyPage> {
   }
 
   void _skipNew() {
+    final exercise = _exerciseMode;
     final graded =
-        _mode == _PracticeMode.quiz || _mode == _PracticeMode.typing;
-    if (_mode != _PracticeMode.flashcard && !graded) {
+        exercise == _PracticeMode.quiz || exercise == _PracticeMode.typing;
+    if (exercise != _PracticeMode.flashcard && !graded) {
       return;
     }
     if (graded && (_quizResult == null || !_quizSettled)) {
@@ -610,6 +660,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
       _faceToken += 1;
       _advance();
       _typing.clear();
+      _applyRandomDraw();
     });
   }
 
@@ -676,6 +727,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
     final practice = _PracticeColumn(
       set: _shown,
       mode: _mode,
+      exerciseMode: _exerciseMode,
       filter: _filter,
       current: cue,
       peek: peek,
@@ -766,6 +818,7 @@ class _PracticeColumn extends StatelessWidget {
   const _PracticeColumn({
     required this.set,
     required this.mode,
+    required this.exerciseMode,
     required this.filter,
     required this.current,
     required this.peek,
@@ -802,6 +855,7 @@ class _PracticeColumn extends StatelessWidget {
 
   final VocabularySet set;
   final _PracticeMode mode;
+  final _PracticeMode exerciseMode;
   final _ListFilter filter;
   final StudyCue? current;
   final VocabularyWord? peek;
@@ -927,7 +981,7 @@ class _PracticeColumn extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          if (mode == _PracticeMode.quiz && cue != null)
+          if (exerciseMode == _PracticeMode.quiz && cue != null)
             QuizCard(
               termLabel: localizations.editorTerm,
               term: cue.word.term,
@@ -952,7 +1006,7 @@ class _PracticeColumn extends StatelessWidget {
               onDontKnow: onQuizDontKnow,
               onSettled: onQuizSettled,
             )
-          else if (mode == _PracticeMode.typing && cue != null)
+          else if (exerciseMode == _PracticeMode.typing && cue != null)
             TypingCard(
               word: cue.word,
               controller: typing,
@@ -971,11 +1025,11 @@ class _PracticeColumn extends StatelessWidget {
             _FlashcardStage(
               word: word,
               peek: peek,
-              mode: mode,
+              mode: _PracticeMode.flashcard,
               onStep: onStep,
               faceToken: faceToken,
               newWord:
-                  mode == _PracticeMode.flashcard &&
+                  exerciseMode == _PracticeMode.flashcard &&
                   (cue == null || !levels.containsKey(cue.index)),
               onSkip: onSkip,
               onStudied: () => onRate(StudyAction.studied),
@@ -983,7 +1037,8 @@ class _PracticeColumn extends StatelessWidget {
               onExitComplete: onExitComplete,
             ),
           const SizedBox(height: 24),
-          if ((mode == _PracticeMode.quiz || mode == _PracticeMode.typing) &&
+          if ((exerciseMode == _PracticeMode.quiz ||
+                  exerciseMode == _PracticeMode.typing) &&
               quizSettled &&
               cue != null)
             if (levels.containsKey(cue.index))
@@ -994,7 +1049,7 @@ class _PracticeColumn extends StatelessWidget {
                 onStudied: () => onRate(StudyAction.studied),
                 localizations: localizations,
               )
-          else if (mode == _PracticeMode.flashcard &&
+          else if (exerciseMode == _PracticeMode.flashcard &&
               cue != null &&
               levels.containsKey(cue.index))
             Row(
@@ -2071,20 +2126,7 @@ class _FlashcardStageState extends State<_FlashcardStage>
     if (widget.mode == _PracticeMode.flashcard) {
       return;
     }
-    if (widget.mode != _PracticeMode.random || widget.peek == null) {
-      widget.onStep(delta);
-      return;
-    }
-    if (_reduced) {
-      widget.onStep(delta);
-      return;
-    }
-    setState(() => _slideSign = delta.toDouble());
-    await _slide.forward(from: 0);
     widget.onStep(delta);
-    if (mounted) {
-      _slide.value = 0;
-    }
   }
 
   void _flipCard() {
@@ -2107,7 +2149,7 @@ class _FlashcardStageState extends State<_FlashcardStage>
   @override
   Widget build(BuildContext context) {
     final colors = HomePalette.of(context);
-    final showArrows = widget.mode != _PracticeMode.flashcard;
+    final showArrows = false;
     final localizations = AppLocalizations.of(context);
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
@@ -2164,9 +2206,7 @@ class _FlashcardStageState extends State<_FlashcardStage>
                               offset: Offset(slideX, 0),
                               child: _CardStack(
                                 word: widget.word,
-                                peek: widget.mode == _PracticeMode.random
-                                    ? widget.peek
-                                    : null,
+                                peek: null,
                                 mode: widget.mode,
                                 meaning: showMeaning,
                               ),
@@ -2279,18 +2319,8 @@ List<String> _cardLines({
       word.note,
     ]);
   }
-  if (mode == _PracticeMode.flashcard) {
+  if (mode == _PracticeMode.flashcard || mode == _PracticeMode.random) {
     return present(<String>[word.term, word.ipa]);
-  }
-  if (mode == _PracticeMode.random) {
-    return present(<String>[
-      word.term,
-      word.ipa,
-      word.singularPlural,
-      sentencePlain(word.sentence),
-      word.definition,
-      word.note,
-    ]);
   }
   if (mode == _PracticeMode.quiz) {
     return present(<String>[word.definition]);
@@ -2376,9 +2406,7 @@ class _Flashcard extends StatelessWidget {
     final current = word;
     final image = current?.imageUrl?.trim() ?? '';
     final showImage =
-        image.isNotEmpty &&
-        (mode == _PracticeMode.random ||
-            (mode == _PracticeMode.flashcard && !meaning));
+        image.isNotEmpty && mode == _PracticeMode.flashcard && !meaning;
     final lines = _cardLines(
       word: current,
       mode: mode,
