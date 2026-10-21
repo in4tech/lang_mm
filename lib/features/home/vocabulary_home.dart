@@ -85,12 +85,19 @@ class _HomeFrameState extends State<_HomeFrame> {
   String? _addSetsFolder;
   StudyHomeData _study = StudyHomeData.empty;
   var _allSets = true;
+  final _pageScroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _library = widget.library;
     _loadStudy();
+  }
+
+  @override
+  void dispose() {
+    _pageScroll.dispose();
+    super.dispose();
   }
 
   void _openEditor() {
@@ -278,7 +285,7 @@ class _HomeFrameState extends State<_HomeFrame> {
   }
 
   List<VocabularySet> _createdSets() {
-    final sets = <VocabularySet>[];
+    final sets = <VocabularySet>[..._library.unfiledSets];
     for (final folder in _library.folders) {
       for (var index = 0; index < folder.sets.length; index++) {
         final content = folder.contentAt(index);
@@ -368,6 +375,27 @@ class _HomeFrameState extends State<_HomeFrame> {
       if (_studyReturn) {
         _studying = true;
       }
+    });
+  }
+
+  void _keepTodayWord(String setId, int index, StudyWordState state) {
+    final current = _study.progress[setId];
+    final levels = Map<int, StudyWordState>.of(
+      current?.levels ?? const <int, StudyWordState>{},
+    );
+    levels[index] = state;
+    final progress = Map<String, StudySetProgress>.of(_study.progress);
+    progress[setId] = StudySetProgress(
+      marks: current?.marks ?? const <int, StudyMark>{},
+      levels: levels,
+      updatedAt: DateTime.now(),
+    );
+    final now = DateTime.now();
+    setState(() {
+      _study = StudyHomeData(
+        progress: progress,
+        agenda: choosePracticeQueue(studyInputs(_library, progress, now), now),
+      );
     });
   }
 
@@ -619,6 +647,20 @@ class _HomeFrameState extends State<_HomeFrame> {
   }
 
   Future<void> _addSetToLibraryFolder(String folderName, VocabularySet set) async {
+    final folderId = _folderNamed(folderName)?.id;
+    final setId = set.id;
+    final store = widget.setStore;
+    if (store != null &&
+        folderId != null &&
+        folderId.isNotEmpty &&
+        setId != null &&
+        setId.isNotEmpty) {
+      try {
+        await store.addSetToFolder(folderId, setId);
+      } catch (_) {
+        return;
+      }
+    }
     final next = _library.addSetToFolder(folderName, set);
     await _storeLibrary(next);
     if (!mounted) {
@@ -631,13 +673,7 @@ class _HomeFrameState extends State<_HomeFrame> {
     String folderName,
     int setIndex,
   ) async {
-    final preserveIn =
-        _library.editorFolder ?? AppLocalizations.of(context).vocabularySet;
-    final next = _library.removeSetFromFolder(
-      folderName,
-      setIndex,
-      preserveIn: preserveIn,
-    );
+    final next = _library.removeSetFromFolder(folderName, setIndex);
     await _storeLibrary(next);
     if (!mounted) {
       return;
@@ -660,12 +696,7 @@ class _HomeFrameState extends State<_HomeFrame> {
   Future<void> _persistSavedSet(VocabularySet set) async {
     final adding = _addSetsFolder;
     final next = adding == null
-        ? _library.addSavedSet(
-            name: set.title,
-            folderLabel: AppLocalizations.of(context).vocabularySet,
-            content: set,
-            folderId: set.folderId,
-          )
+        ? _library.addUnfiled(set)
         : _library.addSetToFolder(adding, set);
     _addSetsFolder = null;
     final preferences = await SharedPreferences.getInstance();
@@ -709,6 +740,7 @@ class _HomeFrameState extends State<_HomeFrame> {
           });
         },
         onWordsChanged: _saveWordStars,
+        onLevelSaved: _keepTodayWord,
       );
     }
     if (_editing) {
@@ -725,13 +757,16 @@ class _HomeFrameState extends State<_HomeFrame> {
             : _LibrarySavingSetStore(
                 inner: setStore,
                 onSaved: _persistSavedSet,
-                folderId: () => _editorFolderId(setStore),
+                folderId: _addSetsFolder == null
+                    ? null
+                    : () => _editorFolderId(setStore),
               ),
       );
     }
     if (_libraryOpen) {
       return LibraryPage(
         folders: _libraryFolders(dashboard),
+        unfiledSets: _library.unfiledSets,
         narrow: narrow,
         openFolder: _libraryFolder,
         onOpenFolder: (name) => setState(() {
@@ -852,25 +887,32 @@ class _HomeFrameState extends State<_HomeFrame> {
                                   ),
                                 ),
                               )
-                            : Scrollbar(
-                                child: SingleChildScrollView(
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: SizedBox(
-                                      key: const Key('home-canvas'),
-                                      width:
-                                          VocabularyHome.designWidth -
-                                          HomeSidebar.width,
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          32,
-                                          20,
-                                          46,
-                                          48,
-                                        ),
-                                        child: _center(
-                                          narrow: false,
-                                          dashboard: dashboard,
+                            : ScrollConfiguration(
+                                behavior: ScrollConfiguration.of(context)
+                                    .copyWith(scrollbars: false),
+                                child: Scrollbar(
+                                  controller: _pageScroll,
+                                  child: SingleChildScrollView(
+                                    controller: _pageScroll,
+                                    primary: false,
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: SizedBox(
+                                        key: const Key('home-canvas'),
+                                        width:
+                                            VocabularyHome.designWidth -
+                                            HomeSidebar.width,
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            32,
+                                            20,
+                                            46,
+                                            48,
+                                          ),
+                                          child: _center(
+                                            narrow: false,
+                                            dashboard: dashboard,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -936,21 +978,28 @@ class _HomeFrameState extends State<_HomeFrame> {
                         ),
                       )
                     else
-                      Scrollbar(
-                        child: SingleChildScrollView(
-                          child: SizedBox(
-                            key: const Key('home-canvas'),
-                            width: width,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                16,
-                                20,
-                                16,
-                                48,
-                              ),
-                              child: _center(
-                                narrow: true,
-                                dashboard: dashboard,
+                      ScrollConfiguration(
+                        behavior: ScrollConfiguration.of(context)
+                            .copyWith(scrollbars: false),
+                        child: Scrollbar(
+                          controller: _pageScroll,
+                          child: SingleChildScrollView(
+                            controller: _pageScroll,
+                            primary: false,
+                            child: SizedBox(
+                              key: const Key('home-canvas'),
+                              width: width,
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  20,
+                                  16,
+                                  48,
+                                ),
+                                child: _center(
+                                  narrow: true,
+                                  dashboard: dashboard,
+                                ),
                               ),
                             ),
                           ),
@@ -1116,12 +1165,12 @@ class _LibrarySavingSetStore implements VocabularySetStore {
   _LibrarySavingSetStore({
     required this.inner,
     required this.onSaved,
-    required this.folderId,
+    this.folderId,
   });
 
   final VocabularySetStore inner;
   final Future<void> Function(VocabularySet set) onSaved;
-  final Future<String> Function() folderId;
+  final Future<String> Function()? folderId;
 
   @override
   Future<String> createFolder(
@@ -1133,16 +1182,23 @@ class _LibrarySavingSetStore implements VocabularySetStore {
   }
 
   @override
-  Future<void> save(VocabularySet set) async {
-    final id = await folderId();
+  Future<String> save(VocabularySet set) async {
+    final folder = folderId;
+    final id = folder == null ? null : await folder();
     final stored = VocabularySet(
       title: set.title,
       description: set.description,
       words: set.words,
       folderId: id,
     );
-    await inner.save(stored);
-    await onSaved(stored);
+    final savedId = await inner.save(stored);
+    await onSaved(stored.withId(savedId));
+    return savedId;
+  }
+
+  @override
+  Future<void> addSetToFolder(String folderId, String setId) {
+    return inner.addSetToFolder(folderId, setId);
   }
 
   @override

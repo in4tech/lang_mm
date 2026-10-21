@@ -707,7 +707,7 @@ void main() {
     expect(store.createdFolders, isEmpty);
   });
 
-  testWidgets('done stores the set name in the editor folder', (tester) async {
+  testWidgets('done stores the set without creating a folder', (tester) async {
     final store = _RecordingStore();
     await pumpApp(tester, setStore: store);
 
@@ -724,26 +724,43 @@ void main() {
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Your vocabulary set'), findsNWidgets(2));
+    expect(find.text('Your vocabulary set'), findsOneWidget);
     expect(find.text('German A1'), findsNothing);
-    await tester.tap(
-      find.byKey(const Key('folder-toggle-Your vocabulary set')),
-    );
-    await tester.pump();
-    expect(find.text('German A1'), findsOneWidget);
-    expect(find.text('0/0'), findsOneWidget);
-    expect(find.text('Hot search'), findsNothing);
-    expect(find.text('diagnosis'), findsNothing);
+    expect(find.text('Hot search'), findsOneWidget);
+    expect(find.text('diagnosis'), findsOneWidget);
+    expect(find.text('0/0'), findsNothing);
     final raw = (await SharedPreferences.getInstance()).getString(
       VocabularyLibraryStore.storageKey,
     );
-    expect(raw, contains('"editorFolder":"Your vocabulary set"'));
+    expect(raw, isNot(contains('editorFolder')));
     expect(raw, contains('German A1'));
     expect(raw, contains('Kind'));
-    expect(raw, contains('folder-1'));
-    expect(store.saved.single.folderId, 'folder-1');
-    expect(store.createdFolders, <String>['Your vocabulary set']);
-    expect(store.editorFolders, <bool>[true]);
+    expect(store.saved, hasLength(1));
+    expect(store.saved.single.folderId, isNull);
+    expect(store.createdFolders, isEmpty);
+
+    await tester.tap(find.byKey(const Key('nav-library')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sidebar-add-folder')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('new-folder-name')), 'Travel');
+    await tester.tap(find.byKey(const Key('new-folder-create')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('library-folder-add-sets')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('German A1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('add-materials-add-unfiled-0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-materials-done')));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('library-folder-page')),
+        matching: find.text('German A1'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a failed store stays in the editor', (tester) async {
@@ -1750,6 +1767,8 @@ void main() {
       disableAnimations: true,
     );
     await _openSet(tester);
+    expect(find.text('Learn new vocab'), findsNothing);
+    expect(find.text('Today practice'), findsOneWidget);
     await _startPractice(tester);
     await tester.tap(find.byKey(const Key('set-study-mode-random')));
     await tester.pumpAndSettle();
@@ -1791,6 +1810,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('set-study-today-practice')), findsOneWidget);
     expect(find.byKey(const Key('set-study-mode-flashcard')), findsNothing);
+    await tester.tap(find.byKey(const Key('set-study-today-practice')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('set-study-mode-flashcard')), findsOneWidget);
+    expect(_cardText('Kind'), findsWidgets);
     await tester.tap(find.byKey(const Key('set-study-filter-mastered')));
     await tester.pump();
     expect(find.byKey(const Key('set-study-word-0')), findsOneWidget);
@@ -2633,12 +2656,13 @@ class _RecordingStore implements VocabularySetStore {
   }
 
   @override
-  Future<void> save(VocabularySet set) async {
+  Future<String> save(VocabularySet set) async {
     final error = this.error;
     if (error != null) {
       throw error;
     }
     saved.add(set);
+    return 'set-${saved.length}';
   }
 
   @override

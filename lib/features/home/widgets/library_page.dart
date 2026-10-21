@@ -10,6 +10,7 @@ class LibraryPage extends StatefulWidget {
   const LibraryPage({
     super.key,
     required this.folders,
+    this.unfiledSets = const <VocabularySet>[],
     required this.onOpenSet,
     this.openFolder,
     this.onOpenFolder,
@@ -23,6 +24,7 @@ class LibraryPage extends StatefulWidget {
   });
 
   final List<VocabularyFolder> folders;
+  final List<VocabularySet> unfiledSets;
   final void Function(String folderName, int setIndex) onOpenSet;
   final String? openFolder;
   final ValueChanged<String?>? onOpenFolder;
@@ -336,6 +338,7 @@ class _LibraryPageState extends State<LibraryPage> {
       context: context,
       folder: folder,
       folders: widget.folders,
+      unfiledSets: widget.unfiledSets,
       onAdd: (set) => widget.onAddSet?.call(folder.name, set),
       onCreate: widget.onCreateSet == null
           ? null

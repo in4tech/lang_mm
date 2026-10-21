@@ -13,10 +13,10 @@ Future<VocabularyLibrary> libraryForDevice({
   } catch (_) {
     return local;
   }
-  if (cloud.folders.isNotEmpty) {
+  if (cloud.folders.isNotEmpty || cloud.unfiledSets.isNotEmpty) {
     return _withoutRemoved(cloud, removedFolderIds);
   }
-  if (local.folders.isEmpty) {
+  if (local.folders.isEmpty && local.unfiledSets.isEmpty) {
     return local;
   }
   try {
@@ -41,6 +41,7 @@ VocabularyLibrary _withoutRemoved(
   return VocabularyLibrary(
     editorFolder: folders.any((folder) => folder.name == editor) ? editor : null,
     folders: List<VocabularyFolder>.unmodifiable(folders),
+    unfiledSets: library.unfiledSets,
   );
 }
 
@@ -71,9 +72,9 @@ Future<VocabularyLibrary> _upload(
         words: content.words,
         folderId: id,
       );
-      await store.save(stored);
+      final setId = await store.save(stored);
       names.add(stored.title);
-      contents.add(stored);
+      contents.add(stored.withId(setId));
     }
     folders.add(
       VocabularyFolder(
@@ -85,8 +86,14 @@ Future<VocabularyLibrary> _upload(
       ),
     );
   }
+  final unfiled = <VocabularySet>[];
+  for (final set in local.unfiledSets) {
+    final id = await store.save(set);
+    unfiled.add(set.withId(id));
+  }
   return VocabularyLibrary(
     folders: List<VocabularyFolder>.unmodifiable(folders),
+    unfiledSets: List<VocabularySet>.unmodifiable(unfiled),
     editorFolder: local.editorFolder,
   );
 }

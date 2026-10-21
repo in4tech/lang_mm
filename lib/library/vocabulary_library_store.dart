@@ -44,6 +44,11 @@ class SharedPreferencesVocabularyLibraryStore
           },
       ],
     };
+    if (library.unfiledSets.isNotEmpty) {
+      payload['sets'] = <Object>[
+        for (final set in library.unfiledSets) _storedUnfiled(set),
+      ];
+    }
     final editorFolder = library.editorFolder;
     if (editorFolder != null) {
       payload['editorFolder'] = editorFolder;
@@ -94,6 +99,20 @@ VocabularyLibrary? _decode(String raw) {
   if (editorFolderValue != null && editorFolderValue is! String) {
     return null;
   }
+  final setsValue = decoded['sets'];
+  if (setsValue != null && setsValue is! List) {
+    return null;
+  }
+  final unfiled = <VocabularySet>[];
+  if (setsValue is List) {
+    for (final item in setsValue) {
+      final stored = vocabularySetFromDocument(item);
+      if (stored == null) {
+        return null;
+      }
+      unfiled.add(stored);
+    }
+  }
   final folders = <VocabularyFolder>[];
   for (final item in foldersValue) {
     if (item is! Map) {
@@ -134,8 +153,18 @@ VocabularyLibrary? _decode(String raw) {
   }
   return VocabularyLibrary(
     folders: List<VocabularyFolder>.unmodifiable(folders),
+    unfiledSets: List<VocabularySet>.unmodifiable(unfiled),
     editorFolder: editorFolderValue is String ? editorFolderValue : null,
   );
+}
+
+Object _storedUnfiled(VocabularySet set) {
+  final document = vocabularySetDocument(set);
+  final id = set.id;
+  if (id == null || id.isEmpty) {
+    return document;
+  }
+  return <String, Object>{...document, 'id': id};
 }
 
 Object _storedSet(VocabularyFolder folder, int index) {

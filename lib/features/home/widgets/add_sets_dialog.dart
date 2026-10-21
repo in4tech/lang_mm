@@ -9,6 +9,7 @@ Future<void> showAddSetsDialog({
   required BuildContext context,
   required VocabularyFolder folder,
   required List<VocabularyFolder> folders,
+  List<VocabularySet> unfiledSets = const <VocabularySet>[],
   required ValueChanged<VocabularySet> onAdd,
   VoidCallback? onCreate,
 }) {
@@ -17,6 +18,7 @@ Future<void> showAddSetsDialog({
     builder: (context) => _AddSetsDialog(
       folder: folder,
       folders: folders,
+      unfiledSets: unfiledSets,
       onAdd: onAdd,
       onCreate: onCreate,
     ),
@@ -39,12 +41,14 @@ class _AddSetsDialog extends StatefulWidget {
   const _AddSetsDialog({
     required this.folder,
     required this.folders,
+    this.unfiledSets = const <VocabularySet>[],
     required this.onAdd,
     this.onCreate,
   });
 
   final VocabularyFolder folder;
   final List<VocabularyFolder> folders;
+  final List<VocabularySet> unfiledSets;
   final ValueChanged<VocabularySet> onAdd;
   final VoidCallback? onCreate;
 
@@ -86,6 +90,15 @@ class _AddSetsDialogState extends State<_AddSetsDialog> {
           _PickerSet(folderName: folder.name, index: index, set: set),
         );
       }
+    }
+    for (var index = 0; index < widget.unfiledSets.length; index++) {
+      final set = widget.unfiledSets[index];
+      if (!seen.add(_mark(set))) {
+        continue;
+      }
+      items.add(
+        _PickerSet(folderName: 'unfiled', index: index, set: set),
+      );
     }
     if (_recents) {
       return items.reversed.toList();

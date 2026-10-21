@@ -29,6 +29,52 @@ void main() {
     expect(levelAfter(action: StudyAction.familiar, level: null, at: at), isNull);
   });
 
+  test('a word kept today stays after its next review moves ahead', () {
+    final now = DateTime(2026, 10, 15, 12);
+    final list = choosePracticeQueue(<StudySetInput>[
+      StudySetInput(
+        setId: 'setA',
+        wordCount: 2,
+        levels: <int, StudyWordState>{
+          0: StudyWordState(
+            level: 6,
+            dueAt: now.add(const Duration(days: 30)),
+            keptOn: '2026-10-15',
+          ),
+          1: StudyWordState(
+            level: 2,
+            dueAt: now.add(const Duration(days: 1)),
+            keptOn: '2026-10-14',
+          ),
+        },
+      ),
+    ], now);
+
+    expect(list.map((word) => word.index), <int>[0]);
+  });
+
+  test('keptOn is stored with the level and read back', () {
+    final at = DateTime(2026, 10, 15, 15);
+    final update = studyLevelUpdate(
+      index: 0,
+      state: StudyWordState(level: 2, dueAt: at, keptOn: '2026-10-15'),
+    );
+    final document = applyStudyLevelUpdate(<String, Object>{
+      'ownerId': 'uid',
+      'setId': 'setA',
+    }, update);
+    final levels = levelsFromDocument(
+      words: document['words'],
+      marks: null,
+      readAt: at,
+    );
+
+    expect(
+      levels[0],
+      StudyWordState(level: 2, dueAt: at, keptOn: '2026-10-15'),
+    );
+  });
+
   test('a due word precedes a new word and a future word is omitted', () {
     final now = DateTime(2026, 10, 15, 12);
     final list = choosePracticeQueue(<StudySetInput>[

@@ -96,11 +96,8 @@ class FirestoreVocabularySetStore implements VocabularySetStore {
   }
 
   @override
-  Future<void> save(VocabularySet set) async {
+  Future<String> save(VocabularySet set) async {
     final folderId = set.folderId;
-    if (folderId == null || folderId.isEmpty) {
-      throw StateError('A flashcard set needs a folder id');
-    }
     final setReference = _firestore.collection('sets').doc();
     final batch = _firestore.batch();
     batch.set(setReference, <String, Object>{
@@ -108,13 +105,23 @@ class FirestoreVocabularySetStore implements VocabularySetStore {
       'ownerId': ownerId,
       'createdAt': FieldValue.serverTimestamp(),
     });
-    batch.update(
-      _firestore.collection('folders').doc(folderId),
-      <String, Object>{
-        'setIds': FieldValue.arrayUnion(<String>[setReference.id]),
-      },
-    );
+    if (folderId != null && folderId.isNotEmpty) {
+      batch.update(
+        _firestore.collection('folders').doc(folderId),
+        <String, Object>{
+          'setIds': FieldValue.arrayUnion(<String>[setReference.id]),
+        },
+      );
+    }
     await batch.commit();
+    return setReference.id;
+  }
+
+  @override
+  Future<void> addSetToFolder(String folderId, String setId) async {
+    await _firestore.collection('folders').doc(folderId).update(<String, Object>{
+      'setIds': FieldValue.arrayUnion(<String>[setId]),
+    });
   }
 
   @override

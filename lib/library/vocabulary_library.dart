@@ -29,12 +29,14 @@ class VocabularyFolder {
 class VocabularyLibrary {
   const VocabularyLibrary({
     this.folders = const <VocabularyFolder>[],
+    this.unfiledSets = const <VocabularySet>[],
     this.editorFolder,
   });
 
   static const empty = VocabularyLibrary();
 
   final List<VocabularyFolder> folders;
+  final List<VocabularySet> unfiledSets;
   final String? editorFolder;
 
   VocabularyLibrary replaceSet(VocabularySet set) {
@@ -44,6 +46,10 @@ class VocabularyLibrary {
     }
     return VocabularyLibrary(
       editorFolder: editorFolder,
+      unfiledSets: List<VocabularySet>.unmodifiable(<VocabularySet>[
+        for (final existing in unfiledSets)
+          if (existing.id == id) set else existing,
+      ]),
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         for (final folder in folders)
           VocabularyFolder(
@@ -66,6 +72,7 @@ class VocabularyLibrary {
         ...folders,
         VocabularyFolder(name: name, id: id, pinned: false),
       ]),
+      unfiledSets: unfiledSets,
       editorFolder: editorFolder,
     );
   }
@@ -73,6 +80,7 @@ class VocabularyLibrary {
   VocabularyLibrary renameFolder(String name, String nextName) {
     return VocabularyLibrary(
       editorFolder: editorFolder == name ? nextName : editorFolder,
+      unfiledSets: unfiledSets,
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         for (final folder in folders)
           if (folder.name == name)
@@ -92,6 +100,7 @@ class VocabularyLibrary {
   VocabularyLibrary removeFolder(String name) {
     return VocabularyLibrary(
       editorFolder: editorFolder == name ? null : editorFolder,
+      unfiledSets: unfiledSets,
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         for (final folder in folders)
           if (folder.name != name) folder,
@@ -102,6 +111,7 @@ class VocabularyLibrary {
   VocabularyLibrary setPinned(String name, bool pinned) {
     return VocabularyLibrary(
       editorFolder: editorFolder,
+      unfiledSets: unfiledSets,
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         for (final folder in folders)
           if (folder.name == name)
@@ -118,9 +128,27 @@ class VocabularyLibrary {
     );
   }
 
-  VocabularyLibrary addSetToFolder(String folderName, VocabularySet set) {
+  VocabularyLibrary addUnfiled(VocabularySet set) {
+    final id = set.id;
     return VocabularyLibrary(
       editorFolder: editorFolder,
+      folders: folders,
+      unfiledSets: List<VocabularySet>.unmodifiable(<VocabularySet>[
+        for (final existing in unfiledSets)
+          if (id == null || id.isEmpty || existing.id != id) existing,
+        set,
+      ]),
+    );
+  }
+
+  VocabularyLibrary addSetToFolder(String folderName, VocabularySet set) {
+    final id = set.id;
+    return VocabularyLibrary(
+      editorFolder: editorFolder,
+      unfiledSets: List<VocabularySet>.unmodifiable(<VocabularySet>[
+        for (final existing in unfiledSets)
+          if (id == null || id.isEmpty || existing.id != id) existing,
+      ]),
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         for (final folder in folders)
           if (folder.name != folderName || _folderHasSet(folder, set))
@@ -151,13 +179,8 @@ class VocabularyLibrary {
   }
 
   /// Removes the set from [folderName] only. The same set may remain in other
-  /// folders. If this was its last folder, flashcard data is kept under
-  /// [preserveIn] so the set is not deleted.
-  VocabularyLibrary removeSetFromFolder(
-    String folderName,
-    int index, {
-    required String preserveIn,
-  }) {
+  /// folders. If this was its last folder, the flashcard set stays unfiled.
+  VocabularyLibrary removeSetFromFolder(String folderName, int index) {
     VocabularyFolder? source;
     for (final folder in folders) {
       if (folder.name == folderName) {
@@ -179,6 +202,7 @@ class VocabularyLibrary {
     );
     final without = VocabularyLibrary(
       editorFolder: editorFolder,
+      unfiledSets: unfiledSets,
       folders: List<VocabularyFolder>.unmodifiable(<VocabularyFolder>[
         for (final folder in folders)
           if (folder.name != folderName)
@@ -202,15 +226,7 @@ class VocabularyLibrary {
     if (_libraryHasSet(without, set)) {
       return without;
     }
-    if (without.folders.any((folder) => folder.name == preserveIn)) {
-      return without.addSetToFolder(preserveIn, set);
-    }
-    return without.addSavedSet(
-      name: set.title,
-      folderLabel: preserveIn,
-      content: set,
-      folderId: set.folderId,
-    );
+    return without.addUnfiled(set);
   }
 
   VocabularyLibrary addSavedSet({
@@ -255,6 +271,7 @@ class VocabularyLibrary {
     }
     return VocabularyLibrary(
       folders: List<VocabularyFolder>.unmodifiable(folders),
+      unfiledSets: unfiledSets,
       editorFolder: target,
     );
   }
@@ -313,13 +330,13 @@ VocabularyLibrary libraryFromCloud({
     });
   String? editorFolder;
   final built = <VocabularyFolder>[];
+  final used = <String>{};
   for (final folder in ordered) {
     if (folder.editor && editorFolder == null) {
       editorFolder = folder.name;
     }
     final names = <String>[];
     final contents = <VocabularySet?>[];
-    final used = <String>{};
     for (final setId in folder.setIds) {
       final set = setsById[setId];
       if (set == null) {
@@ -333,6 +350,7 @@ VocabularyLibrary libraryFromCloud({
       if (used.contains(record.id) || record.set.folderId != folder.id) {
         continue;
       }
+      used.add(record.id);
       names.add(record.set.title);
       contents.add(record.set.withId(record.id));
     }
@@ -346,8 +364,13 @@ VocabularyLibrary libraryFromCloud({
       ),
     );
   }
+  final unfiled = <VocabularySet>[
+    for (final record in sets)
+      if (!used.contains(record.id)) record.set.withId(record.id),
+  ];
   return VocabularyLibrary(
     folders: List<VocabularyFolder>.unmodifiable(built),
+    unfiledSets: List<VocabularySet>.unmodifiable(unfiled),
     editorFolder: editorFolder,
   );
 }

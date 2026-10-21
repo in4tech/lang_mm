@@ -62,6 +62,8 @@ class _WordEditorState extends State<WordEditor> {
   final _drafts = <_Draft>[_Draft()];
   final _customTypes = <String>[];
   bool _titleInvalid = false;
+  bool _saving = false;
+  VocabularySet? _existingTarget;
 
   @override
   void initState() {
@@ -198,6 +200,9 @@ class _WordEditorState extends State<WordEditor> {
   }
 
   void _close() {
+    if (_saving) {
+      return;
+    }
     final onClose = widget.onClose;
     if (onClose != null) {
       onClose();
@@ -206,7 +211,34 @@ class _WordEditorState extends State<WordEditor> {
     Navigator.of(context).pop();
   }
 
+  void _selectExistingSet(VocabularySet set) {
+    setState(() {
+      _existingTarget = set;
+      _title.text = set.title;
+      _description.text = set.description;
+      _titleInvalid = false;
+    });
+  }
+
+  VocabularySet? _targetExistingSet() {
+    final title = _title.text.trim();
+    final selected = _existingTarget;
+    if (selected != null && selected.title.trim() == title) {
+      return selected;
+    }
+    for (final set in widget.existingSets) {
+      final id = set.id;
+      if (id != null && id.isNotEmpty && set.title.trim() == title) {
+        return set;
+      }
+    }
+    return null;
+  }
+
   Future<void> _save() async {
+    if (_saving) {
+      return;
+    }
     final titleMissing = _title.text.trim().isEmpty;
     if (titleMissing) {
       setState(() => _titleInvalid = true);
@@ -243,11 +275,15 @@ class _WordEditorState extends State<WordEditor> {
         description: initial.description,
         words: set.words,
       );
+      setState(() => _saving = true);
       final store = widget.setStore;
       if (store != null) {
         try {
           await store.updateWords(edited);
         } catch (_) {
+          if (mounted) {
+            setState(() => _saving = false);
+          }
           return;
         }
       }
@@ -255,6 +291,7 @@ class _WordEditorState extends State<WordEditor> {
         return;
       }
       widget.onWordsUpdated?.call(edited);
+      setState(() => _saving = false);
       _close();
       return;
     }
@@ -262,15 +299,83 @@ class _WordEditorState extends State<WordEditor> {
     if (store == null) {
       return;
     }
+    final target = _targetExistingSet();
+    final targetId = target?.id;
+    setState(() => _saving = true);
     try {
-      await store.save(set);
+      if (target != null && targetId != null && targetId.isNotEmpty) {
+        final merged = VocabularySet(
+          id: targetId,
+          folderId: target.folderId,
+          title: target.title,
+          description: _description.text.trim().isEmpty
+              ? target.description
+              : _description.text,
+          words: <VocabularyWord>[...target.words, ...set.words],
+        );
+        await store.updateWords(merged);
+        if (!mounted) {
+          return;
+        }
+        widget.onWordsUpdated?.call(merged);
+      } else {
+        await store.save(set);
+      }
     } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
       return;
     }
     if (!mounted) {
       return;
     }
+    setState(() => _saving = false);
     _close();
+  }
+
+  Widget _draftCard(
+    int index, {
+    required bool expanded,
+    required AppLocalizations localizations,
+    Widget? footer,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _WordCard(
+        draft: _drafts[index],
+        number: index + 1,
+        expanded: expanded,
+        localizations: localizations,
+        customTypes: _customTypes,
+        onSelectType: (type) => _selectType(_drafts[index], type),
+        onAddType: () => _promptType(_drafts[index]),
+        onToggleDetails: () => _toggleDetails(_drafts[index]),
+        onToggleImageLink: () => _toggleImageLink(_drafts[index]),
+        onChanged: () => setState(() {}),
+        footer: footer,
+      ),
+    );
+  }
+
+  Widget _addWordButton(BuildContext context, AppLocalizations localizations) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: FilledButton.icon(
+        key: const Key('word-editor-add-word'),
+        onPressed: _addWord,
+        style: FilledButton.styleFrom(
+          backgroundColor: HomePalette.of(context).newVocab,
+          foregroundColor: HomePalette.of(context).onAccent,
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: const StadiumBorder(),
+        ),
+        icon: const Icon(Icons.add, size: 18),
+        label: Text(localizations.editorAddWord),
+      ),
+    );
   }
 
   @override
@@ -279,6 +384,8 @@ class _WordEditorState extends State<WordEditor> {
     final focus = widget.focusWordIndex;
     final editingWord =
         focus != null && focus >= 0 && focus < _drafts.length;
+    final addBox = !editingWord && widget.initialSet == null;
+    final editorIndex = _drafts.length - 1;
     final fields = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -287,16 +394,11 @@ class _WordEditorState extends State<WordEditor> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: widget.initialSet == null
+              child: widget.initialSet == null &&
+                      widget.existingSets.isNotEmpty
                   ? _ExistingSetMenu(
                       sets: widget.existingSets,
-                      onSelected: (set) {
-                        setState(() {
-                          _title.text = set.title;
-                          _description.text = set.description;
-                          _titleInvalid = false;
-                        });
-                      },
+                      onSelected: _selectExistingSet,
                       field: (onOpen) => _SetField(
                         fillKey: const Key('word-editor-title-fill'),
                         fieldKey: const Key('word-editor-title'),
@@ -394,44 +496,32 @@ class _WordEditorState extends State<WordEditor> {
           ],
         ),
         if (!editingWord) const SizedBox(height: 16),
-        for (var index = _drafts.length - 1; index >= 0; index--)
-          if (!editingWord || index == focus)
-            Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _WordCard(
-              draft: _drafts[index],
-              number: index + 1,
-              expanded: editingWord
-                  ? index == focus
-                  : widget.initialSet == null && index == _drafts.length - 1,
+        if (addBox)
+          _draftCard(
+            editorIndex,
+            expanded: true,
+            localizations: localizations,
+            footer: _addWordButton(context, localizations),
+          ),
+        if (addBox)
+          for (var index = editorIndex - 1; index >= 0; index--)
+            _draftCard(
+              index,
+              expanded: false,
               localizations: localizations,
-              customTypes: _customTypes,
-              onSelectType: (type) => _selectType(_drafts[index], type),
-              onAddType: () => _promptType(_drafts[index]),
-              onToggleDetails: () => _toggleDetails(_drafts[index]),
-              onToggleImageLink: () => _toggleImageLink(_drafts[index]),
-              onChanged: () => setState(() {}),
             ),
-          ),
-        if (!editingWord) const SizedBox(height: 4),
-        if (!editingWord)
-          Align(
-            alignment: Alignment.center,
-            child: FilledButton.icon(
-              key: const Key('word-editor-add-word'),
-              onPressed: _addWord,
-              style: FilledButton.styleFrom(
-                backgroundColor: HomePalette.of(context).newVocab,
-                foregroundColor: HomePalette.of(context).onAccent,
-                minimumSize: const Size(0, 44),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: const StadiumBorder(),
+        if (!addBox)
+          for (var index = 0; index < _drafts.length; index++)
+            if (!editingWord || index == focus)
+              _draftCard(
+                index,
+                expanded: editingWord && index == focus,
+                localizations: localizations,
               ),
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(localizations.editorAddWord),
-            ),
-          ),
+        if (!editingWord && !addBox) ...[
+          const SizedBox(height: 4),
+          _addWordButton(context, localizations),
+        ],
       ],
     );
     final header = _Header(
@@ -441,6 +531,7 @@ class _WordEditorState extends State<WordEditor> {
           : HomePalette.of(context).page,
       onClose: _close,
       onDone: _save,
+      saving: _saving,
     );
     final form = SingleChildScrollView(
       key: const Key('word-editor-scroll'),
@@ -485,12 +576,14 @@ class _Header extends StatelessWidget {
     required this.background,
     required this.onClose,
     required this.onDone,
+    required this.saving,
   });
 
   final AppLocalizations localizations;
   final Color background;
   final VoidCallback onClose;
   final VoidCallback onDone;
+  final bool saving;
 
   @override
   Widget build(BuildContext context) {
@@ -505,7 +598,7 @@ class _Header extends StatelessWidget {
         children: [
           TextButton(
             key: const Key('word-editor-back'),
-            onPressed: onClose,
+            onPressed: saving ? null : onClose,
             style: TextButton.styleFrom(
               foregroundColor: colors.text,
               padding: const EdgeInsets.fromLTRB(0, 8, 4, 8),
@@ -528,10 +621,13 @@ class _Header extends StatelessWidget {
           ),
           const Spacer(),
           FilledButton(
-            onPressed: onDone,
+            key: const Key('word-editor-done'),
+            onPressed: saving ? null : onDone,
             style: FilledButton.styleFrom(
-              backgroundColor: HomePalette.of(context).newVocab,
-              foregroundColor: HomePalette.of(context).onAccent,
+              backgroundColor: colors.newVocab,
+              disabledBackgroundColor: colors.newVocab,
+              foregroundColor: colors.onAccent,
+              disabledForegroundColor: colors.onAccent,
               minimumSize: const Size(0, 44),
               maximumSize: const Size(double.infinity, 44),
               padding: const EdgeInsets.symmetric(horizontal: 23),
@@ -539,10 +635,19 @@ class _Header extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              textStyle: HomeText.of(context).subtitle
-                  .copyWith(color: HomePalette.of(context).onAccent),
+              textStyle: text.subtitle.copyWith(color: colors.onAccent),
             ),
-            child: Text(localizations.editorDone),
+            child: saving
+                ? SizedBox(
+                    key: const Key('word-editor-done-progress'),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colors.onAccent,
+                    ),
+                  )
+                : Text(localizations.editorDone),
           ),
         ],
       ),
@@ -563,6 +668,7 @@ class _WordCard extends StatelessWidget {
     required this.onToggleDetails,
     required this.onToggleImageLink,
     required this.onChanged,
+    this.footer,
   });
 
   final _Draft draft;
@@ -575,6 +681,7 @@ class _WordCard extends StatelessWidget {
   final VoidCallback onToggleDetails;
   final VoidCallback onToggleImageLink;
   final VoidCallback onChanged;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -923,6 +1030,10 @@ class _WordCard extends StatelessWidget {
             ],
           ),
         ],
+        if (footer != null) ...[
+          const SizedBox(height: 16),
+          footer!,
+        ],
       ],
     );
   }
@@ -969,56 +1080,66 @@ class _ExistingSetMenu extends StatelessWidget {
     final colors = HomePalette.of(context);
     final text = HomeText.of(context);
     final localizations = AppLocalizations.of(context);
-    return MenuAnchor(
-      crossAxisUnconstrained: false,
-      alignmentOffset: const Offset(0, 8),
-      style: MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(colors.surface),
-        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-        elevation: const WidgetStatePropertyAll(8),
-        shadowColor: const WidgetStatePropertyAll(Color(0x33101828)),
-        side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
-        minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 0)),
-      ),
-      menuChildren: [
-        for (var index = 0; index < sets.length; index++) ...[
-          if (index > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Divider(height: 1, thickness: 1, color: colors.border),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final menuWidth = constraints.maxWidth;
+        return MenuAnchor(
+          crossAxisUnconstrained: false,
+          alignmentOffset: const Offset(0, 8),
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(colors.surface),
+            surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+            elevation: const WidgetStatePropertyAll(8),
+            shadowColor: const WidgetStatePropertyAll(Color(0x33101828)),
+            side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-          MenuItemButton(
-            key: Key('word-editor-existing-set-$index'),
-            onPressed: () => onSelected(sets[index]),
-            style: MenuItemButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              minimumSize: const Size(double.infinity, 0),
-              alignment: Alignment.centerLeft,
-            ),
-            child: _ExistingSetMenuItem(
-              set: sets[index],
-              titleStyle: text.subtitle.copyWith(
-                color: colors.ink,
-                fontWeight: FontWeight.w600,
-              ),
-              metaStyle: text.caption.copyWith(color: colors.muted),
-              termCount: localizations.libraryTermCount(sets[index].words.length),
-            ),
+            padding:
+                const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
+            minimumSize: WidgetStatePropertyAll(Size(menuWidth, 0)),
+            maximumSize: WidgetStatePropertyAll(Size(menuWidth, double.infinity)),
           ),
-        ],
-      ],
-      builder: (context, controller, child) {
-        return field(() {
-          if (controller.isOpen) {
-            controller.close();
-          } else {
-            controller.open();
-          }
-        });
+          menuChildren: [
+            for (var index = 0; index < sets.length; index++) ...[
+              if (index > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Divider(height: 1, thickness: 1, color: colors.border),
+                ),
+              MenuItemButton(
+                key: Key('word-editor-existing-set-$index'),
+                onPressed: () => onSelected(sets[index]),
+                style: MenuItemButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  minimumSize: Size(menuWidth, 0),
+                  maximumSize: Size(menuWidth, double.infinity),
+                  alignment: Alignment.centerLeft,
+                ),
+                child: _ExistingSetMenuItem(
+                  set: sets[index],
+                  titleStyle: text.subtitle.copyWith(
+                    color: colors.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  metaStyle: text.caption.copyWith(color: colors.muted),
+                  termCount:
+                      localizations.libraryTermCount(sets[index].words.length),
+                ),
+              ),
+            ],
+          ],
+          builder: (context, controller, child) {
+            return field(() {
+              if (controller.isOpen) {
+                controller.close();
+              } else {
+                controller.open();
+              }
+            });
+          },
+        );
       },
     );
   }
@@ -1182,6 +1303,20 @@ class _LabeledField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final Widget? toolbar;
 
+  Widget _sentenceField(Widget field) {
+    final sentence = controller;
+    if (sentence is! SentenceEditingController) {
+      return field;
+    }
+    return CallbackShortcuts(
+      bindings: sentenceFormatShortcuts(
+        sentence,
+        onChanged: onChanged == null ? null : () => onChanged!(sentence.text),
+      ),
+      child: field,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final errorText = this.errorText;
@@ -1203,28 +1338,30 @@ class _LabeledField extends StatelessWidget {
           toolbar!,
           const SizedBox(height: 6),
         ],
-        TextField(
-          key: fieldKey,
-          controller: controller,
-          onChanged: onChanged,
-          style: HomeText.of(context).subtitle,
-          minLines: 1,
-          maxLines: null,
-          keyboardType: TextInputType.multiline,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: HomeText.of(context).subtitle
-                .copyWith(color: HomePalette.of(context).placeholder),
-            filled: true,
-            fillColor: HomePalette.of(context).folderFill,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
+        _sentenceField(
+          TextField(
+            key: fieldKey,
+            controller: controller,
+            onChanged: onChanged,
+            style: HomeText.of(context).subtitle,
+            minLines: 1,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: HomeText.of(context).subtitle
+                  .copyWith(color: HomePalette.of(context).placeholder),
+              filled: true,
+              fillColor: HomePalette.of(context).folderFill,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: border,
+              enabledBorder: border,
+              focusedBorder: border,
             ),
-            border: border,
-            enabledBorder: border,
-            focusedBorder: border,
           ),
         ),
         if (errorText != null) ...[

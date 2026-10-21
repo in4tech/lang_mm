@@ -37,6 +37,7 @@ class SetStudyPage extends StatefulWidget {
     this.cues,
     this.onPracticing,
     this.onWordsChanged,
+    this.onLevelSaved,
     this.statisticsLibrary,
     this.statisticsProgress = const <String, StudySetProgress>{},
     this.statisticsAll = true,
@@ -54,6 +55,8 @@ class SetStudyPage extends StatefulWidget {
   final List<StudyCue>? cues;
   final ValueChanged<bool>? onPracticing;
   final ValueChanged<VocabularySet>? onWordsChanged;
+  final void Function(String setId, int index, StudyWordState state)?
+  onLevelSaved;
   final VocabularyLibrary? statisticsLibrary;
   final Map<String, StudySetProgress> statisticsProgress;
   final bool statisticsAll;
@@ -287,7 +290,7 @@ class _SetStudyPageState extends State<SetStudyPage> {
     final now = DateTime.now();
     return _cuesWhere((index) {
       final state = _levels[index];
-      return state != null && !state.dueAt.isAfter(now);
+      return state != null && studyStaysToday(state, now);
     });
   }
 
@@ -596,21 +599,30 @@ class _SetStudyPageState extends State<SetStudyPage> {
     if (cue == null || _exit != null) {
       return;
     }
+    final now = DateTime.now();
+    final previous = _stateFor(cue);
     final next = levelAfter(
       action: action,
-      level: _stateFor(cue)?.level,
-      at: DateTime.now(),
+      level: previous?.level,
+      at: now,
     );
     if (next == null) {
       return;
     }
+    final stored = StudyWordState(
+      level: next.level,
+      dueAt: next.dueAt,
+      keptOn: previous != null && studyStaysToday(previous, now)
+          ? localStudyDate(now)
+          : null,
+    );
     final playExit = _practicing && !graded && action != StudyAction.studied;
     setState(() {
       if (cue.setId == null || cue.setId == widget.set.id) {
-        _levels[cue.index] = next;
+        _levels[cue.index] = stored;
       }
       if (cue.setId != null) {
-        _rememberHomeLevel(cue.setId!, cue.index, next);
+        _rememberHomeLevel(cue.setId!, cue.index, stored);
       }
       if (_practicing) {
         if (action == StudyAction.hard) {
@@ -633,8 +645,9 @@ class _SetStudyPageState extends State<SetStudyPage> {
     });
     final id = cue.setId;
     final store = widget.progress;
-    if (id != null && store != null) {
-      store.saveLevel(setId: id, index: cue.index, state: next);
+    if (id != null) {
+      widget.onLevelSaved?.call(id, cue.index, stored);
+      store?.saveLevel(setId: id, index: cue.index, state: stored);
     }
   }
 
@@ -772,7 +785,9 @@ class _SetStudyPageState extends State<SetStudyPage> {
             title: _shown.title,
             onEdit: widget.onEdit,
             onPractice: () => _openSession(_todayQueue()),
-            onLearnNew: () => _openSession(_newQueue()),
+            onLearnNew: _newQueue().isEmpty
+                ? null
+                : () => _openSession(_newQueue()),
           );
     final scrolling = SingleChildScrollView(
       key: const Key('set-study-scroll'),
@@ -3448,13 +3463,13 @@ class _BrowseHeader extends StatelessWidget {
     required this.title,
     required this.onEdit,
     required this.onPractice,
-    required this.onLearnNew,
+    this.onLearnNew,
   });
 
   final String title;
   final VoidCallback onEdit;
   final VoidCallback onPractice;
-  final VoidCallback onLearnNew;
+  final VoidCallback? onLearnNew;
 
   @override
   Widget build(BuildContext context) {
@@ -3503,15 +3518,17 @@ class _BrowseHeader extends StatelessWidget {
                     onPressed: onPractice,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ActionButton(
-                    buttonKey: const Key('set-study-learn-new'),
-                    label: localizations.studyLearnNew,
-                    filled: false,
-                    onPressed: onLearnNew,
+                if (onLearnNew != null) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ActionButton(
+                      buttonKey: const Key('set-study-learn-new'),
+                      label: localizations.studyLearnNew,
+                      filled: false,
+                      onPressed: onLearnNew!,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ],

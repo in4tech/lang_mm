@@ -7,18 +7,35 @@ enum StudyMark { hard, familiar, easy }
 enum StudyAction { easy, familiar, hard, studied }
 
 class StudyWordState {
-  const StudyWordState({required this.level, required this.dueAt});
+  const StudyWordState({
+    required this.level,
+    required this.dueAt,
+    this.keptOn,
+  });
 
   final int level;
   final DateTime dueAt;
 
+  /// Local date (`yyyy-MM-dd`) this word stays in Today practice.
+  final String? keptOn;
+
   @override
   bool operator ==(Object other) {
-    return other is StudyWordState && other.level == level && other.dueAt == dueAt;
+    return other is StudyWordState &&
+        other.level == level &&
+        other.dueAt == dueAt &&
+        other.keptOn == keptOn;
   }
 
   @override
-  int get hashCode => Object.hash(level, dueAt);
+  int get hashCode => Object.hash(level, dueAt, keptOn);
+}
+
+bool studyStaysToday(StudyWordState state, DateTime now) {
+  if (state.keptOn == localStudyDate(now)) {
+    return true;
+  }
+  return !state.dueAt.isAfter(now);
 }
 
 class StudyWordRef {
@@ -192,7 +209,7 @@ List<StudyWordRef> choosePracticeQueue(
       order += 1;
       if (state == null) {
         fresh.add(ref);
-      } else if (!state.dueAt.isAfter(now)) {
+      } else if (studyStaysToday(state, now)) {
         due.add((ref: ref, dueAt: state.dueAt, order: order));
       }
     }
@@ -271,6 +288,7 @@ Map<String, Object> studyLevelUpdate({
     'words.$index': <String, Object>{
       'level': state.level,
       'dueAt': state.dueAt,
+      if (state.keptOn != null) 'keptOn': state.keptOn!,
     },
   };
 }
@@ -312,10 +330,15 @@ Map<int, StudyWordState> levelsFromDocument({
       }
       final level = value['level'];
       final dueAt = studyDueAt(value['dueAt']);
+      final keptOn = value['keptOn'];
       if (level is! int || level < 1 || level > 6 || dueAt == null) {
         continue;
       }
-      levels[index] = StudyWordState(level: level, dueAt: dueAt);
+      levels[index] = StudyWordState(
+        level: level,
+        dueAt: dueAt,
+        keptOn: keptOn is String && keptOn.isNotEmpty ? keptOn : null,
+      );
     }
   }
   if (marks is Map) {

@@ -71,6 +71,28 @@ void main() {
     expect(library.folders.first.sets, <String>['German A1', 'Extra']);
     expect(library.folders.first.contentAt(0)?.folderId, 'folder-a');
     expect(library.folders[1].sets, <String>['Airport']);
+    expect(library.unfiledSets, isEmpty);
+  });
+
+  test('a set with no folder stays unfiled', () {
+    final library = libraryFromCloud(
+      folders: const <CloudFolderRecord>[],
+      sets: <CloudSetRecord>[
+        CloudSetRecord(
+          id: 'set-9',
+          set: const VocabularySet(
+            title: 'German A1',
+            description: 'basics',
+            words: <VocabularyWord>[word],
+          ),
+        ),
+      ],
+    );
+
+    expect(library.folders, isEmpty);
+    expect(library.editorFolder, isNull);
+    expect(library.unfiledSets.single.id, 'set-9');
+    expect(library.unfiledSets.single.title, 'German A1');
   });
 
   test('one set id can appear in multiple folders', () {
@@ -264,8 +286,9 @@ class _Store implements VocabularySetStore {
   }
 
   @override
-  Future<void> save(VocabularySet set) async {
+  Future<String> save(VocabularySet set) async {
     saved.add(set);
+    return 'set-${saved.length}';
   }
 
   @override
@@ -279,4 +302,10 @@ class _Store implements VocabularySetStore {
 
   @override
   Future<void> setFolderPinned(String id, bool pinned) async {}
+
+  @override
+  Future<void> addSetToFolder(String folderId, String setId) {
+    // TODO: implement addSetToFolder
+    throw UnimplementedError();
+  }
 }

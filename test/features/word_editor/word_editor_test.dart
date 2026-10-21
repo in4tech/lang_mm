@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lang/features/home/widgets/home_header.dart';
 import 'package:lang/features/home/widgets/home_sidebar.dart';
@@ -52,19 +55,34 @@ void main() {
 
   testWidgets('the title dropdown lists sets created earlier', (tester) async {
     await prepareView(tester);
+    final store = _RecordingStore();
+    final existing = VocabularySet(
+      id: 'set-1',
+      title: 'German A1',
+      description: 'basics',
+      words: const <VocabularyWord>[
+        VocabularyWord(
+          term: 'Kind',
+          definition: 'child',
+          sentence: '',
+          ipa: '',
+          singularPlural: '',
+          note: '',
+        ),
+      ],
+    );
     await tester.pumpWidget(
-      const MaterialApp(
-        locale: Locale('en'),
+      MaterialApp(
+        locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: WordEditor(
+          onClose: _noop,
+          setStore: store,
           existingSets: <VocabularySet>[
-            VocabularySet(
-              title: 'German A1',
-              description: 'basics',
-              words: <VocabularyWord>[],
-            ),
-            VocabularySet(
+            existing,
+            const VocabularySet(
+              id: 'set-2',
               title: 'Travel',
               description: 'trips',
               words: <VocabularyWord>[],
@@ -77,11 +95,18 @@ void main() {
     expect(find.byKey(const Key('word-editor-title-sets')), findsOneWidget);
     expect(find.text('German A1'), findsNothing);
 
+    final titleWidth =
+        tester.getSize(find.byKey(const Key('word-editor-title-fill'))).width;
+
     await tester.tap(find.byKey(const Key('word-editor-title-sets')));
     await tester.pumpAndSettle();
 
     expect(find.text('German A1'), findsOneWidget);
     expect(find.text('Travel'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('word-editor-existing-set-0'))).width,
+      titleWidth,
+    );
 
     await tester.tap(find.byKey(const Key('word-editor-existing-set-0')));
     await tester.pumpAndSettle();
@@ -89,11 +114,56 @@ void main() {
     expect(fieldText(tester, const Key('word-editor-title')), 'German A1');
     expect(fieldText(tester, const Key('word-editor-description')), 'basics');
     expect(find.text('Travel'), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('word-term')), 'Haus');
+    await tester.enterText(find.byKey(const Key('word-definition')), 'house');
+    await tester.tap(find.byKey(const Key('word-editor-done')));
+    await tester.pumpAndSettle();
+
+    expect(store.saved, isEmpty);
+    expect(store.updated, hasLength(1));
+    expect(store.updated.single.id, 'set-1');
+    expect(
+      store.updated.single.words.map((word) => word.term),
+      <String>['Kind', 'Haus'],
+    );
+  });
+
+  testWidgets('done shows loading until the store finishes', (tester) async {
+    await prepareView(tester);
+    final gate = Completer<void>();
+    final store = _RecordingStore()..delay = gate.future;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WordEditor(onClose: _noop, setStore: store),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('word-editor-title')),
+      'German',
+    );
+    await tester.enterText(find.byKey(const Key('word-term')), 'Kind');
+    await tester.tap(find.byKey(const Key('word-editor-done')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('word-editor-done-progress')), findsOneWidget);
+    expect(find.text('Done'), findsNothing);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+
+    expect(store.saved, hasLength(1));
+    expect(find.byKey(const Key('word-editor-done-progress')), findsNothing);
   });
 
   testWidgets('the editor opens on one empty card', (tester) async {
     await pumpEditor(tester);
 
+    expect(find.byKey(const Key('word-editor-title-sets')), findsNothing);
     expect(fieldText(tester, const Key('word-editor-title')), isEmpty);
     expect(fieldText(tester, const Key('word-editor-description')), isEmpty);
     expect(find.byKey(const Key('word-card-1')), findsOneWidget);
@@ -384,7 +454,7 @@ void main() {
     );
   });
 
-  testWidgets('add new word stacks a summary above an empty card', (
+  testWidgets('add new word keeps the empty card above the summary', (
     tester,
   ) async {
     await pumpEditor(tester);
@@ -437,9 +507,16 @@ void main() {
       tester.getTopLeft(find.byKey(const Key('word-card-2'))).dy,
       lessThan(tester.getTopLeft(find.byKey(const Key('word-card-1'))).dy),
     );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('word-card-2')),
+        matching: find.text('Add new word'),
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('the newest card stays on top', (tester) async {
+  testWidgets('a new word sits directly under the add box', (tester) async {
     await pumpEditor(tester);
 
     Future<void> fillCard() async {
@@ -551,12 +628,12 @@ void main() {
         of: find.byKey(const Key('word-card-2')),
         matching: find.text('Add new word'),
       ),
-      findsNothing,
+      findsOneWidget,
     );
     expect(find.text('Add new word'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('Add new word')).dy,
-      greaterThan(tester.getTopLeft(find.byKey(const Key('word-card-1'))).dy),
+      lessThan(tester.getTopLeft(find.byKey(const Key('word-card-1'))).dy),
     );
   });
 
@@ -1038,13 +1115,73 @@ void main() {
     expect(controller.stored, isNot('1. Das Kind'));
     expect(sentencePlain(controller.stored), '1. Das Kind');
   });
+
+  testWidgets('sentence format shortcuts style the selection', (tester) async {
+    await pumpEditor(tester);
+
+    await tester.enterText(find.byKey(const Key('word-sentence')), 'Das Kind');
+    final controller =
+        tester.widget<TextField>(find.byKey(const Key('word-sentence'))).controller!
+            as SentenceEditingController;
+    controller.selection = const TextSelection(baseOffset: 0, extentOffset: 3);
+    await tester.pump();
+
+    Future<void> press(LogicalKeyboardKey key, {bool shift = false}) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      if (shift) {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      }
+      await tester.sendKeyDownEvent(key);
+      await tester.sendKeyUpEvent(key);
+      if (shift) {
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      }
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+    }
+
+    TextSpan styled() {
+      final span = controller.buildTextSpan(
+        context: tester.element(find.byKey(const Key('word-sentence'))),
+        style: const TextStyle(),
+        withComposing: false,
+      );
+      return span.children!.first as TextSpan;
+    }
+
+    await press(LogicalKeyboardKey.keyB);
+    expect(styled().text, 'Das');
+    expect(styled().style?.fontWeight, FontWeight.w700);
+
+    await press(LogicalKeyboardKey.keyI);
+    expect(styled().style?.fontStyle, FontStyle.italic);
+
+    await press(LogicalKeyboardKey.keyU);
+    expect(styled().style?.decoration, TextDecoration.underline);
+
+    await press(LogicalKeyboardKey.digit8, shift: true);
+    expect(fieldText(tester, const Key('word-sentence')), '• Das Kind');
+
+    await press(LogicalKeyboardKey.digit7, shift: true);
+    expect(fieldText(tester, const Key('word-sentence')), '1. Das Kind');
+
+    controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: controller.text.length,
+    );
+    await tester.pump();
+    await press(LogicalKeyboardKey.keyC, shift: true);
+    expect(styled().style?.color, sentencePalette.first);
+  });
 }
 
 void _noop() {}
 
 class _RecordingStore implements VocabularySetStore {
   final saved = <VocabularySet>[];
+  final updated = <VocabularySet>[];
   Object? error;
+  Future<void>? delay;
 
   @override
   Future<String> createFolder(
@@ -1055,16 +1192,31 @@ class _RecordingStore implements VocabularySetStore {
       'folder-1';
 
   @override
-  Future<void> save(VocabularySet set) async {
+  Future<String> save(VocabularySet set) async {
+    final wait = delay;
+    if (wait != null) {
+      await wait;
+    }
     final error = this.error;
     if (error != null) {
       throw error;
     }
     saved.add(set);
+    return 'set-${saved.length}';
   }
 
   @override
-  Future<void> updateWords(VocabularySet set) async {}
+  Future<void> updateWords(VocabularySet set) async {
+    final wait = delay;
+    if (wait != null) {
+      await wait;
+    }
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+    updated.add(set);
+  }
 
   @override
   Future<void> renameFolder(String id, String name) async {}

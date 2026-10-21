@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lang/theme/home_palette.dart';
 
 const _prefix = '\u{E000}rt1:';
@@ -236,6 +237,22 @@ class SentenceEditingController extends TextEditingController {
   void toggleBullet() => _toggleList(numbered: false);
 
   void toggleNumbered() => _toggleList(numbered: true);
+
+  void cycleColor() {
+    final current = colorActive;
+    final index = current == null
+        ? -1
+        : sentencePalette.indexWhere((color) => color.toARGB32() == current);
+    if (index < 0) {
+      applyColor(sentencePalette.first);
+      return;
+    }
+    if (index >= sentencePalette.length - 1) {
+      applyColor(null);
+      return;
+    }
+    applyColor(sentencePalette[index + 1]);
+  }
 
   (int, int)? _range() {
     final selected = selection;
@@ -695,6 +712,56 @@ class FormattedSentence extends StatelessWidget {
   }
 }
 
+Map<ShortcutActivator, VoidCallback> sentenceFormatShortcuts(
+  SentenceEditingController controller, {
+  VoidCallback? onChanged,
+}) {
+  void bind(
+    Map<ShortcutActivator, VoidCallback> bindings,
+    LogicalKeyboardKey key,
+    VoidCallback action, {
+    bool shift = false,
+  }) {
+    void call() {
+      action();
+      onChanged?.call();
+    }
+
+    bindings[SingleActivator(key, control: true, shift: shift)] = call;
+    bindings[SingleActivator(key, meta: true, shift: shift)] = call;
+  }
+
+  final bindings = <ShortcutActivator, VoidCallback>{};
+  bind(bindings, LogicalKeyboardKey.keyB, controller.toggleBold);
+  bind(bindings, LogicalKeyboardKey.keyI, controller.toggleItalic);
+  bind(bindings, LogicalKeyboardKey.keyU, controller.toggleUnderline);
+  bind(
+    bindings,
+    LogicalKeyboardKey.digit8,
+    controller.toggleBullet,
+    shift: true,
+  );
+  bind(
+    bindings,
+    LogicalKeyboardKey.digit7,
+    controller.toggleNumbered,
+    shift: true,
+  );
+  bind(bindings, LogicalKeyboardKey.keyC, controller.cycleColor, shift: true);
+  return bindings;
+}
+
+String sentenceShortcutLabel(BuildContext context, String chord) {
+  final apple = switch (Theme.of(context).platform) {
+    TargetPlatform.macOS || TargetPlatform.iOS => true,
+    _ => false,
+  };
+  if (!apple) {
+    return 'Ctrl+$chord';
+  }
+  return '⌘${chord.replaceAll('Shift+', '⇧')}';
+}
+
 class SentenceFormatBar extends StatefulWidget {
   const SentenceFormatBar({
     super.key,
@@ -746,9 +813,12 @@ class _SentenceFormatBarState extends State<SentenceFormatBar> {
       required Key buttonKey,
       required IconData icon,
       required bool active,
+      required String shortcut,
       required VoidCallback onPressed,
     }) {
-      return Material(
+      return Tooltip(
+        message: sentenceShortcutLabel(context, shortcut),
+        child: Material(
         color: active ? colors.selectedFill : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
@@ -768,6 +838,7 @@ class _SentenceFormatBarState extends State<SentenceFormatBar> {
             ),
           ),
         ),
+      ),
       );
     }
 
@@ -779,30 +850,35 @@ class _SentenceFormatBarState extends State<SentenceFormatBar> {
             buttonKey: const Key('sentence-bold'),
             icon: Icons.format_bold,
             active: controller.boldActive,
+            shortcut: 'B',
             onPressed: controller.toggleBold,
           ),
           button(
             buttonKey: const Key('sentence-italic'),
             icon: Icons.format_italic,
             active: controller.italicActive,
+            shortcut: 'I',
             onPressed: controller.toggleItalic,
           ),
           button(
             buttonKey: const Key('sentence-underline'),
             icon: Icons.format_underlined,
             active: controller.underlineActive,
+            shortcut: 'U',
             onPressed: controller.toggleUnderline,
           ),
           button(
             buttonKey: const Key('sentence-bullet'),
             icon: Icons.format_list_bulleted,
             active: false,
+            shortcut: 'Shift+8',
             onPressed: controller.toggleBullet,
           ),
           button(
             buttonKey: const Key('sentence-number'),
             icon: Icons.format_list_numbered,
             active: false,
+            shortcut: 'Shift+7',
             onPressed: controller.toggleNumbered,
           ),
           _ColorButton(controller: controller, onChanged: widget.onChanged),
@@ -824,51 +900,144 @@ class _ColorButton extends StatefulWidget {
 
 class _ColorButtonState extends State<_ColorButton> {
   TextSelection? _held;
+  final _menu = MenuController();
+
+  void _choose(int? argb) {
+    final held = _held;
+    final controller = widget.controller;
+    if (held != null && held.isValid) {
+      controller.selection = held;
+    }
+    controller.applyColor(argb == null ? null : Color(argb));
+    widget.onChanged();
+    if (_menu.isOpen) {
+      _menu.close();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = HomePalette.of(context);
-    final controller = widget.controller;
-    final selected = controller.colorActive;
-    return Listener(
-      onPointerDown: (_) => _held = controller.selection,
-      child: PopupMenuButton<int>(
-      key: const Key('sentence-color'),
-      tooltip: '',
-      padding: EdgeInsets.zero,
-      onSelected: (value) {
-        final held = _held;
-        if (held != null && held.isValid) {
-          controller.selection = held;
-        }
-        controller.applyColor(value == 0 ? null : Color(value));
-        widget.onChanged();
-      },
-      itemBuilder: (context) => <PopupMenuEntry<int>>[
-        for (final color in sentencePalette)
-          PopupMenuItem<int>(
-            key: Key('sentence-color-${color.toARGB32()}'),
-            value: color.toARGB32(),
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
+    final selected = widget.controller.colorActive;
+    return Tooltip(
+      message: sentenceShortcutLabel(context, 'Shift+C'),
+      child: MenuAnchor(
+        controller: _menu,
+        alignmentOffset: const Offset(0, 6),
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(colors.surface),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(8),
+          shadowColor: const WidgetStatePropertyAll(Color(0x33101828)),
+          side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-        const PopupMenuItem<int>(
-          key: Key('sentence-color-clear'),
-          value: 0,
-          child: Icon(Icons.format_color_reset, size: 20),
+          padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 0)),
         ),
-      ],
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Icon(
-          Icons.format_color_text,
-          size: 20,
-          color: selected == null ? colors.muted : Color(selected),
-        ),
+        menuChildren: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final color in sentencePalette)
+                _ColorSwatch(
+                  swatchKey: Key('sentence-color-${color.toARGB32()}'),
+                  color: color,
+                  selected: selected == color.toARGB32(),
+                  onTap: () => _choose(color.toARGB32()),
+                ),
+              Container(
+                width: 1,
+                height: 18,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                color: colors.border,
+              ),
+              _ColorSwatch(
+                swatchKey: const Key('sentence-color-clear'),
+                onTap: () => _choose(null),
+              ),
+            ],
+          ),
+        ],
+        builder: (context, menu, child) {
+          return Listener(
+            onPointerDown: (_) => _held = widget.controller.selection,
+            child: InkWell(
+              key: const Key('sentence-color'),
+              canRequestFocus: false,
+              onTap: () {
+                if (menu.isOpen) {
+                  menu.close();
+                } else {
+                  menu.open();
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Icon(
+                  Icons.format_color_text,
+                  size: 20,
+                  color: selected == null ? colors.muted : Color(selected),
+                ),
+              ),
+            ),
+          );
+        },
       ),
+    );
+  }
+}
+
+class _ColorSwatch extends StatelessWidget {
+  const _ColorSwatch({
+    required this.swatchKey,
+    required this.onTap,
+    this.color,
+    this.selected = false,
+  });
+
+  final Key swatchKey;
+  final VoidCallback onTap;
+  final Color? color;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomePalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: InkWell(
+        key: swatchKey,
+        onTap: onTap,
+        canRequestFocus: false,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: selected
+                ? Border.all(color: colors.ink, width: 2)
+                : null,
+          ),
+          child: Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color == null ? colors.border : color!,
+              ),
+            ),
+            child: color == null
+                ? Icon(Icons.format_color_reset, size: 12, color: colors.muted)
+                : null,
+          ),
+        ),
       ),
     );
   }

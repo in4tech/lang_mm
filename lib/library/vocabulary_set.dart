@@ -98,7 +98,9 @@ String? _keptImage(String? imageUrl) {
 }
 
 abstract class VocabularySetStore {
-  Future<void> save(VocabularySet set);
+  Future<String> save(VocabularySet set);
+
+  Future<void> addSetToFolder(String folderId, String setId) async {}
 
   Future<void> updateWords(VocabularySet set) async {}
 
